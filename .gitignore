@@ -1,0 +1,19 @@
+# Build output
+bin/
+obj/
+*.user
+
+# Local databases / generated data (never publish real data)
+*.db
+*.db-shm
+*.db-wal
+*.enc
+
+# Logs
+*.log
+
+# OS / IDE
+.vs/
+Thumbs.db
+desktop.ini
+*.suo

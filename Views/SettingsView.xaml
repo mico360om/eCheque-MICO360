@@ -1,0 +1,111 @@
+﻿<UserControl x:Class="eCheque.MICO360.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F5F5F5">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" MaxWidth="700">
+            <!-- Company -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Company Settings" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="Company Name" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding CompanyName}"/>
+                    </StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Currency" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding Currency}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Date Format" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding DateFormat}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            <!-- Amount in Words -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Amount in Words" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Currency Wording" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding CurrencyWording}" ToolTip="e.g. Omani Rials"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Baisa Wording" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding BaisaWording}" ToolTip="e.g. Baisa"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Case Format" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding CaseFormats}" SelectedItem="{Binding CaseFormat}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,10,0" VerticalAlignment="Bottom">
+                            <CheckBox Content="  Include Baisa" FontSize="13" IsChecked="{Binding IncludeBaisa}" Margin="0,8,0,0"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <CheckBox Content='  Append "Only"' FontSize="13" IsChecked="{Binding AddOnly}" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                    <!-- Live preview -->
+                    <Border Background="#F5F5F5" CornerRadius="4" Padding="12,8" Margin="0,4,0,0">
+                        <TextBlock FontSize="12" Foreground="#555555" TextWrapping="Wrap">
+                            <Run Text="Preview: " FontWeight="Bold"/>
+                            <Run Text="4956.250 → "/>
+                            <Run x:Name="RunWordsPreview" Foreground="#8B1818" FontStyle="Italic"
+                                 Text="FOUR THOUSAND NINE HUNDRED FIFTY-SIX OMANI RIALS AND TWO HUNDRED FIFTY BAISA ONLY"/>
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <!-- Paths -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="File Paths" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="PDF Output Path" Style="{StaticResource FieldLabel}"/>
+                        <DockPanel>
+                            <Button Content="Browse" Style="{StaticResource SecondaryBtn}" DockPanel.Dock="Right"
+                                    Padding="12,6" Command="{Binding BrowsePdfCommand}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding PdfPath}" IsReadOnly="True"
+                                     Background="#F8F8F8" Margin="0,0,8,0"/>
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Backup Path" Style="{StaticResource FieldLabel}"/>
+                        <DockPanel>
+                            <Button Content="Browse" Style="{StaticResource SecondaryBtn}" DockPanel.Dock="Right"
+                                    Padding="12,6" Command="{Binding BrowseBackupCommand}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding BackupPath}" IsReadOnly="True"
+                                     Background="#F8F8F8" Margin="0,0,8,0"/>
+                        </DockPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <!-- Backup -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Backup &amp; Restore" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
+                    <TextBlock Text="Create a backup copy of the database to the backup path." Foreground="#666666" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Create Backup Now" Style="{StaticResource PrimaryBtn}" Margin="0,0,10,0"
+                                Command="{Binding BackupCommand}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#2E7D32" FontSize="12" Margin="0,10,0,0"
+                               Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibility}}"/>
+                </StackPanel>
+            </Border>
+            <!-- Save -->
+            <StackPanel HorizontalAlignment="Right">
+                <Button Content="Save Settings" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
+

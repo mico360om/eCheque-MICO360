@@ -1,0 +1,82 @@
+﻿<Window x:Class="eCheque.MICO360.Views.ChequeLayoutDesigner"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cheque Layout Designer — eCheque MICO360"
+        Width="860" Height="560" MinWidth="700" MinHeight="460"
+        WindowStartupLocation="CenterOwner"
+        Icon="/logo.png"
+        Background="#F5F5F5">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#1A1A1A" Padding="16,10">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock x:Name="TxtProfileName" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock FontSize="11" Foreground="#888888">
+                        <Run Text="Drag fields to position them on the cheque. Scale: "/>
+                        <Run x:Name="RunScale" Text="3.0"/>
+                        <Run Text=" px/mm"/>
+                    </TextBlock>
+                </StackPanel>
+                <!-- Legend -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#1565C022" BorderBrush="#1565C0" BorderThickness="1" CornerRadius="3" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="📅 Date" Foreground="#1565C0" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border Background="#2E7D3222" BorderBrush="#2E7D32" BorderThickness="1" CornerRadius="3" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="👤 Payee" Foreground="#2E7D32" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border Background="#E6510022" BorderBrush="#E65100" BorderThickness="1" CornerRadius="3" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="💰 Amount" Foreground="#E65100" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border Background="#6A1B9A22" BorderBrush="#6A1B9A" BorderThickness="1" CornerRadius="3" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="📝 Words" Foreground="#6A1B9A" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border Background="#8B181822" BorderBrush="#8B1818" BorderThickness="1" CornerRadius="3" Padding="6,2" Margin="4,0">
+                        <TextBlock Text="# ChequeNo" Foreground="#8B1818" FontSize="11" FontWeight="SemiBold"/>
+                    </Border>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Canvas scroll area -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                      Background="#777777" Padding="24">
+            <Border BorderBrush="#555555" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Canvas x:Name="ChequeCanvas" Background="White"
+                        MouseMove="Canvas_MouseMove"
+                        MouseLeftButtonUp="Canvas_MouseLeftButtonUp"
+                        Cursor="Default">
+                    <!-- Cheque outline drawn in code-behind -->
+                </Canvas>
+            </Border>
+        </ScrollViewer>
+
+        <!-- Position info bar -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="16,6">
+            <TextBlock x:Name="TxtPosition" FontSize="12" Foreground="#555555"
+                       Text="Click and drag any field label to reposition it. Position shown in millimetres (mm)."/>
+        </Border>
+
+        <!-- Action buttons -->
+        <Border Grid.Row="3" Background="#F5F5F5" Padding="16,10">
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Content="Reset to Defaults" Style="{StaticResource SecondaryBtn}"
+                        Click="BtnReset_Click" Padding="14,7"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"
+                            Click="BtnCancel_Click"/>
+                    <Button Content="Save Layout" Style="{StaticResource PrimaryBtn}"
+                            Click="BtnSave_Click"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

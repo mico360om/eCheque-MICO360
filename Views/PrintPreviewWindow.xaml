@@ -1,0 +1,44 @@
+﻿<Window x:Class="eCheque.MICO360.Views.PrintPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Print Preview — eCheque MICO360"
+        Width="820" Height="640"
+        WindowStartupLocation="CenterOwner"
+        Icon="/logo.png"
+        Background="#F5F5F5">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="16,10">
+            <DockPanel>
+                <TextBlock Text="Cheque Print Preview" FontSize="16" FontWeight="Bold" Foreground="#1A1A1A" VerticalAlignment="Center"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button x:Name="BtnPrint" Content="Print Now" Style="{StaticResource PrimaryBtn}"
+                            Margin="0,0,8,0" Click="BtnPrint_Click"/>
+                    <Button x:Name="BtnSavePdf" Content="Save PDF" Style="{StaticResource SecondaryBtn}"
+                            Margin="0,0,8,0" Click="BtnSavePdf_Click"/>
+                    <Button Content="Close" Style="{StaticResource SecondaryBtn}" Click="BtnClose_Click"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <!-- Preview Area -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                      Background="#888888">
+            <Border Margin="24" Background="White"
+                    Effect="{DynamicResource {x:Static SystemParameters.DropShadowKey}}">
+                <Image x:Name="PreviewImage" Stretch="None"/>
+            </Border>
+        </ScrollViewer>
+        <!-- Info bar -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="16,8">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="TxtInfo" Foreground="#666666" FontSize="12"/>
+                <TextBlock x:Name="TxtPdfPath" Foreground="#8B1818" FontSize="12" Margin="16,0,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

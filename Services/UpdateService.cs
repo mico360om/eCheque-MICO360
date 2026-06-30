@@ -1,0 +1,238 @@
+using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text.Json;
+using eCheque.MICO360.Helpers;
+using eCheque.MICO360.Models;
+
+namespace eCheque.MICO360.Services
+{
+    /// <summary>
+    /// Self-update against GitHub Releases. Flow:
+    ///   Check → compare versions → download package → verify SHA-256 → apply on restart → rollback on failure.
+    /// All steps are logged to update.log. User data (database, PDFs, settings) lives outside the app
+    /// folder (LocalAppData / MyDocuments) and is never touched by the update.
+    /// </summary>
+    public static class UpdateService
+    {
+        static readonly HttpClient Http = CreateClient();
+
+        static HttpClient CreateClient()
+        {
+            var c = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+            c.DefaultRequestHeaders.UserAgent.ParseAdd("eCheque-MICO360-Updater");
+            c.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+            return c;
+        }
+
+        public static string LogPath
+        {
+            get
+            {
+                var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "eCheque_MICO360");
+                Directory.CreateDirectory(dir);
+                return Path.Combine(dir, "update.log");
+            }
+        }
+
+        public static void Log(string message)
+        {
+            try { File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {message}{Environment.NewLine}"); }
+            catch { }
+        }
+
+        /// <summary>Queries GitHub for the latest release. Throws HttpRequestException on no-internet/network errors.</summary>
+        public static async Task<UpdateInfo> CheckForUpdatesAsync()
+        {
+            var info = new UpdateInfo { CurrentVersion = AppInfo.Version };
+            Log($"Checking for updates. Current version {info.CurrentVersion}. Source {AppInfo.ReleasesApiUrl}");
+
+            using var resp = await Http.GetAsync(AppInfo.ReleasesApiUrl);
+            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Log("No releases published yet (404).");
+                info.LatestVersion = info.CurrentVersion;
+                info.UpdateAvailable = false;
+                return info;
+            }
+            resp.EnsureSuccessStatusCode();
+
+            var json = await resp.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            var tag  = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "" : "";
+            var body = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
+            info.LatestVersion = tag.TrimStart('v', 'V');
+            info.Changelog = string.IsNullOrWhiteSpace(body) ? "(No release notes provided.)" : body.Trim();
+            info.Mandatory = body.Contains("[mandatory]", StringComparison.OrdinalIgnoreCase)
+                          || body.Contains("mandatory: true", StringComparison.OrdinalIgnoreCase);
+
+            // Pick the first .zip asset as the update package; capture a .sha256 companion if present.
+            string shaFromAsset = "";
+            if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var a in assets.EnumerateArray())
+                {
+                    var name = a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+                    var url  = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() ?? "" : "";
+                    var size = a.TryGetProperty("size", out var s) ? s.GetInt64() : 0;
+                    if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(info.DownloadUrl))
+                    { info.DownloadUrl = url; info.AssetName = name; info.SizeBytes = size; }
+                    else if (name.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(url))
+                    { try { shaFromAsset = (await Http.GetStringAsync(url)).Trim().Split(' ')[0]; } catch { } }
+                }
+            }
+
+            // Fallback: a "SHA256: <hash>" line in the release notes.
+            if (string.IsNullOrEmpty(shaFromAsset))
+            {
+                foreach (var line in info.Changelog.Split('\n'))
+                {
+                    var l = line.Trim();
+                    if (l.StartsWith("SHA256:", StringComparison.OrdinalIgnoreCase))
+                    { shaFromAsset = l.Substring(7).Trim(); break; }
+                }
+            }
+            info.Sha256 = shaFromAsset;
+
+            info.UpdateAvailable = !string.IsNullOrEmpty(info.DownloadUrl) && IsNewer(info.LatestVersion, info.CurrentVersion);
+            Log($"Latest version {info.LatestVersion}. Update available: {info.UpdateAvailable}. Mandatory: {info.Mandatory}. Asset: {info.AssetName}");
+            return info;
+        }
+
+        /// <summary>True if <paramref name="latest"/> is a strictly higher version than <paramref name="current"/>.</summary>
+        public static bool IsNewer(string latest, string current)
+        {
+            if (Version.TryParse(Normalize(latest), out var l) && Version.TryParse(Normalize(current), out var c))
+                return l > c;
+            // Fall back to string comparison if the tags aren't dotted versions.
+            return !string.IsNullOrEmpty(latest) && !string.Equals(latest, current, StringComparison.OrdinalIgnoreCase);
+        }
+
+        static string Normalize(string v)
+        {
+            v = (v ?? "").Trim().TrimStart('v', 'V');
+            var parts = v.Split('.');
+            return parts.Length switch { 1 => v + ".0.0", 2 => v + ".0", _ => v };
+        }
+
+        /// <summary>Downloads the package to a temp file, reporting 0..1 progress. Returns the file path.</summary>
+        public static async Task<string> DownloadAsync(UpdateInfo info, IProgress<double> progress, CancellationToken ct)
+        {
+            CheckDiskSpace(info.SizeBytes);
+            var dir = Path.Combine(Path.GetTempPath(), "eCheque_Update");
+            Directory.CreateDirectory(dir);
+            var file = Path.Combine(dir, string.IsNullOrEmpty(info.AssetName) ? "update.zip" : info.AssetName);
+
+            Log($"Downloading {info.DownloadUrl} -> {file}");
+            using var resp = await Http.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+            resp.EnsureSuccessStatusCode();
+            var total = resp.Content.Headers.ContentLength ?? info.SizeBytes;
+
+            await using var src = await resp.Content.ReadAsStreamAsync(ct);
+            await using var dst = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.None);
+            var buffer = new byte[81920];
+            long read = 0; int n;
+            while ((n = await src.ReadAsync(buffer, ct)) > 0)
+            {
+                await dst.WriteAsync(buffer.AsMemory(0, n), ct);
+                read += n;
+                if (total > 0) progress.Report(Math.Min(1.0, (double)read / total));
+            }
+            Log($"Download complete: {read} bytes.");
+            return file;
+        }
+
+        static void CheckDiskSpace(long needed)
+        {
+            try
+            {
+                var drive = new DriveInfo(Path.GetPathRoot(Path.GetTempPath()) ?? "C:\\");
+                // Require the package size plus headroom for backup + extraction.
+                var required = Math.Max(needed, 1) * 3 + 50L * 1024 * 1024;
+                if (drive.AvailableFreeSpace < required)
+                    throw new IOException($"Not enough disk space. Need ~{required / 1024 / 1024} MB free.");
+            }
+            catch (IOException) { throw; }
+            catch { /* if we can't determine space, proceed */ }
+        }
+
+        public static string ComputeSha256(string file)
+        {
+            using var sha = SHA256.Create();
+            using var fs = File.OpenRead(file);
+            return Convert.ToHexString(sha.ComputeHash(fs)).ToLowerInvariant();
+        }
+
+        /// <summary>Verifies the downloaded file against the expected hash. Returns true if no hash was published (cannot verify).</summary>
+        public static bool VerifyChecksum(string file, string expectedSha)
+        {
+            if (string.IsNullOrWhiteSpace(expectedSha))
+            {
+                Log("No checksum published — skipping verification.");
+                return true;
+            }
+            var actual = ComputeSha256(file);
+            var ok = string.Equals(actual, expectedSha.Trim().ToLowerInvariant(), StringComparison.OrdinalIgnoreCase);
+            Log($"Checksum verify: expected {expectedSha}, actual {actual}, ok={ok}");
+            return ok;
+        }
+
+        /// <summary>
+        /// Writes an external updater script that waits for this process to exit, backs up the current
+        /// app folder, extracts the new package over it, relaunches the app, and rolls back on failure.
+        /// Then starts the script and signals the caller to shut down.
+        /// </summary>
+        public static void ApplyAndRestart(string zipPath)
+        {
+            var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName;
+            var appDir  = Path.GetDirectoryName(exePath)!;
+            var pid     = Environment.ProcessId;
+            var workDir = Path.Combine(Path.GetTempPath(), "eCheque_Update");
+            Directory.CreateDirectory(workDir);
+            var backupDir = Path.Combine(workDir, "backup");
+            var scriptPath = Path.Combine(workDir, "apply_update.cmd");
+
+            // %~dp0 self-deletes at the end. robocopy exit codes < 8 are success.
+            var script = $@"@echo off
+setlocal
+echo {DateTime.Now:yyyy-MM-dd HH:mm:ss} ^| Applying update >> ""{LogPath}""
+:waitloop
+tasklist /FI ""PID eq {pid}"" 2>nul | find ""{pid}"" >nul
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto waitloop
+)
+echo Backing up current version... >> ""{LogPath}""
+if exist ""{backupDir}"" rmdir /s /q ""{backupDir}""
+robocopy ""{appDir}"" ""{backupDir}"" /E /XD ""{backupDir}"" >nul
+echo Extracting update... >> ""{LogPath}""
+powershell -NoProfile -ExecutionPolicy Bypass -Command ""Expand-Archive -LiteralPath '{zipPath}' -DestinationPath '{appDir}' -Force""
+if errorlevel 1 (
+    echo Extraction FAILED — rolling back >> ""{LogPath}""
+    robocopy ""{backupDir}"" ""{appDir}"" /E >nul
+    echo Rollback complete >> ""{LogPath}""
+) else (
+    echo Update applied successfully >> ""{LogPath}""
+)
+start """" ""{exePath}""
+rmdir /s /q ""{backupDir}"" 2>nul
+del ""{zipPath}"" 2>nul
+del ""%~f0"" 2>nul
+";
+            File.WriteAllText(scriptPath, script);
+            Log($"Launching updater script {scriptPath}");
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"{scriptPath}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WorkingDirectory = workDir
+            });
+        }
+    }
+}
