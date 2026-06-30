@@ -15,8 +15,20 @@ namespace eCheque.MICO360.Services
             var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "eCheque_MICO360");
             Directory.CreateDirectory(folder);
             var masterDb = Path.Combine(folder, "companies.db");
-            _cs = $"Data Source={masterDb}";
-            CreateTable();
+
+            SecurityService.Init();
+            try
+            {
+                SecurityService.EnsureEncrypted(masterDb);
+                _cs = SecurityService.ConnectionString(masterDb);
+                CreateTable();
+            }
+            catch
+            {
+                SecurityService.Disable("CompanyService.Initialize failed with key");
+                _cs = SecurityService.ConnectionString(masterDb);
+                CreateTable();
+            }
             SeedDefault();
         }
 

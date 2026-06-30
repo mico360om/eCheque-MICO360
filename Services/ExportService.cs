@@ -26,5 +26,22 @@ namespace eCheque.MICO360.Services
             pkg.SaveAs(new FileInfo(path));
             return path;
         }
+
+        public static string ExportPrintHistory(List<PrintHistory> rows, string title="Print History")
+        {
+            var path=Path.Combine(DatabaseService.GetSetting("PdfSavePath",Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),"eCheque MICO360","Reports")),$"PrintHistory_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var pkg=new ExcelPackage();
+            var ws=pkg.Workbook.Worksheets.Add("Print History");
+            ws.Cells["A1"].Value="eCheque MICO360";ws.Cells["A1"].Style.Font.Bold=true;ws.Cells["A1"].Style.Font.Size=14;
+            ws.Cells["A2"].Value=title;ws.Cells["A2"].Style.Font.Bold=true;
+            ws.Cells["A3"].Value=$"Generated: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            var hdrs=new[]{"#","Printed Date","Cheque No","Payee Name","Bank","Amount","Printed By","Type","Reason / Notes"};
+            for(int i=0;i<hdrs.Length;i++){var cell=ws.Cells[5,i+1];cell.Value=hdrs[i];cell.Style.Font.Bold=true;cell.Style.Fill.PatternType=ExcelFillStyle.Solid;cell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(139,24,24));cell.Style.Font.Color.SetColor(Color.White);}
+            for(int i=0;i<rows.Count;i++){var h=rows[i];var row=i+6;ws.Cells[row,1].Value=i+1;ws.Cells[row,2].Value=h.PrintedDate.ToString("dd/MM/yyyy HH:mm:ss");ws.Cells[row,3].Value=h.ChequeNumber;ws.Cells[row,4].Value=h.PayeeName;ws.Cells[row,5].Value=h.BankName;ws.Cells[row,6].Value=(double)h.Amount;ws.Cells[row,6].Style.Numberformat.Format="#,##0.000";ws.Cells[row,7].Value=h.PrintedBy;ws.Cells[row,8].Value=h.ReprintLabel;ws.Cells[row,9].Value=h.Reason;if(i%2==1){ws.Cells[row,1,row,hdrs.Length].Style.Fill.PatternType=ExcelFillStyle.Solid;ws.Cells[row,1,row,hdrs.Length].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(248,235,235));}}
+            ws.Cells.AutoFitColumns();
+            pkg.SaveAs(new FileInfo(path));
+            return path;
+        }
     }
 }

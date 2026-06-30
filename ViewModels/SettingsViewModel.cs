@@ -22,9 +22,10 @@ namespace eCheque.MICO360.ViewModels
         public List<string> DateFormats{get;}=new(){"dd/MM/yyyy","MM/dd/yyyy","yyyy-MM-dd","dd-MMM-yyyy"};
         public ICommand SaveCommand{get;}
         public ICommand BackupCommand{get;}
+        public ICommand RestoreCommand{get;}
         public ICommand BrowsePdfCommand{get;}
         public ICommand BrowseBackupCommand{get;}
-        public SettingsViewModel(){SaveCommand=new RelayCommand(Save);BackupCommand=new RelayCommand(DoBackup);BrowsePdfCommand=new RelayCommand(BrowsePdf);BrowseBackupCommand=new RelayCommand(BrowseBackup);}
+        public SettingsViewModel(){SaveCommand=new RelayCommand(Save);BackupCommand=new RelayCommand(DoBackup);RestoreCommand=new RelayCommand(DoRestore);BrowsePdfCommand=new RelayCommand(BrowsePdf);BrowseBackupCommand=new RelayCommand(BrowseBackup);}
         public void Load(){CompanyName=DatabaseService.GetSetting("CompanyName","My Company LLC");Currency=DatabaseService.GetSetting("DefaultCurrency","OMR");DateFormat=DatabaseService.GetSetting("DateFormat","dd/MM/yyyy");PdfPath=DatabaseService.GetSetting("PdfSavePath","");BackupPath=DatabaseService.GetSetting("BackupPath","");CaseFormat=DatabaseService.GetSetting("AmountCaseFormat","UPPERCASE");CurrencyWording=DatabaseService.GetSetting("AmountCurrencyWording","Omani Rials");BaisaWording=DatabaseService.GetSetting("AmountBaisaWording","Baisa");IncludeBaisa=DatabaseService.GetSetting("AmountIncludeBaisa","true")=="true";AddOnly=DatabaseService.GetSetting("AmountAddOnly","true")=="true";}
         void Save(){
             if(!string.IsNullOrWhiteSpace(PdfPath)&&!System.IO.Directory.Exists(PdfPath)){StatusMessage=$"PDF output path does not exist: {PdfPath}";return;}
@@ -33,6 +34,15 @@ namespace eCheque.MICO360.ViewModels
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Settings Changed","",$"Company={CompanyName}, Currency={Currency}, CaseFormat={CaseFormat}");
             StatusMessage="Settings saved successfully.";}
         void DoBackup(){try{var p=BackupService.CreateBackup();StatusMessage=$"Backup created: {System.IO.Path.GetFileName(p)}";}catch(Exception ex){StatusMessage=$"Backup failed: {ex.Message}";}}
+        void DoRestore()
+        {
+            using var d=new System.Windows.Forms.OpenFileDialog{Filter="Database backup (*.db)|*.db",Title="Select a backup to restore"};
+            if(System.IO.Directory.Exists(BackupPath)) d.InitialDirectory=BackupPath;
+            if(d.ShowDialog()!=System.Windows.Forms.DialogResult.OK)return;
+            if(System.Windows.MessageBox.Show("Restoring will OVERWRITE the current company's data with the selected backup.\n\nA safety copy of the current data is kept (.prerestore). Continue?","Confirm Restore",System.Windows.MessageBoxButton.YesNo,System.Windows.MessageBoxImage.Warning)!=System.Windows.MessageBoxResult.Yes)return;
+            try{BackupService.RestoreBackup(d.FileName);StatusMessage="Backup restored. Please restart the application for the change to fully apply.";}
+            catch(Exception ex){StatusMessage=$"Restore failed: {ex.Message}";}
+        }
         void BrowsePdf(){using var d=new System.Windows.Forms.FolderBrowserDialog();if(d.ShowDialog()==System.Windows.Forms.DialogResult.OK)PdfPath=d.SelectedPath;}
         void BrowseBackup(){using var d=new System.Windows.Forms.FolderBrowserDialog();if(d.ShowDialog()==System.Windows.Forms.DialogResult.OK)BackupPath=d.SelectedPath;}
     }

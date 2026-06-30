@@ -14,6 +14,13 @@
     <Company>MICO360 Softwares</Company>
     <Product>eCheque MICO360</Product>
   </PropertyGroup>
+  <!-- The test project lives under Tests\ inside the repo; keep it out of the app build. -->
+  <ItemGroup>
+    <Compile Remove="Tests\**" />
+    <EmbeddedResource Remove="Tests\**" />
+    <None Remove="Tests\**" />
+    <Page Remove="Tests\**" />
+  </ItemGroup>
   <ItemGroup>
     <Resource Include="logo.png" />
     <Resource Include="logo-w.png" />
@@ -21,7 +28,9 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="EPPlus" Version="6.2.10" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <!-- Microsoft.Data.Sqlite.Core + SQLCipher bundle gives page-level encryption at rest. -->
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.9" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.10" />
     <PackageReference Include="PDFsharp-WPF" Version="6.2.4" />
   </ItemGroup>
 </Project>

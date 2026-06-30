@@ -92,10 +92,12 @@
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Backup &amp; Restore" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
-                    <TextBlock Text="Create a backup copy of the database to the backup path." Foreground="#666666" Margin="0,0,0,12"/>
+                    <TextBlock Text="Create a backup copy of the current company's database, or restore from a previous backup." Foreground="#666666" Margin="0,0,0,12"/>
                     <StackPanel Orientation="Horizontal">
                         <Button Content="Create Backup Now" Style="{StaticResource PrimaryBtn}" Margin="0,0,10,0"
                                 Command="{Binding BackupCommand}"/>
+                        <Button Content="Restore from Backup…" Style="{StaticResource SecondaryBtn}"
+                                Command="{Binding RestoreCommand}"/>
                     </StackPanel>
                     <TextBlock Text="{Binding StatusMessage}" Foreground="#2E7D32" FontSize="12" Margin="0,10,0,0"
                                Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibility}}"/>

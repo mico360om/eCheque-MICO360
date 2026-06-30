@@ -13,8 +13,21 @@ namespace eCheque.MICO360.Services
             var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "eCheque_MICO360");
             Directory.CreateDirectory(folder);
             DbPath = dbPath ?? Path.Combine(folder, "echeque.db");
-            _cs = $"Data Source={DbPath}";
-            CreateTables();
+
+            SecurityService.Init();
+            try
+            {
+                SecurityService.EnsureEncrypted(DbPath);
+                _cs = SecurityService.ConnectionString(DbPath);
+                CreateTables();
+            }
+            catch
+            {
+                // Last-resort fallback: open without encryption so the user is never locked out.
+                SecurityService.Disable("DatabaseService.Initialize failed with key");
+                _cs = SecurityService.ConnectionString(DbPath);
+                CreateTables();
+            }
             MigrateSchema();
             SeedData();
         }
