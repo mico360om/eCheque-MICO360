@@ -90,6 +90,9 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="← Back" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
                             Command="{Binding BackCommand}"/>
+                    <Button Content="🖨  Print / Export PDF" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
+                            Click="BtnPrint_Click"
+                            Visibility="{Binding IsViewing, Converter={StaticResource BoolToVisibility}}"/>
                     <Button Content="✎  Edit" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
                             Command="{Binding EditCommand}"
                             Visibility="{Binding ShowEdit, Converter={StaticResource BoolToVisibility}}"/>
