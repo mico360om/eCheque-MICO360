@@ -12,7 +12,12 @@ namespace eCheque.MICO360.ViewModels
         int _total, _printed, _draft, _cancelled, _voided, _todayPrinted, _monthPrinted;
         decimal _totalAmount, _monthAmount, _yearAmount;
         string _companyName = "", _currency = "OMR", _backupStatus = "";
+        int _pdcDue; string _pdcAlert = ""; bool _hasPdcAlert;
         ObservableCollection<ChequeRecord> _recent = new();
+
+        public int PdcDue        { get => _pdcDue;      set => Set(ref _pdcDue, value); }
+        public string PdcAlert   { get => _pdcAlert;    set => Set(ref _pdcAlert, value); }
+        public bool HasPdcAlert  { get => _hasPdcAlert; set => Set(ref _hasPdcAlert, value); }
 
         public int Total          { get => _total;        set => Set(ref _total, value); }
         public int Printed        { get => _printed;      set => Set(ref _printed, value); }
@@ -33,6 +38,7 @@ namespace eCheque.MICO360.ViewModels
         public event Action? NewChequeRequested;
         public event Action? HistoryRequested;
         public event Action? PendingChequesRequested;
+        public event Action? PdcRequested;
         public event Action<ChequeRecord, ChequeProfile>? PrintRequested;
 
         public ICommand NewChequeCommand     { get; }
@@ -42,12 +48,14 @@ namespace eCheque.MICO360.ViewModels
         public ICommand RefreshCommand       { get; }
         public ICommand PrintRowCommand      { get; }
         public ICommand ViewRowCommand       { get; }
+        public ICommand PdcCommand           { get; }
 
         public DashboardViewModel()
         {
             NewChequeCommand  = new RelayCommand(() => NewChequeRequested?.Invoke());
             HistoryCommand    = new RelayCommand(() => HistoryRequested?.Invoke());
             PendingCommand    = new RelayCommand(() => PendingChequesRequested?.Invoke());
+            PdcCommand        = new RelayCommand(() => PdcRequested?.Invoke());
             BackupCommand     = new RelayCommand(DoBackup);
             RefreshCommand    = new RelayCommand(Load);
             PrintRowCommand   = new RelayCommand<ChequeRecord>(DoPrint, r => r != null);
@@ -76,6 +84,14 @@ namespace eCheque.MICO360.ViewModels
                 YearAmount   = s.YearAmount;
 
                 Recent = new ObservableCollection<ChequeRecord>(ChequeService.GetCheques().Take(10));
+
+                // Post-dated cheque reminder
+                var reminderDays = int.TryParse(DatabaseService.GetSetting("PdcReminderDays", "7"), out var d) ? d : 7;
+                PdcDue = ChequeService.GetDuePdcCount(reminderDays);
+                HasPdcAlert = PdcDue > 0;
+                PdcAlert = PdcDue > 0
+                    ? $"⏰  {PdcDue} post-dated cheque(s) due within {reminderDays} days — click to review."
+                    : "";
             }
             catch { }
         }

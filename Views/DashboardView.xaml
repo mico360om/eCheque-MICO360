@@ -76,6 +76,20 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="20,20,20,24">
 
+            <!-- PDC due reminder banner -->
+            <Button Command="{Binding PdcCommand}" Cursor="Hand" BorderThickness="0" HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch" Margin="0,0,0,14" Padding="0"
+                    Visibility="{Binding HasPdcAlert, Converter={StaticResource BoolToVisibility}}">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="#FFF4E5" BorderBrush="#FFCC80" BorderThickness="1" CornerRadius="6" Padding="14,10">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <TextBlock Text="{Binding PdcAlert}" Foreground="#B26A00" FontSize="13" FontWeight="SemiBold"/>
+            </Button>
+
             <!-- Welcome Row -->
             <DockPanel Margin="0,0,0,16">
                 <StackPanel>

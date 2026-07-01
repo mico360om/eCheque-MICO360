@@ -154,6 +154,7 @@ namespace eCheque.MICO360
                 "Dashboard" => "Dashboard",
                 "NewCheque" => "New Cheque",
                 "History" => "Cheque History",
+                "Tracking" => "Cheque Tracking",
                 "PrintHistory" => "Print History",
                 "Profiles" => "Cheque Profiles",
                 "Settings" => "Settings",
@@ -174,6 +175,7 @@ namespace eCheque.MICO360
                     "Dashboard" => CreateDashboard(),
                     "NewCheque" => CreateChequeEntry(),
                     "History" => CreateHistory(),
+                    "Tracking" => CreateTracking(),
                     "PrintHistory" => CreatePrintHistory(),
                     "Profiles" => CreateProfiles(),
                     "Settings" => CreateSettings(),
@@ -253,6 +255,7 @@ namespace eCheque.MICO360
             vm.NewChequeRequested    += () => { Navigate("NewCheque"); SetActiveNav(NavNewCheque); };
             vm.HistoryRequested      += () => { Navigate("History");   SetActiveNav(NavHistory);   };
             vm.PendingChequesRequested += () => { ShowHistoryFiltered("Draft"); };
+            vm.PdcRequested += () => { Navigate("Tracking"); SetActiveNav(NavTracking); };
             vm.PrintRequested += (cheque, profile) =>
             {
                 if (RunPrintFlow(cheque, profile)) vm.Load();
@@ -346,6 +349,12 @@ namespace eCheque.MICO360
         {
             var vm = new PrintHistoryViewModel(); vm.Load();
             return new PrintHistoryView { DataContext = vm };
+        }
+
+        private UserControl CreateTracking()
+        {
+            var vm = new ChequeTrackingViewModel(); vm.Load();
+            return new ChequeTrackingView { DataContext = vm };
         }
 
         private UserControl CreateAudit()

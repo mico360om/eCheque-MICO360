@@ -30,7 +30,7 @@ namespace eCheque.MICO360.Services
         public static bool ChequeNumberExists(string num,string bank,int excludeId=0){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("SELECT COUNT(*) FROM ChequeRecords WHERE ChequeNumber=@n AND BankName=@b AND Id!=@id",conn);cmd.Parameters.AddWithValue("@n",num);cmd.Parameters.AddWithValue("@b",bank);cmd.Parameters.AddWithValue("@id",excludeId);return Convert.ToInt32(cmd.ExecuteScalar())>0;}
 
         /// <summary>Statuses that represent an issued/closed cheque which must not be edited or re-printed casually.</summary>
-        public static bool IsLocked(string? status) => status is "Printed" or "Reprinted" or "Cancelled" or "Void";
+        public static bool IsLocked(string? status) => status is "Printed" or "Reprinted" or "Presented" or "Cleared" or "Bounced" or "Cancelled" or "Void";
         /// <summary>A cheque whose status forbids printing entirely.</summary>
         public static bool IsPrintBlocked(string? status) => status is "Cancelled" or "Void";
         /// <summary>Number of saved cheques referencing a profile (used to block deletion of in-use profiles).</summary>
@@ -77,6 +77,47 @@ namespace eCheque.MICO360.Services
             cmd.Parameters.AddWithValue("@r",reason);cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Cancelled",id.ToString(),reason);
         }
+
+        // ───────────────────────── Cheque lifecycle / reconciliation ─────────────────────────
+
+        /// <summary>Marks an issued cheque as presented to the bank.</summary>
+        public static void MarkPresented(int id,DateTime date)
+        {
+            using var conn=DatabaseService.GetConnection();
+            using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Presented',PresentedDate=@d WHERE Id=@id",conn);
+            cmd.Parameters.AddWithValue("@d",date.ToString("o"));cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Presented",id.ToString(),date.ToString("yyyy-MM-dd"));
+        }
+
+        /// <summary>Marks a cheque as cleared by the bank (settled).</summary>
+        public static void MarkCleared(int id,DateTime date)
+        {
+            using var conn=DatabaseService.GetConnection();
+            using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Cleared',ClearedDate=@d WHERE Id=@id",conn);
+            cmd.Parameters.AddWithValue("@d",date.ToString("o"));cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Cleared",id.ToString(),date.ToString("yyyy-MM-dd"));
+        }
+
+        /// <summary>Marks a cheque as bounced/returned with a reason.</summary>
+        public static void MarkBounced(int id,string reason)
+        {
+            using var conn=DatabaseService.GetConnection();
+            using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Bounced',BounceReason=@r WHERE Id=@id",conn);
+            cmd.Parameters.AddWithValue("@r",reason);cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Bounced",id.ToString(),reason);
+        }
+
+        /// <summary>Post-dated cheques: issued/ready, dated in the future, not yet settled or cancelled. Ordered by due date.</summary>
+        public static List<ChequeRecord> GetPdcCheques()
+            => GetCheques().Where(c => c.IsPdc).OrderBy(c => c.ChequeDate).ToList();
+
+        /// <summary>Issued cheques awaiting settlement (for the reconciliation screen).</summary>
+        public static List<ChequeRecord> GetOutstandingCheques()
+            => GetCheques().Where(c => c.Status is "Printed" or "Reprinted" or "Presented").OrderBy(c => c.ChequeDate).ToList();
+
+        /// <summary>Count of PDCs due within the next <paramref name="days"/> days (including overdue).</summary>
+        public static int GetDuePdcCount(int days)
+            => GetPdcCheques().Count(c => c.DaysUntilDue <= days);
 
         public static void VoidCheque(int id,string reason)
         {
@@ -208,7 +249,7 @@ namespace eCheque.MICO360.Services
             cmd.Parameters.AddWithValue("@n",p.Name);cmd.Parameters.AddWithValue("@bn",p.BankName);cmd.Parameters.AddWithValue("@an",p.AccountName);cmd.Parameters.AddWithValue("@anum",p.AccountNumber);cmd.Parameters.AddWithValue("@cw",p.ChequeWidth);cmd.Parameters.AddWithValue("@ch",p.ChequeHeight);cmd.Parameters.AddWithValue("@dx",p.DateX);cmd.Parameters.AddWithValue("@dy",p.DateY);cmd.Parameters.AddWithValue("@px",p.PayeeX);cmd.Parameters.AddWithValue("@py",p.PayeeY);cmd.Parameters.AddWithValue("@ax",p.AmountNumX);cmd.Parameters.AddWithValue("@ay",p.AmountNumY);cmd.Parameters.AddWithValue("@wx",p.AmountWordsX);cmd.Parameters.AddWithValue("@wy",p.AmountWordsY);cmd.Parameters.AddWithValue("@nx",p.ChequeNumX);cmd.Parameters.AddWithValue("@ny",p.ChequeNumY);cmd.Parameters.AddWithValue("@ff",p.FontFamily);cmd.Parameters.AddWithValue("@fs",p.FontSize);cmd.Parameters.AddWithValue("@ib",p.IsBold?1:0);cmd.Parameters.AddWithValue("@ox",p.PrintOffsetX);cmd.Parameters.AddWithValue("@oy",p.PrintOffsetY);cmd.Parameters.AddWithValue("@ps",p.PaperSize);cmd.Parameters.AddWithValue("@ia",p.IsActive?1:0);cmd.Parameters.AddWithValue("@cd",p.CreatedDate.ToString("o"));cmd.Parameters.AddWithValue("@cb",p.CreatedBy);
         }
 
-        static ChequeRecord MapCheque(SqliteDataReader r)=>new(){Id=I(r,"Id"),ChequeNumber=S(r,"ChequeNumber"),ChequeDate=DateTime.TryParse(S(r,"ChequeDate"),out var cd)?cd:DateTime.Today,PayeeName=S(r,"PayeeName"),Amount=(decimal)D(r,"Amount"),AmountInWords=S(r,"AmountInWords"),BankName=S(r,"BankName"),AccountName=S(r,"AccountName"),AccountNumber=S(r,"AccountNumber"),ProfileId=I(r,"ProfileId"),ProfileName=S(r,"ProfileName"),Currency=S(r,"Currency"),Remarks=S(r,"Remarks"),ReferenceNumber=S(r,"ReferenceNumber"),InvoiceNumber=S(r,"InvoiceNumber"),VoucherNumber=S(r,"VoucherNumber"),PreparedBy=S(r,"PreparedBy"),ApprovedBy=S(r,"ApprovedBy"),Department=S(r,"Department"),PaymentCategory=S(r,"PaymentCategory"),Status=S(r,"Status"),CreatedBy=S(r,"CreatedBy"),CreatedDate=DateTime.TryParse(S(r,"CreatedDate"),out var crd)?crd:DateTime.Now,PrintCount=I(r,"PrintCount"),PdfFilePath=S(r,"PdfFilePath"),CancellationReason=S(r,"CancellationReason"),PrintedDate=DateTime.TryParse(S(r,"PrintedDate"),out var prd)?prd:null};
+        static ChequeRecord MapCheque(SqliteDataReader r)=>new(){Id=I(r,"Id"),ChequeNumber=S(r,"ChequeNumber"),ChequeDate=DateTime.TryParse(S(r,"ChequeDate"),out var cd)?cd:DateTime.Today,PayeeName=S(r,"PayeeName"),Amount=(decimal)D(r,"Amount"),AmountInWords=S(r,"AmountInWords"),BankName=S(r,"BankName"),AccountName=S(r,"AccountName"),AccountNumber=S(r,"AccountNumber"),ProfileId=I(r,"ProfileId"),ProfileName=S(r,"ProfileName"),Currency=S(r,"Currency"),Remarks=S(r,"Remarks"),ReferenceNumber=S(r,"ReferenceNumber"),InvoiceNumber=S(r,"InvoiceNumber"),VoucherNumber=S(r,"VoucherNumber"),PreparedBy=S(r,"PreparedBy"),ApprovedBy=S(r,"ApprovedBy"),Department=S(r,"Department"),PaymentCategory=S(r,"PaymentCategory"),Status=S(r,"Status"),CreatedBy=S(r,"CreatedBy"),CreatedDate=DateTime.TryParse(S(r,"CreatedDate"),out var crd)?crd:DateTime.Now,PrintCount=I(r,"PrintCount"),PdfFilePath=S(r,"PdfFilePath"),CancellationReason=S(r,"CancellationReason"),PrintedDate=DateTime.TryParse(S(r,"PrintedDate"),out var prd)?prd:null,PresentedDate=DateTime.TryParse(S(r,"PresentedDate"),out var psd)?psd:null,ClearedDate=DateTime.TryParse(S(r,"ClearedDate"),out var cld)?cld:null,BounceReason=S(r,"BounceReason")};
 
         static ChequeProfile MapProfile(SqliteDataReader r)=>new(){Id=I(r,"Id"),Name=S(r,"Name"),BankName=S(r,"BankName"),AccountName=S(r,"AccountName"),AccountNumber=S(r,"AccountNumber"),ChequeWidth=D(r,"ChequeWidth"),ChequeHeight=D(r,"ChequeHeight"),DateX=D(r,"DateX"),DateY=D(r,"DateY"),PayeeX=D(r,"PayeeX"),PayeeY=D(r,"PayeeY"),AmountNumX=D(r,"AmountNumX"),AmountNumY=D(r,"AmountNumY"),AmountWordsX=D(r,"AmountWordsX"),AmountWordsY=D(r,"AmountWordsY"),ChequeNumX=D(r,"ChequeNumX"),ChequeNumY=D(r,"ChequeNumY"),FontFamily=S(r,"FontFamily"),FontSize=D(r,"FontSize"),IsBold=I(r,"IsBold")==1,PrintOffsetX=D(r,"PrintOffsetX"),PrintOffsetY=D(r,"PrintOffsetY"),PaperSize=S(r,"PaperSize"),IsActive=I(r,"IsActive")==1,LastChequeNumber=I(r,"LastChequeNumber")};
         public static List<Models.PrintHistory> GetPrintHistory(int? chequeId = null, int limit = 300)

@@ -11,6 +11,7 @@ namespace eCheque.MICO360.Models
         int _profileId; string _profileName="",_currency="OMR",_remarks="",_reference="",_invoice="",_voucher="";
         string _preparedBy="",_approvedBy="",_department="",_category="",_status="Draft",_createdBy="",_pdfPath="",_cancelReason="";
         decimal _amount; DateTime _chequeDate=DateTime.Today,_createdDate=DateTime.Now; DateTime? _printedDate; int _printCount;
+        DateTime? _presentedDate,_clearedDate; string _bounceReason="";
 
         public int Id{get=>_id;set{_id=value;N();}}
         public string ChequeNumber{get=>_chequeNumber;set{_chequeNumber=value;N();}}
@@ -39,5 +40,16 @@ namespace eCheque.MICO360.Models
         public int PrintCount{get=>_printCount;set{_printCount=value;N();}}
         public string PdfFilePath{get=>_pdfPath;set{_pdfPath=value;N();}}
         public string CancellationReason{get=>_cancelReason;set{_cancelReason=value;N();}}
+        public DateTime? PresentedDate{get=>_presentedDate;set{_presentedDate=value;N();}}
+        public DateTime? ClearedDate{get=>_clearedDate;set{_clearedDate=value;N();}}
+        public string BounceReason{get=>_bounceReason;set{_bounceReason=value;N();}}
+
+        // ── PDC / lifecycle helpers (computed, not persisted) ──
+        public bool IsIssued => Status is "Printed" or "Reprinted" or "Presented";
+        public bool IsOpen => Status is "Printed" or "Reprinted" or "Presented" or "ReadyToPrint";
+        /// <summary>A post-dated cheque: issued/ready, dated in the future, and not yet settled/cancelled.</summary>
+        public bool IsPdc => IsOpen && ChequeDate.Date > DateTime.Today;
+        public int DaysUntilDue => (ChequeDate.Date - DateTime.Today).Days;
+        public string DueLabel => !IsPdc ? "" : DaysUntilDue == 0 ? "Due today" : DaysUntilDue < 0 ? $"Overdue {-DaysUntilDue}d" : $"In {DaysUntilDue}d";
     }
 }

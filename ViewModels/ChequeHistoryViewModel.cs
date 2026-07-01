@@ -14,7 +14,7 @@ namespace eCheque.MICO360.ViewModels
         public string StatusFilter{get=>_statusF;set{Set(ref _statusF,value);Refresh();}}
         public DateTime? From{get=>_from;set{Set(ref _from,value);Refresh();}}
         public DateTime? To{get=>_to;set{Set(ref _to,value);Refresh();}}
-        public List<string> Statuses{get;}=new(){"","Draft","ReadyToPrint","Printed","Cancelled","Void","Reprinted"};
+        public List<string> Statuses{get;}=new(){"","Draft","ReadyToPrint","Printed","Reprinted","Presented","Cleared","Bounced","Cancelled","Void"};
         public ICommand RefreshCommand{get;}
         public ICommand PrintCommand{get;}
         public ICommand ExportCommand{get;}
