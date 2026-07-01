@@ -101,72 +101,99 @@
                         <TextBlock Text="Sign in to your account" FontSize="13"
                                    Foreground="#888888" Margin="0,0,0,28"/>
 
-                        <!-- Username -->
-                        <TextBlock Text="USERNAME" FontSize="10" FontWeight="Bold"
-                                   Foreground="#888888" Margin="0,0,0,5"/>
-                        <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5"
-                                Background="White" x:Name="UsernameBorder" Margin="0,0,0,14">
-                            <TextBox x:Name="TxtUsername"
-                                     Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                                     Padding="10,9" FontSize="14" FontFamily="Segoe UI"
-                                     Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
-                                     BorderThickness="0" Height="40"
-                                     UseLayoutRounding="True" SnapsToDevicePixels="True"
-                                     VerticalContentAlignment="Center">
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="TextBox">
-                                                    <ScrollViewer x:Name="PART_ContentHost"
-                                                                  Margin="{TemplateBinding Padding}"
-                                                                  VerticalAlignment="Center"/>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
-                        </Border>
-
-                        <!-- Password -->
-                        <TextBlock Text="PASSWORD" FontSize="10" FontWeight="Bold"
-                                   Foreground="#888888" Margin="0,0,0,5"/>
-                        <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5"
-                                Background="White" x:Name="PasswordBorder" Margin="0,0,0,6">
-                            <PasswordBox x:Name="TxtPassword"
+                        <!-- ============ PASSWORD LOGIN ============ -->
+                        <StackPanel Visibility="{Binding PasswordMode, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="USERNAME" FontSize="10" FontWeight="Bold"
+                                       Foreground="#888888" Margin="0,0,0,5"/>
+                            <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5"
+                                    Background="White" x:Name="UsernameBorder" Margin="0,0,0,14">
+                                <TextBox x:Name="TxtUsername"
+                                         Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                                          Padding="10,9" FontSize="14" FontFamily="Segoe UI"
                                          Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
                                          BorderThickness="0" Height="40"
-                                         UseLayoutRounding="True" SnapsToDevicePixels="True">
-                                <PasswordBox.Style>
-                                    <Style TargetType="PasswordBox">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="PasswordBox">
-                                                    <ScrollViewer x:Name="PART_ContentHost"
-                                                                  Margin="{TemplateBinding Padding}"
-                                                                  VerticalAlignment="Center"/>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </PasswordBox.Style>
-                            </PasswordBox>
-                        </Border>
+                                         UseLayoutRounding="True" SnapsToDevicePixels="True"
+                                         VerticalContentAlignment="Center">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="TextBox">
+                                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                                      Margin="{TemplateBinding Padding}"
+                                                                      VerticalAlignment="Center"/>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                            </Border>
 
-                        <!-- Error -->
+                            <TextBlock Text="PASSWORD" FontSize="10" FontWeight="Bold"
+                                       Foreground="#888888" Margin="0,0,0,5"/>
+                            <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5"
+                                    Background="White" x:Name="PasswordBorder" Margin="0,0,0,14">
+                                <PasswordBox x:Name="TxtPassword"
+                                             Padding="10,9" FontSize="14" FontFamily="Segoe UI"
+                                             Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
+                                             BorderThickness="0" Height="40"
+                                             UseLayoutRounding="True" SnapsToDevicePixels="True">
+                                    <PasswordBox.Style>
+                                        <Style TargetType="PasswordBox">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="PasswordBox">
+                                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                                      Margin="{TemplateBinding Padding}"
+                                                                      VerticalAlignment="Center"/>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </PasswordBox.Style>
+                                </PasswordBox>
+                            </Border>
+
+                            <Button Content="SIGN IN" Height="42" FontSize="13" FontWeight="Bold"
+                                    Style="{StaticResource PrimaryBtn}" Click="LoginBtn_Click" Margin="0,0,0,10"/>
+                            <TextBlock HorizontalAlignment="Center" FontSize="12">
+                                <Hyperlink Command="{Binding UseOtpCommand}" Foreground="#8B1818"
+                                           TextDecorations="None"><Run Text="Sign in with Email OTP"/></Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- ============ EMAIL OTP LOGIN ============ -->
+                        <StackPanel Visibility="{Binding OtpMode, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="EMAIL" FontSize="10" FontWeight="Bold" Foreground="#888888" Margin="0,0,0,5"/>
+                            <TextBox Style="{StaticResource InputBox}" Height="40" FontSize="14" CaretBrush="#1A1A1A"
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                            <Button Content="SEND CODE" Height="40" FontSize="13" FontWeight="Bold"
+                                    Style="{StaticResource PrimaryBtn}" Command="{Binding SendOtpCommand}" Margin="0,0,0,12"/>
+
+                            <StackPanel Visibility="{Binding OtpSent, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="ENTER CODE" FontSize="10" FontWeight="Bold" Foreground="#888888" Margin="0,0,0,5"/>
+                                <TextBox Style="{StaticResource InputBox}" Height="40" FontSize="18" FontWeight="Bold"
+                                         CaretBrush="#1A1A1A" Text="{Binding OtpCode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                <Button Content="VERIFY &amp; SIGN IN" Height="42" FontSize="13" FontWeight="Bold"
+                                        Style="{StaticResource PrimaryBtn}" Command="{Binding VerifyOtpCommand}" Margin="0,0,0,10"/>
+                            </StackPanel>
+
+                            <TextBlock HorizontalAlignment="Center" FontSize="12">
+                                <Hyperlink Command="{Binding UsePasswordCommand}" Foreground="#8B1818"
+                                           TextDecorations="None"><Run Text="Use username &amp; password"/></Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Status + Error (shared) -->
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="#2E7D32"
+                                   FontSize="12" TextWrapping="Wrap" Margin="0,12,0,0"/>
                         <TextBlock Text="{Binding ErrorMessage}" Foreground="#CC2020"
-                                   FontSize="12" TextWrapping="Wrap" MinHeight="18" Margin="0,0,0,12"/>
-
-                        <!-- Login Button -->
-                        <Button Content="SIGN IN" Height="42" FontSize="13" FontWeight="Bold"
-                                Style="{StaticResource PrimaryBtn}"
-                                Click="LoginBtn_Click" Margin="0,0,0,16"/>
+                                   FontSize="12" TextWrapping="Wrap" Margin="0,6,0,0"/>
 
                         <!-- Security notice -->
                         <TextBlock Text="Authorized users only" FontSize="11"
-                                   Foreground="#BBBBBB" HorizontalAlignment="Center"/>
+                                   Foreground="#BBBBBB" HorizontalAlignment="Center" Margin="0,14,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>

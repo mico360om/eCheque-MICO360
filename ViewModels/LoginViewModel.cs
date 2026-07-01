@@ -1,29 +1,43 @@
-using System.Collections.Generic;
 using System.Windows.Input;
 using eCheque.MICO360.Helpers;
-using eCheque.MICO360.Models;
 using eCheque.MICO360.Services;
 
 namespace eCheque.MICO360.ViewModels
 {
     public class LoginViewModel : BaseViewModel
     {
-        string _username = "", _error = ""; bool _loading;
+        string _username = "", _error = "", _email = "", _otpCode = "", _status = "";
+        bool _loading, _otpMode, _otpSent;
 
         public string Username { get => _username; set => Set(ref _username, value); }
         public string ErrorMessage { get => _error; set => Set(ref _error, value); }
+        public string StatusMessage { get => _status; set => Set(ref _status, value); }
         public bool IsLoading { get => _loading; set => Set(ref _loading, value); }
 
+        // OTP state
+        public string Email { get => _email; set => Set(ref _email, value); }
+        public string OtpCode { get => _otpCode; set => Set(ref _otpCode, value); }
+        public bool OtpMode { get => _otpMode; set { Set(ref _otpMode, value); OnPropertyChanged(nameof(PasswordMode)); } }
+        public bool PasswordMode => !_otpMode;
+        public bool OtpSent { get => _otpSent; set => Set(ref _otpSent, value); }
+
         public ICommand LoginCommand { get; }
+        public ICommand UseOtpCommand { get; }
+        public ICommand UsePasswordCommand { get; }
+        public ICommand SendOtpCommand { get; }
+        public ICommand VerifyOtpCommand { get; }
         public event Action? LoginSuccessful;
 
         public LoginViewModel()
         {
-            LoginCommand = new RelayCommand<string>(DoLogin);
+            LoginCommand      = new RelayCommand<string>(DoLogin);
+            UseOtpCommand     = new RelayCommand(() => { OtpMode = true; ErrorMessage = ""; StatusMessage = ""; });
+            UsePasswordCommand= new RelayCommand(() => { OtpMode = false; OtpSent = false; ErrorMessage = ""; StatusMessage = ""; });
+            SendOtpCommand    = new RelayCommand(async () => await SendOtp());
+            VerifyOtpCommand  = new RelayCommand(VerifyOtp);
         }
 
-        // Single central login — no company selection. The user's role governs access; after
-        // authentication the default company is opened and companies can be switched in-app.
+        // Password login (single central login — no company selection).
         public void DoLogin(string? password)
         {
             ErrorMessage = "";
@@ -35,14 +49,43 @@ namespace eCheque.MICO360.ViewModels
             {
                 var error = AuthService.Login(Username.Trim(), password);
                 if (error != null) { ErrorMessage = error; return; }
-
-                var company = CompanyService.GetAll().FirstOrDefault();
-                if (company == null) { ErrorMessage = "No company is configured. Contact your administrator."; AuthService.Logout(); return; }
-
-                CompanyService.OpenCompany(company.Id, company.Name);
-                LoginSuccessful?.Invoke();
+                CompleteLogin();
             }
             finally { IsLoading = false; }
+        }
+
+        async Task SendOtp()
+        {
+            ErrorMessage = ""; StatusMessage = "";
+            if (string.IsNullOrWhiteSpace(Email)) { ErrorMessage = "Please enter your email."; return; }
+            IsLoading = true;
+            StatusMessage = "Sending code…";
+            try
+            {
+                var error = await AuthService.RequestEmailOtpAsync(Email);
+                if (error != null) { ErrorMessage = error; StatusMessage = ""; return; }
+                OtpSent = true;
+                StatusMessage = "A login code has been emailed to you. Enter it below.";
+            }
+            finally { IsLoading = false; }
+        }
+
+        void VerifyOtp()
+        {
+            ErrorMessage = "";
+            if (string.IsNullOrWhiteSpace(OtpCode)) { ErrorMessage = "Enter the code from your email."; return; }
+            var error = AuthService.VerifyEmailOtp(Email, OtpCode);
+            if (error != null) { ErrorMessage = error; return; }
+            CompleteLogin();
+        }
+
+        // Shared post-authentication step for both password and OTP paths.
+        void CompleteLogin()
+        {
+            var company = CompanyService.GetAll().FirstOrDefault();
+            if (company == null) { ErrorMessage = "No company is configured. Contact your administrator."; AuthService.Logout(); return; }
+            CompanyService.OpenCompany(company.Id, company.Name);
+            LoginSuccessful?.Invoke();
         }
     }
 }

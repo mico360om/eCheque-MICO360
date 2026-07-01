@@ -55,7 +55,24 @@ namespace eCheque.MICO360.Core.Services
             using var cmd = new SqliteCommand(@"
                 CREATE TABLE IF NOT EXISTS Companies(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,TradeName TEXT DEFAULT '',Address TEXT DEFAULT '',Phone TEXT DEFAULT '',Email TEXT DEFAULT '',Currency TEXT DEFAULT 'OMR',CreatedDate TEXT,IsActive INTEGER DEFAULT 1);
                 CREATE TABLE IF NOT EXISTS Users(Id INTEGER PRIMARY KEY AUTOINCREMENT,Username TEXT NOT NULL UNIQUE,PasswordHash TEXT NOT NULL,FullName TEXT DEFAULT '',Email TEXT DEFAULT '',Role TEXT DEFAULT 'Accountant',IsActive INTEGER DEFAULT 1,CreatedDate TEXT,LastLogin TEXT,FailedLoginAttempts INTEGER DEFAULT 0,LockoutUntil TEXT);
-                CREATE TABLE IF NOT EXISTS AuditLogs(Id INTEGER PRIMARY KEY AUTOINCREMENT,UserName TEXT DEFAULT '',Action TEXT DEFAULT '',RecordReference TEXT DEFAULT '',Remarks TEXT DEFAULT '',ActionDate TEXT);", conn);
+                CREATE TABLE IF NOT EXISTS AuditLogs(Id INTEGER PRIMARY KEY AUTOINCREMENT,UserName TEXT DEFAULT '',Action TEXT DEFAULT '',RecordReference TEXT DEFAULT '',Remarks TEXT DEFAULT '',ActionDate TEXT);
+                CREATE TABLE IF NOT EXISTS MasterSettings(Key TEXT PRIMARY KEY,Value TEXT DEFAULT '');", conn);
+            cmd.ExecuteNonQuery();
+        }
+
+        public static string GetMasterSetting(string key, string def = "")
+        {
+            using var conn = GetConn();
+            using var cmd = new SqliteCommand("SELECT Value FROM MasterSettings WHERE Key=@k", conn);
+            cmd.Parameters.AddWithValue("@k", key);
+            return cmd.ExecuteScalar()?.ToString() ?? def;
+        }
+
+        public static void SetMasterSetting(string key, string value)
+        {
+            using var conn = GetConn();
+            using var cmd = new SqliteCommand("INSERT OR REPLACE INTO MasterSettings(Key,Value)VALUES(@k,@v)", conn);
+            cmd.Parameters.AddWithValue("@k", key); cmd.Parameters.AddWithValue("@v", value);
             cmd.ExecuteNonQuery();
         }
 

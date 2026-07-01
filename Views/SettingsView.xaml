@@ -64,6 +64,36 @@
                     </Border>
                 </StackPanel>
             </Border>
+            <!-- Email OTP (Mailjet) -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Email OTP Login (Mailjet)" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,4"/>
+                    <TextBlock Text="Used to email one-time login codes. Get your API Key and Secret Key from your Mailjet account (Account → API Key Management). The From email must be a Mailjet-verified sender."
+                               FontSize="11" Foreground="#888888" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Mailjet API Key" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetApiKey}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Mailjet Secret Key" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetSecretKey}"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="From Email (verified sender)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetFromEmail}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="From Name" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetFromName}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
             <!-- Paths -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>

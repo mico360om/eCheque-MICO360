@@ -7,6 +7,11 @@ namespace eCheque.MICO360.ViewModels
     {
         string _co="",_cur="OMR",_df="dd/MM/yyyy",_pdf="",_bak="",_cf="UPPERCASE",_status="";
         string _currencyWording="Omani Rials",_baisaWording="Baisa"; bool _includeBaisa=true,_addOnly=true;
+        string _mjKey="",_mjSecret="",_mjFrom="",_mjFromName="eCheque MICO360";
+        public string MailjetApiKey{get=>_mjKey;set=>Set(ref _mjKey,value);}
+        public string MailjetSecretKey{get=>_mjSecret;set=>Set(ref _mjSecret,value);}
+        public string MailjetFromEmail{get=>_mjFrom;set=>Set(ref _mjFrom,value);}
+        public string MailjetFromName{get=>_mjFromName;set=>Set(ref _mjFromName,value);}
         public string CompanyName{get=>_co;set=>Set(ref _co,value);}
         public string Currency{get=>_cur;set=>Set(ref _cur,value);}
         public string DateFormat{get=>_df;set=>Set(ref _df,value);}
@@ -26,11 +31,13 @@ namespace eCheque.MICO360.ViewModels
         public ICommand BrowsePdfCommand{get;}
         public ICommand BrowseBackupCommand{get;}
         public SettingsViewModel(){SaveCommand=new RelayCommand(Save);BackupCommand=new RelayCommand(DoBackup);RestoreCommand=new RelayCommand(DoRestore);BrowsePdfCommand=new RelayCommand(BrowsePdf);BrowseBackupCommand=new RelayCommand(BrowseBackup);}
-        public void Load(){CompanyName=DatabaseService.GetSetting("CompanyName","My Company LLC");Currency=DatabaseService.GetSetting("DefaultCurrency","OMR");DateFormat=DatabaseService.GetSetting("DateFormat","dd/MM/yyyy");PdfPath=DatabaseService.GetSetting("PdfSavePath","");BackupPath=DatabaseService.GetSetting("BackupPath","");CaseFormat=DatabaseService.GetSetting("AmountCaseFormat","UPPERCASE");CurrencyWording=DatabaseService.GetSetting("AmountCurrencyWording","Omani Rials");BaisaWording=DatabaseService.GetSetting("AmountBaisaWording","Baisa");IncludeBaisa=DatabaseService.GetSetting("AmountIncludeBaisa","true")=="true";AddOnly=DatabaseService.GetSetting("AmountAddOnly","true")=="true";}
+        public void Load(){CompanyName=DatabaseService.GetSetting("CompanyName","My Company LLC");Currency=DatabaseService.GetSetting("DefaultCurrency","OMR");DateFormat=DatabaseService.GetSetting("DateFormat","dd/MM/yyyy");PdfPath=DatabaseService.GetSetting("PdfSavePath","");BackupPath=DatabaseService.GetSetting("BackupPath","");CaseFormat=DatabaseService.GetSetting("AmountCaseFormat","UPPERCASE");CurrencyWording=DatabaseService.GetSetting("AmountCurrencyWording","Omani Rials");BaisaWording=DatabaseService.GetSetting("AmountBaisaWording","Baisa");IncludeBaisa=DatabaseService.GetSetting("AmountIncludeBaisa","true")=="true";AddOnly=DatabaseService.GetSetting("AmountAddOnly","true")=="true";
+            MailjetApiKey=CompanyService.GetMasterSetting("Mailjet_ApiKey","");MailjetSecretKey=CompanyService.GetMasterSetting("Mailjet_SecretKey","");MailjetFromEmail=CompanyService.GetMasterSetting("Mailjet_FromEmail","");MailjetFromName=CompanyService.GetMasterSetting("Mailjet_FromName","eCheque MICO360");}
         void Save(){
             if(!string.IsNullOrWhiteSpace(PdfPath)&&!System.IO.Directory.Exists(PdfPath)){StatusMessage=$"PDF output path does not exist: {PdfPath}";return;}
             if(!string.IsNullOrWhiteSpace(BackupPath)&&!System.IO.Directory.Exists(BackupPath)){StatusMessage=$"Backup path does not exist: {BackupPath}";return;}
             DatabaseService.SaveSetting("CompanyName",CompanyName);DatabaseService.SaveSetting("DefaultCurrency",Currency);DatabaseService.SaveSetting("DateFormat",DateFormat);DatabaseService.SaveSetting("PdfSavePath",PdfPath);DatabaseService.SaveSetting("BackupPath",BackupPath);DatabaseService.SaveSetting("AmountCaseFormat",CaseFormat);DatabaseService.SaveSetting("AmountCurrencyWording",CurrencyWording);DatabaseService.SaveSetting("AmountBaisaWording",BaisaWording);DatabaseService.SaveSetting("AmountIncludeBaisa",IncludeBaisa?"true":"false");DatabaseService.SaveSetting("AmountAddOnly",AddOnly?"true":"false");
+            CompanyService.SetMasterSetting("Mailjet_ApiKey",(MailjetApiKey??"").Trim());CompanyService.SetMasterSetting("Mailjet_SecretKey",(MailjetSecretKey??"").Trim());CompanyService.SetMasterSetting("Mailjet_FromEmail",(MailjetFromEmail??"").Trim());CompanyService.SetMasterSetting("Mailjet_FromName",(MailjetFromName??"").Trim());
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Settings Changed","",$"Company={CompanyName}, Currency={Currency}, CaseFormat={CaseFormat}");
             StatusMessage="Settings saved successfully.";}
         void DoBackup(){try{var p=BackupService.CreateBackup();StatusMessage=$"Backup created: {System.IO.Path.GetFileName(p)}";}catch(Exception ex){StatusMessage=$"Backup failed: {ex.Message}";}}

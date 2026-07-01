@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.Data.Sqlite;
 using eCheque.MICO360.Core.Models;
 
@@ -7,6 +8,8 @@ namespace eCheque.MICO360.Core.Services
     {
         private const int MaxFailedAttempts = 5;
         private const int LockoutMinutes = 5;
+        private const int OtpValidMinutes = 5;
+        private static readonly Dictionary<string, (string code, DateTime expiry, int attempts)> _otps = new();
 
         public static User? CurrentUser { get; private set; }
         public static bool IsAdmin => CurrentUser?.Role == "Admin";
@@ -81,6 +84,61 @@ namespace eCheque.MICO360.Core.Services
         {
             if (CurrentUser != null) CompanyService.MasterAudit(CurrentUser.Username, "Logout");
             CurrentUser = null;
+        }
+
+        // ── Email OTP login (alternative to password) ──
+        static User? FindActiveByEmail(string email)
+        {
+            using var conn = CompanyService.GetMasterConnection();
+            using var cmd = new SqliteCommand("SELECT Id,Username,FullName,Email,Role FROM Users WHERE Email=@e COLLATE NOCASE AND IsActive=1", conn);
+            cmd.Parameters.AddWithValue("@e", email.Trim());
+            using var r = cmd.ExecuteReader();
+            return r.Read()
+                ? new User { Id = r.GetInt32(0), Username = r.GetString(1), FullName = r.IsDBNull(2) ? "" : r.GetString(2), Email = r.IsDBNull(3) ? "" : r.GetString(3), Role = r.GetString(4) }
+                : null;
+        }
+
+        public static async Task<string?> RequestEmailOtpAsync(string email)
+        {
+            email = (email ?? "").Trim();
+            if (email.Length == 0 || !email.Contains('@')) return "Please enter a valid email address.";
+            var user = FindActiveByEmail(email);
+            if (user == null) return "No active account is registered with that email.";
+
+            var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            _otps[email.ToLowerInvariant()] = (code, DateTime.Now.AddMinutes(OtpValidMinutes), 0);
+
+            var html = $@"<div style='font-family:Segoe UI,Arial,sans-serif'>
+                <p>Hello {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>
+                <p>Your eCheque MICO360 login code is:</p>
+                <p style='font-size:26px;font-weight:bold;letter-spacing:4px;color:#8B1818'>{code}</p>
+                <p>This code expires in {OtpValidMinutes} minutes. If you didn't request it, ignore this email.</p></div>";
+            var (ok, err) = await EmailService.SendAsync(email, user.FullName, "Your eCheque MICO360 login code", html,
+                $"Your eCheque MICO360 login code is {code} (expires in {OtpValidMinutes} minutes).");
+            if (!ok) { _otps.Remove(email.ToLowerInvariant()); return $"Could not send the code: {err}"; }
+
+            CompanyService.MasterAudit(user.Username, "OTP Requested", email);
+            return null;
+        }
+
+        public static string? VerifyEmailOtp(string email, string code)
+        {
+            var key = (email ?? "").Trim().ToLowerInvariant();
+            if (!_otps.TryGetValue(key, out var e)) return "Please request a code first.";
+            if (DateTime.Now > e.expiry) { _otps.Remove(key); return "The code has expired. Request a new one."; }
+            if (e.attempts >= MaxFailedAttempts) { _otps.Remove(key); return "Too many attempts. Request a new code."; }
+            if ((code ?? "").Trim() != e.code) { _otps[key] = (e.code, e.expiry, e.attempts + 1); return "Incorrect code."; }
+
+            _otps.Remove(key);
+            var user = FindActiveByEmail(email!.Trim());
+            if (user == null) return "Account not found.";
+
+            CurrentUser = user;
+            using var conn = CompanyService.GetMasterConnection();
+            using var upd = new SqliteCommand("UPDATE Users SET LastLogin=@d,FailedLoginAttempts=0,LockoutUntil=NULL WHERE Id=@id", conn);
+            upd.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); upd.Parameters.AddWithValue("@id", user.Id); upd.ExecuteNonQuery();
+            CompanyService.MasterAudit(user.Username, "Login (OTP)");
+            return null;
         }
 
         public static List<User> GetAllUsers()
