@@ -29,8 +29,8 @@ namespace eCheque.MICO360.Views
     public partial class ChequeLayoutDesigner : Window
     {
         readonly ChequeProfile _profile;
-        readonly string _originalFields, _originalImage;
-        List<ChequeField> _fields;
+        string _originalFields = "", _originalImage = "";
+        List<ChequeField> _fields = new();
         ChequeField? _selected;
         Border? _selBox;
         double _scale = 3.2;
@@ -51,17 +51,30 @@ namespace eCheque.MICO360.Views
         {
             InitializeComponent();
             _profile = profile;
-            _fields = ChequeLayout.Parse(profile);
-            _originalFields = ChequeLayout.Serialize(_fields);
-            _originalImage = profile.BackgroundImage ?? "";
+            try
+            {
+                _fields = ChequeLayout.Parse(profile);
+                _originalFields = ChequeLayout.Serialize(_fields);
+                _originalImage = profile.BackgroundImage ?? "";
 
-            TxtProfileName.Text = $"{profile.Name} — {profile.BankName}  ({profile.ChequeWidth:N0} × {profile.ChequeHeight:N0} mm)";
-            foreach (var f in FontChoices) CmbFont.Items.Add(f);
-            foreach (var a in Addable) CmbAddField.Items.Add(new ComboBoxItem { Content = a.Label, Tag = a.Key });
-            CmbAddField.SelectedIndex = 0;
-            LstFields.ItemsSource = _fields;
+                TxtProfileName.Text = $"{profile.Name} — {profile.BankName}  ({profile.ChequeWidth:N0} × {profile.ChequeHeight:N0} mm)";
+                foreach (var f in FontChoices) CmbFont.Items.Add(f);
+                foreach (var a in Addable) CmbAddField.Items.Add(new ComboBoxItem { Content = a.Label, Tag = a.Key });
+                CmbAddField.SelectedIndex = 0;
+                LstFields.ItemsSource = _fields;
+            }
+            catch (Exception ex) { BugReportService.Report(ex, "ChequeLayoutDesigner.ctor"); }
 
-            Loaded += (s, e) => { LoadBackground(); BuildCanvas(); };
+            Loaded += (s, e) =>
+            {
+                try { LoadBackground(); BuildCanvas(); }
+                catch (Exception ex)
+                {
+                    BugReportService.Report(ex, "ChequeLayoutDesigner.Loaded");
+                    MessageBox.Show($"The layout designer hit an error:\n\n{ex.Message}\n\n(Logged for the developers.)",
+                        "Design Layout", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            };
         }
 
         // ── Background image ──

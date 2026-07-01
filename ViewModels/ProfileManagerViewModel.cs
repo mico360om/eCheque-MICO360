@@ -24,10 +24,18 @@ namespace eCheque.MICO360.ViewModels
         public ProfileManagerViewModel(){NewCommand=new RelayCommand(NewProfile);SaveCommand=new RelayCommand(SaveProfile,()=>IsEditing);DeleteCommand=new RelayCommand(DeleteProfile,()=>Selected!=null);DuplicateCommand=new RelayCommand(Duplicate,()=>Selected!=null);CancelEditCommand=new RelayCommand(()=>IsEditing=false);DesignLayoutCommand=new RelayCommand(OpenDesigner,()=>Selected!=null);}
         void OpenDesigner()
         {
-            if(Selected==null)return;
-            var w=new Views.ChequeLayoutDesigner(Selected);
-            w.ShowDialog();
-            if(w.Saved){Load();StatusMessage="Layout saved.";}
+            if(Selected==null){StatusMessage="Select a profile first.";return;}
+            try
+            {
+                var w=new Views.ChequeLayoutDesigner(Selected);
+                w.ShowDialog();
+                if(w.Saved){Load();StatusMessage="Layout saved.";}
+            }
+            catch(Exception ex)
+            {
+                BugReportService.Report(ex,"OpenDesigner");
+                System.Windows.MessageBox.Show($"Could not open the layout designer:\n\n{ex.Message}","Design Layout",System.Windows.MessageBoxButton.OK,System.Windows.MessageBoxImage.Warning);
+            }
         }
         public void Load(){Profiles=new ObservableCollection<ChequeProfile>(ChequeService.GetProfiles(false));}
         void NewProfile(){Edit=new ChequeProfile{CreatedBy=AuthService.CurrentUser?.Username??"",AccountName=DatabaseService.GetSetting("CompanyName","")};IsEditing=true;}
