@@ -11,8 +11,8 @@ namespace eCheque.MICO360.Helpers
     {
         public const string AppName      = "eCheque MICO360";
         public const string CompanyName  = "MICO360 Softwares";
-        public const string ContactEmail = "mico360om@gmail.com";
-        public const string Website      = "https://www.mico360.com";
+        public const string ContactEmail = "info@mico360om";
+        public const string Website      = "www.mico360.com";
 
         // ── Auto-update source (GitHub repository) ──
         public const string GitHubOwner  = "mico360om";
