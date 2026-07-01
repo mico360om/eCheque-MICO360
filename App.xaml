@@ -108,21 +108,60 @@
 
             <!-- TextBox Style -->
             <Style x:Key="InputBox" TargetType="TextBox">
-                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="Padding" Value="10,7"/>
                 <Setter Property="FontSize" Value="13"/>
-                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                <Setter Property="Foreground" Value="#1A1A1A"/>
+                <Setter Property="BorderBrush" Value="#D5D5D5"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Background" Value="White"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
-                            <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                    Background="{TemplateBinding Background}" CornerRadius="4">
+                            <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                    Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
+                                <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#B0B0B0"/>
+                                </Trigger>
+                                <Trigger Property="IsFocused" Value="True">
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#8B1818"/>
+                                    <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bd" Property="Background" Value="#F4F4F4"/>
+                                    <Setter Property="Foreground" Value="#999999"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- PasswordBox Style (matches InputBox) -->
+            <Style x:Key="InputPassword" TargetType="PasswordBox">
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="Padding" Value="10,7"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="BorderBrush" Value="#D5D5D5"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="PasswordBox">
+                            <Border x:Name="Bd" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                    Background="{TemplateBinding Background}" CornerRadius="6" SnapsToDevicePixels="True">
                                 <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsFocused" Value="True">
-                                    <Setter Property="BorderBrush" Value="#8B1818"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#8B1818"/>
+                                    <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -132,11 +171,25 @@
 
             <!-- ComboBox Style -->
             <Style x:Key="InputCombo" TargetType="ComboBox">
-                <Setter Property="Padding" Value="8,6"/>
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="Padding" Value="8,4"/>
                 <Setter Property="FontSize" Value="13"/>
                 <Setter Property="Background" Value="White"/>
-                <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                <Setter Property="BorderBrush" Value="#D5D5D5"/>
                 <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
+            </Style>
+
+            <!-- DatePicker Style (consistent height/border) -->
+            <Style x:Key="InputDate" TargetType="DatePicker">
+                <Setter Property="MinHeight" Value="34"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="#D5D5D5"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="SnapsToDevicePixels" Value="True"/>
             </Style>
 
             <!-- Label Style -->

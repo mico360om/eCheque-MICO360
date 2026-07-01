@@ -42,17 +42,17 @@
                     <TextBlock Text="Change Password" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,12"/>
                     <StackPanel Margin="0,0,0,10">
                         <TextBlock Text="Current Password" Style="{StaticResource FieldLabel}"/>
-                        <PasswordBox x:Name="PwdCurrent" Padding="8,6" FontSize="13" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                        <PasswordBox x:Name="PwdCurrent" Style="{StaticResource InputPassword}"/>
                     </StackPanel>
                     <Grid Margin="0,0,0,12">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="New Password" Style="{StaticResource FieldLabel}"/>
-                            <PasswordBox x:Name="PwdNew" Padding="8,6" FontSize="13" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                            <PasswordBox x:Name="PwdNew" Style="{StaticResource InputPassword}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Confirm New Password" Style="{StaticResource FieldLabel}"/>
-                            <PasswordBox x:Name="PwdConfirm" Padding="8,6" FontSize="13" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                            <PasswordBox x:Name="PwdConfirm" Style="{StaticResource InputPassword}"/>
                         </StackPanel>
                     </Grid>
                     <TextBlock Text="Minimum 8 characters, with letters and numbers." FontSize="11" Foreground="#AAAAAA" Margin="0,0,0,10"/>
