@@ -52,7 +52,8 @@ namespace eCheque.MICO360.Services
                 CREATE TABLE IF NOT EXISTS Companies(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,TradeName TEXT DEFAULT '',Address TEXT DEFAULT '',Phone TEXT DEFAULT '',Email TEXT DEFAULT '',Currency TEXT DEFAULT 'OMR',CreatedDate TEXT,IsActive INTEGER DEFAULT 1);
                 CREATE TABLE IF NOT EXISTS Users(Id INTEGER PRIMARY KEY AUTOINCREMENT,Username TEXT NOT NULL UNIQUE,PasswordHash TEXT NOT NULL,FullName TEXT DEFAULT '',Email TEXT DEFAULT '',Role TEXT DEFAULT 'Accountant',IsActive INTEGER DEFAULT 1,CreatedDate TEXT,LastLogin TEXT,FailedLoginAttempts INTEGER DEFAULT 0,LockoutUntil TEXT);
                 CREATE TABLE IF NOT EXISTS AuditLogs(Id INTEGER PRIMARY KEY AUTOINCREMENT,UserName TEXT DEFAULT '',Action TEXT DEFAULT '',RecordReference TEXT DEFAULT '',Remarks TEXT DEFAULT '',ActionDate TEXT);
-                CREATE TABLE IF NOT EXISTS MasterSettings(Key TEXT PRIMARY KEY,Value TEXT DEFAULT '');", conn);
+                CREATE TABLE IF NOT EXISTS MasterSettings(Key TEXT PRIMARY KEY,Value TEXT DEFAULT '');
+                CREATE TABLE IF NOT EXISTS BugReports(Id INTEGER PRIMARY KEY AUTOINCREMENT,CreatedDate TEXT,AppVersion TEXT,UserName TEXT,Context TEXT,Message TEXT,StackTrace TEXT);", conn);
             cmd.ExecuteNonQuery();
         }
 

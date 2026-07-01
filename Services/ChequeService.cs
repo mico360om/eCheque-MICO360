@@ -55,6 +55,7 @@ namespace eCheque.MICO360.Services
                 FillCheque(cmd,c);cmd.Parameters.AddWithValue("@id",c.Id);cmd.ExecuteNonQuery();
                 DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Updated",c.ChequeNumber,DescribeChequeChanges(old,c));
             }
+            SavePayee(c.PayeeName);
             return c.Id;
         }
 
@@ -233,7 +234,30 @@ namespace eCheque.MICO360.Services
             return true;
         }
         public static List<string> GetBanks(){var list=new List<string>();using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("SELECT Name FROM Banks WHERE IsActive=1 ORDER BY Name",conn);using var r=cmd.ExecuteReader();while(r.Read())list.Add(r.GetString(0));return list;}
-        public static List<string> GetPayees(){var list=new List<string>();using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("SELECT DISTINCT PayeeName FROM ChequeRecords WHERE PayeeName!='' ORDER BY PayeeName LIMIT 200",conn);using var r=cmd.ExecuteReader();while(r.Read())list.Add(r.GetString(0));return list;}
+        public static List<string> GetPayees()
+        {
+            var list=new List<string>();
+            using var conn=DatabaseService.GetConnection();
+            // Saved payees, most-recently-used first.
+            using(var cmd=new SqliteCommand("SELECT Name FROM Payees ORDER BY LastUsed DESC, Name LIMIT 300",conn))
+            using(var r=cmd.ExecuteReader()) while(r.Read()) list.Add(r.GetString(0));
+            if(list.Count==0) // fall back to distinct historical cheque payees
+            {
+                using var c2=new SqliteCommand("SELECT DISTINCT PayeeName FROM ChequeRecords WHERE PayeeName!='' ORDER BY PayeeName LIMIT 300",conn);
+                using var r2=c2.ExecuteReader(); while(r2.Read()) list.Add(r2.GetString(0));
+            }
+            return list;
+        }
+
+        /// <summary>Remembers a payee for reuse in the autocomplete (upsert with last-used timestamp).</summary>
+        public static void SavePayee(string name)
+        {
+            if(string.IsNullOrWhiteSpace(name)) return;
+            using var conn=DatabaseService.GetConnection();
+            using var cmd=new SqliteCommand("INSERT INTO Payees(Name,LastUsed)VALUES(@n,@d) ON CONFLICT(Name) DO UPDATE SET LastUsed=@d",conn);
+            cmd.Parameters.AddWithValue("@n",name.Trim()); cmd.Parameters.AddWithValue("@d",DateTime.Now.ToString("o"));
+            cmd.ExecuteNonQuery();
+        }
 
         public static List<AuditLog> GetAuditLogs(int limit=500)
         {

@@ -10,28 +10,25 @@ namespace eCheque.MICO360
         {
             base.OnStartup(e);
 
+            string _lastMsg = ""; DateTime _lastAt = DateTime.MinValue;
+
             DispatcherUnhandledException += (s, ex) =>
             {
                 ex.Handled = true;
-                MessageBox.Show(
-                    $"An unexpected error occurred:\n\n{ex.Exception.Message}\n\nThe application will continue running.",
-                    "eCheque MICO360 — Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                try { DatabaseService.LogAudit("SYSTEM", "UnhandledException", "", ex.Exception.Message); } catch { }
+                BugReportService.Report(ex.Exception, "DispatcherUnhandledException");
+                // Auto-logged; show a friendly notice, de-duplicated so a repeating error can't spam popups.
+                var m = ex.Exception.Message;
+                if (m != _lastMsg || (DateTime.Now - _lastAt).TotalSeconds > 5)
+                {
+                    _lastMsg = m; _lastAt = DateTime.Now;
+                    MessageBox.Show(
+                        "Something went wrong, but the app will keep running.\n\nThe problem has been logged automatically for the developers.",
+                        "eCheque MICO360", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             };
 
             System.AppDomain.CurrentDomain.UnhandledException += (s, ex) =>
-            {
-                var msg = (ex.ExceptionObject as Exception)?.Message ?? ex.ExceptionObject?.ToString() ?? "Unknown";
-                try
-                {
-                    var folder = System.IO.Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "eCheque_MICO360");
-                    System.IO.Directory.CreateDirectory(folder);
-                    System.IO.File.AppendAllText(System.IO.Path.Combine(folder, "crash.log"),
-                        $"{DateTime.Now:o} CRASH: {msg}{Environment.NewLine}");
-                }
-                catch { }
-            };
+                BugReportService.Report(ex.ExceptionObject as Exception, "AppDomain.UnhandledException (fatal)");
 
             try
             {

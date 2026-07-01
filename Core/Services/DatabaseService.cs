@@ -32,7 +32,8 @@ namespace eCheque.MICO360.Core.Services
                 CREATE TABLE IF NOT EXISTS AuditLogs(Id INTEGER PRIMARY KEY AUTOINCREMENT,UserName TEXT DEFAULT '',Action TEXT DEFAULT '',RecordReference TEXT DEFAULT '',Remarks TEXT DEFAULT '',ActionDate TEXT);
                 CREATE TABLE IF NOT EXISTS PrintHistory(Id INTEGER PRIMARY KEY AUTOINCREMENT,ChequeId INTEGER,ChequeNumber TEXT DEFAULT '',PrintedBy TEXT DEFAULT '',PrintedDate TEXT,Reason TEXT DEFAULT '',IsReprint INTEGER DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS AppSettings(Key TEXT PRIMARY KEY,Value TEXT DEFAULT '');
-                CREATE TABLE IF NOT EXISTS Banks(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,IsActive INTEGER DEFAULT 1);";
+                CREATE TABLE IF NOT EXISTS Banks(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,IsActive INTEGER DEFAULT 1);
+                CREATE TABLE IF NOT EXISTS Payees(Name TEXT PRIMARY KEY,LastUsed TEXT);";
             using var cmd = new SqliteCommand(sql, conn);
             cmd.ExecuteNonQuery();
         }
@@ -57,6 +58,7 @@ namespace eCheque.MICO360.Core.Services
         {
             using var conn = GetConnection();
             // User accounts live in the central master DB; do not seed an admin into per-company databases.
+            try { using var pf = new SqliteCommand("INSERT OR IGNORE INTO Payees(Name,LastUsed) SELECT PayeeName, MAX(CreatedDate) FROM ChequeRecords WHERE PayeeName!='' GROUP BY PayeeName", conn); pf.ExecuteNonQuery(); } catch { }
             using (var c = new SqliteCommand("SELECT COUNT(*) FROM Banks", conn))
                 if (Convert.ToInt32(c.ExecuteScalar()) == 0)
                     foreach (var b in new[]{"Bank Muscat","National Bank of Oman","Sohar International","Bank Dhofar","HSBC Oman","Oman Arab Bank","First Abu Dhabi Bank"})

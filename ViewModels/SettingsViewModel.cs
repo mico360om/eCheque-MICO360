@@ -30,7 +30,8 @@ namespace eCheque.MICO360.ViewModels
         public ICommand RestoreCommand{get;}
         public ICommand BrowsePdfCommand{get;}
         public ICommand BrowseBackupCommand{get;}
-        public SettingsViewModel(){SaveCommand=new RelayCommand(Save);BackupCommand=new RelayCommand(DoBackup);RestoreCommand=new RelayCommand(DoRestore);BrowsePdfCommand=new RelayCommand(BrowsePdf);BrowseBackupCommand=new RelayCommand(BrowseBackup);}
+        public ICommand OpenLogCommand{get;}
+        public SettingsViewModel(){SaveCommand=new RelayCommand(Save);BackupCommand=new RelayCommand(DoBackup);RestoreCommand=new RelayCommand(DoRestore);BrowsePdfCommand=new RelayCommand(BrowsePdf);BrowseBackupCommand=new RelayCommand(BrowseBackup);OpenLogCommand=new RelayCommand(BugReportService.OpenLog);}
         public void Load(){CompanyName=DatabaseService.GetSetting("CompanyName","My Company LLC");Currency=DatabaseService.GetSetting("DefaultCurrency","OMR");DateFormat=DatabaseService.GetSetting("DateFormat","dd/MM/yyyy");PdfPath=DatabaseService.GetSetting("PdfSavePath","");BackupPath=DatabaseService.GetSetting("BackupPath","");CaseFormat=DatabaseService.GetSetting("AmountCaseFormat","UPPERCASE");CurrencyWording=DatabaseService.GetSetting("AmountCurrencyWording","Omani Rials");BaisaWording=DatabaseService.GetSetting("AmountBaisaWording","Baisa");IncludeBaisa=DatabaseService.GetSetting("AmountIncludeBaisa","true")=="true";AddOnly=DatabaseService.GetSetting("AmountAddOnly","true")=="true";
             MailjetApiKey=CompanyService.GetMasterSetting("Mailjet_ApiKey","");MailjetSecretKey=CompanyService.GetMasterSetting("Mailjet_SecretKey","");MailjetFromEmail=CompanyService.GetMasterSetting("Mailjet_FromEmail","");MailjetFromName=CompanyService.GetMasterSetting("Mailjet_FromName","eCheque MICO360");}
         void Save(){
