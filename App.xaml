@@ -246,6 +246,81 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <!-- ================= Slim modern scrollbars =================
+                 A thin rounded overlay-style scrollbar used app-wide. The thumb colour is a
+                 DynamicResource so any container (e.g. the dark sidebar) can override it locally. -->
+            <SolidColorBrush x:Key="ScrollThumbBrush" Color="#BFBFBF"/>
+            <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#8A8A8A"/>
+
+            <Style x:Key="ScrollPageButton" TargetType="RepeatButton">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="IsTabStop" Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RepeatButton">
+                            <Border Background="Transparent"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ScrollThumbStyle" TargetType="Thumb">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="IsTabStop" Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Thumb">
+                            <Border x:Name="b" CornerRadius="4" Background="{DynamicResource ScrollThumbBrush}" Margin="2"/>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="b" Property="Background" Value="{DynamicResource ScrollThumbHoverBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="ScrollBar">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Width" Value="10"/>
+                <Setter Property="MinWidth" Value="10"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid Background="{TemplateBinding Background}">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb" Style="{StaticResource ScrollThumbStyle}" MinHeight="28"/>
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton x:Name="IncBtn" Style="{StaticResource ScrollPageButton}" Command="ScrollBar.PageDownCommand"/>
+                                    </Track.IncreaseRepeatButton>
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton x:Name="DecBtn" Style="{StaticResource ScrollPageButton}" Command="ScrollBar.PageUpCommand"/>
+                                    </Track.DecreaseRepeatButton>
+                                </Track>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="Orientation" Value="Horizontal">
+                                    <Setter Property="Width" Value="Auto"/>
+                                    <Setter Property="MinWidth" Value="0"/>
+                                    <Setter Property="Height" Value="10"/>
+                                    <Setter Property="MinHeight" Value="10"/>
+                                    <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                                    <Setter TargetName="Thumb" Property="MinHeight" Value="0"/>
+                                    <Setter TargetName="Thumb" Property="MinWidth" Value="28"/>
+                                    <Setter TargetName="IncBtn" Property="Command" Value="ScrollBar.PageRightCommand"/>
+                                    <Setter TargetName="DecBtn" Property="Command" Value="ScrollBar.PageLeftCommand"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

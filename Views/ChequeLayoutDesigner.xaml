@@ -51,7 +51,7 @@
                     <Grid>
                         <Image x:Name="BgImage" Stretch="Fill" SnapsToDevicePixels="True"/>
                         <Canvas x:Name="ChequeCanvas" Background="Transparent"
-                                MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseLeftButtonUp" Cursor="Default"/>
+                                MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseLeftButtonUp" Cursor="Arrow"/>
                     </Grid>
                 </Border>
             </ScrollViewer>

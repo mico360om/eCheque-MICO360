@@ -36,7 +36,11 @@
                             Click="BtnLogout_Click" Style="{StaticResource NavBtn}"/>
                 </Border>
                 <!-- Nav -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                    <ScrollViewer.Resources>
+                        <SolidColorBrush x:Key="ScrollThumbBrush" Color="#4A4A4A"/>
+                        <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#7A7A7A"/>
+                    </ScrollViewer.Resources>
                     <StackPanel Margin="8,8">
                         <TextBlock Text="MAIN" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,6,0,4"/>
                         <Button x:Name="NavDashboard"    Tag="Dashboard"    Content="🏠  Dashboard"       Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
