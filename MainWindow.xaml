@@ -40,6 +40,7 @@
                         <Button x:Name="NavPrintHistory" Tag="PrintHistory" Content="🖨  Print History"   Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <TextBlock Text="CONFIGURATION" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
                         <Button x:Name="NavProfiles"  Tag="Profiles"  Content="📄  Cheque Profiles"  Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
+                        <Button x:Name="NavMyProfile" Tag="MyProfile" Content="👤  My Profile"       Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <Button x:Name="NavSettings"  Tag="Settings"  Content="⚙  Settings"         Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <TextBlock x:Name="TxtAdminHdr" Text="ADMINISTRATION" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
                         <Button x:Name="NavCompanies" Tag="Companies" Content="🏢  Companies"        Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>

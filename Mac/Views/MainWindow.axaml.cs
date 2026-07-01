@@ -81,6 +81,12 @@ namespace eCheque.MICO360.Mac.Views
             ContentArea.Content = new ChequeTrackingView { DataContext = vm };
         }
 
+        void NavMyProfile(object? sender, RoutedEventArgs e)
+        {
+            SetTitle("My Profile");
+            ContentArea.Content = new MyProfileView { DataContext = new MyProfileViewModel() };
+        }
+
         void NavAbout(object? sender, RoutedEventArgs e)
         {
             SetTitle("About Us");

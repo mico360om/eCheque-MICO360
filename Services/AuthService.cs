@@ -190,6 +190,24 @@ namespace eCheque.MICO360.Services
             }
         }
 
+        /// <summary>Self-service: lets the signed-in user update their own name and email (not role or active state).</summary>
+        public static string? UpdateOwnProfile(string fullName, string email)
+        {
+            var me = CurrentUser;
+            if (me == null) return "No user is signed in.";
+            if (string.IsNullOrWhiteSpace(fullName)) return "Full name is required.";
+            if (!string.IsNullOrWhiteSpace(email) && !email.Contains('@')) return "Email address is not valid.";
+            if (EmailExists(email, me.Id)) return $"Email '{email}' is already in use.";
+
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SqliteCommand("UPDATE Users SET FullName=@fn,Email=@e WHERE Id=@id", conn);
+            cmd.Parameters.AddWithValue("@fn", fullName.Trim()); cmd.Parameters.AddWithValue("@e", email.Trim()); cmd.Parameters.AddWithValue("@id", me.Id);
+            cmd.ExecuteNonQuery();
+            me.FullName = fullName.Trim(); me.Email = email.Trim();   // reflect in the live session
+            DatabaseService.LogAudit(me.Username, "Profile Updated (self)", me.Username);
+            return null;
+        }
+
         public static bool ChangePassword(int userId, string current, string newPwd)
         {
             if (!VerifyPassword(userId, current)) return false;
