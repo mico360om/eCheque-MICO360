@@ -141,4 +141,20 @@ namespace eCheque.MICO360.Core.Models
         public int Total, Printed, Draft, Cancelled, Voided, TodayPrinted, MonthPrinted;
         public decimal TotalAmount, MonthAmount, YearAmount;
     }
+
+    public class UpdateInfo
+    {
+        public string CurrentVersion { get; set; } = "";
+        public string LatestVersion  { get; set; } = "";
+        public string Changelog      { get; set; } = "";
+        public string DownloadUrl    { get; set; } = "";
+        public string AssetName      { get; set; } = "";
+        public long   SizeBytes      { get; set; }
+        public string Sha256         { get; set; } = "";
+        public bool   Mandatory      { get; set; }
+        public bool   UpdateAvailable { get; set; }
+        public string SizeDisplay =>
+            SizeBytes <= 0 ? "—" :
+            SizeBytes >= 1024 * 1024 ? $"{SizeBytes / 1024.0 / 1024.0:N1} MB" : $"{SizeBytes / 1024.0:N0} KB";
+    }
 }
