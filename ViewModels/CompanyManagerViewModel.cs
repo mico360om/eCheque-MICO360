@@ -15,13 +15,25 @@ namespace eCheque.MICO360.ViewModels
         string _status = "";
 
         public ObservableCollection<Company> Companies { get => _companies; set => Set(ref _companies, value); }
-        public Company? Selected { get => _selected; set { Set(ref _selected, value); if (value != null) Edit = Clone(value); } }
+        public Company? Selected
+        {
+            get => _selected;
+            set
+            {
+                Set(ref _selected, value);
+                // Selecting a company always shows its details (read-only) and cancels any in-progress edit.
+                if (value != null) Edit = Clone(value);
+                IsEditing = false;
+                StatusMessage = "";
+            }
+        }
         public Company Edit { get => _edit; set => Set(ref _edit, value); }
         public bool IsEditing { get => _isEditing; set => Set(ref _isEditing, value); }
         public string StatusMessage { get => _status; set => Set(ref _status, value); }
         public List<string> Currencies { get; } = new() { "OMR", "USD", "EUR", "GBP", "AED", "SAR", "QAR", "KWD", "BHD" };
 
         public ICommand NewCommand { get; }
+        public ICommand EditCommand { get; }
         public ICommand SaveCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand CancelEditCommand { get; }
@@ -30,9 +42,10 @@ namespace eCheque.MICO360.ViewModels
         public CompanyManagerViewModel()
         {
             NewCommand = new RelayCommand(NewCompany);
+            EditCommand = new RelayCommand(EditCompany, () => Selected != null);
             SaveCommand = new RelayCommand(SaveCompany, () => IsEditing);
             DeleteCommand = new RelayCommand(DeleteCompany, () => Selected != null && Selected.Id != CompanyService.CurrentCompanyId);
-            CancelEditCommand = new RelayCommand(() => IsEditing = false);
+            CancelEditCommand = new RelayCommand(CancelEdit);
         }
 
         public void Load()
@@ -41,7 +54,9 @@ namespace eCheque.MICO360.ViewModels
             Selected = Companies.FirstOrDefault(c => c.Id == CompanyService.CurrentCompanyId) ?? Companies.FirstOrDefault();
         }
 
-        void NewCompany() { Edit = new Company { Currency = "OMR" }; IsEditing = true; }
+        void NewCompany() { Edit = new Company { Currency = "OMR" }; IsEditing = true; StatusMessage = ""; }
+        void EditCompany() { if (Selected == null) return; Edit = Clone(Selected); IsEditing = true; StatusMessage = ""; }
+        void CancelEdit() { if (Selected != null) Edit = Clone(Selected); IsEditing = false; StatusMessage = ""; }
 
         void SaveCompany()
         {

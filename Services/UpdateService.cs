@@ -133,14 +133,19 @@ namespace eCheque.MICO360.Services
             var total = resp.Content.Headers.ContentLength ?? info.SizeBytes;
 
             await using var src = await resp.Content.ReadAsStreamAsync(ct);
-            await using var dst = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.None);
-            var buffer = new byte[81920];
-            long read = 0; int n;
+            await using var dst = new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.None, 1 << 20, useAsync: true);
+            var buffer = new byte[1 << 20];   // 1 MB buffer — far fewer round-trips than 80 KB
+            long read = 0; int n; double lastReported = -1;
             while ((n = await src.ReadAsync(buffer, ct)) > 0)
             {
                 await dst.WriteAsync(buffer.AsMemory(0, n), ct);
                 read += n;
-                if (total > 0) progress.Report(Math.Min(1.0, (double)read / total));
+                if (total > 0)
+                {
+                    // Only push progress on ~1% change so the UI thread isn't flooded (which itself slows the download).
+                    var pct = Math.Min(1.0, (double)read / total);
+                    if (pct - lastReported >= 0.01 || pct >= 1.0) { lastReported = pct; progress.Report(pct); }
+                }
             }
             Log($"Download complete: {read} bytes.");
             return file;

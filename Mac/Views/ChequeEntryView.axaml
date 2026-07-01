@@ -3,7 +3,7 @@
              x:Class="eCheque.MICO360.Mac.Views.ChequeEntryView">
     <Grid RowDefinitions="*,Auto">
         <ScrollViewer Grid.Row="0">
-            <StackPanel Margin="24" MaxWidth="880" HorizontalAlignment="Left">
+            <StackPanel Margin="24" MaxWidth="880" HorizontalAlignment="Stretch">
                 <!-- Profile -->
                 <Border Classes="card" Margin="0,0,0,12">
                     <StackPanel>

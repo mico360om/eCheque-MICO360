@@ -10,7 +10,7 @@
         </Grid.RowDefinitions>
 
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
-            <StackPanel Margin="24,20,24,12" MaxWidth="780" HorizontalAlignment="Left">
+            <StackPanel Margin="24,20,24,12" MaxWidth="780" HorizontalAlignment="Stretch">
 
                 <!-- Identity card -->
                 <Border Style="{StaticResource Card}" Margin="0,0,0,16">

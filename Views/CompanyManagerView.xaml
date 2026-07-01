@@ -116,7 +116,7 @@
                     <!-- Buttons -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Edit" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"
-                                Command="{Binding NewCommand}"
+                                Command="{Binding EditCommand}"
                                 Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibility}}"/>
                         <Button Content="Delete" Margin="0,0,10,0" Padding="16,7"
                                 Foreground="#CC2020" Background="Transparent" BorderBrush="#CC2020" BorderThickness="1"

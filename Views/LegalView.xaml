@@ -11,7 +11,7 @@
 
         <!-- Scrollable content -->
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
-            <StackPanel Margin="24,20,24,12" MaxWidth="900" HorizontalAlignment="Left">
+            <StackPanel Margin="24,20,24,12" MaxWidth="900" HorizontalAlignment="Stretch">
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
                         <!-- Title row -->

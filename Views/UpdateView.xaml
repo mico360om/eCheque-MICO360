@@ -4,7 +4,7 @@
              Background="#F5F5F5"
              UseLayoutRounding="True" SnapsToDevicePixels="True">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="24,20" MaxWidth="760" HorizontalAlignment="Left">
+        <StackPanel Margin="24,20" MaxWidth="760" HorizontalAlignment="Stretch">
 
             <!-- Version summary -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
