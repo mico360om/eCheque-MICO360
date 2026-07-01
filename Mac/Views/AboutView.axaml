@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.AboutView">
+    <ScrollViewer>
+        <StackPanel Margin="24" MaxWidth="700" HorizontalAlignment="Left">
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock x:Name="TxtAppName" FontSize="22" FontWeight="Bold" Foreground="#8B1818"/>
+                    <TextBlock x:Name="TxtVersion" FontSize="13" Foreground="#888888" Margin="0,0,0,12"/>
+                    <TextBlock x:Name="TxtIntro" TextWrapping="Wrap" FontSize="13" Foreground="#333333"/>
+                </StackPanel>
+            </Border>
+            <Border Classes="card">
+                <StackPanel>
+                    <TextBlock Text="Company &amp; Contact" Classes="cardTitle"/>
+                    <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Company" Classes="label"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TxtCompany" FontSize="13" Margin="0,0,0,8"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Contact Email" Classes="label"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TxtEmail" FontSize="13" Foreground="#1565C0" Margin="0,0,0,8"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Website" Classes="label"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="TxtWebsite" FontSize="13" Foreground="#1565C0" Margin="0,0,0,8"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Platform" Classes="label"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="macOS (Avalonia)" FontSize="13"/>
+                    </Grid>
+                    <TextBlock Text="© 2026 MICO360 Softwares. All rights reserved." FontSize="11" Foreground="#AAAAAA" Margin="0,14,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

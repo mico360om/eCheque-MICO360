@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.ChequeHistoryView">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+        <!-- Filters -->
+        <Border Grid.Row="0" Classes="card" Margin="0,0,0,14">
+            <Grid ColumnDefinitions="2*,*,Auto">
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="Search (cheque, payee, bank)" Classes="label"/>
+                    <TextBox Text="{Binding Search}" Watermark="Type to search…"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                    <TextBlock Text="Status" Classes="label"/>
+                    <ComboBox ItemsSource="{Binding Statuses}" SelectedItem="{Binding StatusFilter}" HorizontalAlignment="Stretch"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                    <Button Content="Refresh" Classes="secondary" Command="{Binding RefreshCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- List -->
+        <Border Grid.Row="1" Classes="card" Padding="16">
+            <Grid RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="100,90,*,120,110,80" Margin="0,0,0,6">
+                    <TextBlock Grid.Column="0" Text="Cheque #" Classes="label"/>
+                    <TextBlock Grid.Column="1" Text="Date" Classes="label"/>
+                    <TextBlock Grid.Column="2" Text="Payee" Classes="label"/>
+                    <TextBlock Grid.Column="3" Text="Bank" Classes="label"/>
+                    <TextBlock Grid.Column="4" Text="Amount" Classes="label"/>
+                    <TextBlock Grid.Column="5" Text="Status" Classes="label"/>
+                </Grid>
+                <ScrollViewer Grid.Row="1">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Cheques}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,8">
+                                        <Grid ColumnDefinitions="100,90,*,120,110,80">
+                                            <TextBlock Grid.Column="0" Text="{Binding ChequeNumber}" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding ChequeDate, StringFormat='{}{0:dd/MM/yy}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding PayeeName}" FontSize="12"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding BankName}" FontSize="12"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding Amount, StringFormat='{}{0:N3}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="5" Text="{Binding Status}" FontSize="11" Foreground="#8B1818"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="No cheques found." Foreground="#AAAAAA" FontSize="12"
+                                   Margin="0,16,0,0" HorizontalAlignment="Center" IsVisible="{Binding IsEmpty}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="{Binding Cheques.Count, StringFormat='{}{0} record(s)'}"
+                   FontSize="12" Foreground="#888888" Margin="0,8,0,0"/>
+    </Grid>
+</UserControl>

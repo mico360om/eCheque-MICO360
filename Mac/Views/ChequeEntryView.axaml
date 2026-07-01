@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.ChequeEntryView">
+    <Grid RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Margin="24" MaxWidth="880" HorizontalAlignment="Left">
+                <!-- Profile -->
+                <Border Classes="card" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Cheque Profile" Classes="cardTitle"/>
+                        <Grid ColumnDefinitions="*,*,*">
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Profile *" Classes="label"/>
+                                <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                <TextBlock Text="Bank" Classes="label"/>
+                                <TextBox Text="{Binding Cheque.BankName}" IsReadOnly="True" Background="#F8F8F8"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Account Number" Classes="label"/>
+                                <TextBox Text="{Binding Cheque.AccountNumber}" IsReadOnly="True" Background="#F8F8F8"/>
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock Text="{Binding ProfileInfo}" FontSize="11" Foreground="#BF360C" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Details -->
+                <Border Classes="card" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Cheque Details" Classes="cardTitle"/>
+                        <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,10">
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Cheque Number *" Classes="label"/>
+                                <TextBox Text="{Binding Cheque.ChequeNumber}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                <TextBlock Text="Date *" Classes="label"/>
+                                <DatePicker SelectedDate="{Binding Cheque.ChequeDate}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Status" Classes="label"/>
+                                <TextBox Text="{Binding Cheque.Status}" IsReadOnly="True" Background="#F8F8F8"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="Payee Name *" Classes="label"/>
+                            <AutoCompleteBox ItemsSource="{Binding Payees}" Text="{Binding Cheque.PayeeName}"
+                                             FilterMode="Contains" Watermark="Payee name"/>
+                        </StackPanel>
+
+                        <Grid ColumnDefinitions="200,*" Margin="0,0,0,10">
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Amount (OMR) *" Classes="label"/>
+                                <TextBox Text="{Binding AmountText}" Watermark="0.000"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Amount in Words (auto)" Classes="label"/>
+                                <TextBox Text="{Binding Cheque.AmountInWords}" TextWrapping="Wrap" Height="46" IsReadOnly="True" Background="#F8F8F8"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel>
+                            <TextBlock Text="Memo / Narration" Classes="label"/>
+                            <TextBox Text="{Binding Cheque.Remarks}" Height="56" TextWrapping="Wrap" AcceptsReturn="True" MaxLength="250"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Reference -->
+                <Expander Header="Reference Details (Optional)" Margin="0,0,0,12">
+                    <Grid ColumnDefinitions="*,*,*" RowDefinitions="Auto,Auto" Margin="0,10,0,0">
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
+                            <TextBlock Text="Invoice Number" Classes="label"/>
+                            <TextBox Text="{Binding Cheque.InvoiceNumber}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,10,10">
+                            <TextBlock Text="Voucher Number" Classes="label"/>
+                            <TextBox Text="{Binding Cheque.VoucherNumber}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,10">
+                            <TextBlock Text="Department" Classes="label"/>
+                            <TextBox Text="{Binding Cheque.Department}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Prepared By" Classes="label"/>
+                            <TextBox Text="{Binding Cheque.PreparedBy}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,10,0">
+                            <TextBlock Text="Approved By" Classes="label"/>
+                            <TextBox Text="{Binding Cheque.ApprovedBy}"/>
+                        </StackPanel>
+                    </Grid>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action bar -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="24,12">
+            <DockPanel>
+                <TextBlock Text="{Binding StatusMessage}" DockPanel.Dock="Left" VerticalAlignment="Center"
+                           Foreground="#CC2020" FontSize="12" TextWrapping="Wrap" MaxWidth="440"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Content="Cancel" Classes="secondary" Command="{Binding CancelCommand}"/>
+                    <Button Content="Save Draft" Classes="secondary" Command="{Binding SaveDraftCommand}"/>
+                    <Button Content="Save Cheque" Classes="primary" Command="{Binding SaveCommand}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

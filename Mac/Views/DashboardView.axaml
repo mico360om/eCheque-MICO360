@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.DashboardView">
+    <ScrollViewer>
+        <StackPanel Margin="24">
+            <!-- Row 1: counts -->
+            <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,14">
+                <Border Grid.Column="0" Classes="card" Margin="0,0,7,0">
+                    <StackPanel>
+                        <TextBlock Text="Total Cheques" Classes="label"/>
+                        <TextBlock Text="{Binding Total}" FontSize="30" FontWeight="Bold" Foreground="#1A1A1A"/>
+                        <TextBlock Text="{Binding Printed, StringFormat='Printed: {0}'}" FontSize="11" Foreground="#888888"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="card" Margin="7,0,7,0">
+                    <StackPanel>
+                        <TextBlock Text="Pending / Draft" Classes="label"/>
+                        <TextBlock Text="{Binding Draft}" FontSize="30" FontWeight="Bold" Foreground="#E65100"/>
+                        <TextBlock Text="{Binding TodayPrinted, StringFormat='Printed today: {0}'}" FontSize="11" Foreground="#888888"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card" Margin="7,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Cancelled / Void" Classes="label"/>
+                        <TextBlock Text="{Binding Cancelled}" FontSize="30" FontWeight="Bold" Foreground="#B00020"/>
+                        <TextBlock Text="{Binding Voided, StringFormat='Voided: {0}'}" FontSize="11" Foreground="#888888"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Row 2: values -->
+            <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,14">
+                <Border Grid.Column="0" Classes="card" Margin="0,0,7,0">
+                    <StackPanel>
+                        <TextBlock Text="This Month" Classes="label"/>
+                        <TextBlock Text="{Binding MonthAmountDisplay}" FontSize="20" FontWeight="Bold" Foreground="#8B1818"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="card" Margin="7,0,7,0">
+                    <StackPanel>
+                        <TextBlock Text="This Year" Classes="label"/>
+                        <TextBlock Text="{Binding YearAmountDisplay}" FontSize="20" FontWeight="Bold" Foreground="#8B1818"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card" Margin="7,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Total Issued" Classes="label"/>
+                        <TextBlock Text="{Binding TotalAmountDisplay}" FontSize="20" FontWeight="Bold" Foreground="#1A1A1A"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Recent cheques -->
+            <Border Classes="card">
+                <StackPanel>
+                    <TextBlock Text="Recent Cheques" Classes="cardTitle"/>
+                    <Grid ColumnDefinitions="110,*,130,60" Margin="0,0,0,6">
+                        <TextBlock Grid.Column="0" Text="Cheque #" Classes="label"/>
+                        <TextBlock Grid.Column="1" Text="Payee" Classes="label"/>
+                        <TextBlock Grid.Column="2" Text="Amount (OMR)" Classes="label"/>
+                        <TextBlock Grid.Column="3" Text="Status" Classes="label"/>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding RecentCheques}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,7">
+                                    <Grid ColumnDefinitions="110,*,130,60">
+                                        <TextBlock Grid.Column="0" Text="{Binding ChequeNumber}" FontSize="12"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding PayeeName}" FontSize="12"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Amount, StringFormat='{}{0:N3}'}" FontSize="12"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="#8B1818"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

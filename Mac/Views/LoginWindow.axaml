@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="eCheque.MICO360.Mac.Views.LoginWindow"
+        Width="820" Height="520" CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Title="eCheque MICO360 — Sign In"
+        Background="White">
+    <Grid ColumnDefinitions="330,*">
+        <!-- Brand panel -->
+        <Border Grid.Column="0" Background="#1A1A1A">
+            <StackPanel Margin="34" VerticalAlignment="Center">
+                <TextBlock Text="eCheque" FontSize="34" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="MICO360" FontSize="34" FontWeight="Bold" Foreground="#8B1818" Margin="0,-6,0,0"/>
+                <Border Height="3" Width="60" Background="#8B1818" Margin="0,16,0,16" HorizontalAlignment="Left"/>
+                <TextBlock Text="Secure cheque preparation, printing &amp; tracking." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13"/>
+                <TextBlock Text="macOS Edition" Foreground="#666666" FontSize="11" Margin="0,18,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Form -->
+        <Border Grid.Column="1" Background="White">
+            <StackPanel Margin="44" VerticalAlignment="Center" Width="300">
+                <TextBlock Text="Sign In" FontSize="24" FontWeight="Bold" Foreground="#1A1A1A" Margin="0,0,0,4"/>
+                <TextBlock Text="Access your company workspace" Foreground="#888888" FontSize="13" Margin="0,0,0,22"/>
+
+                <TextBlock Text="Company" Classes="label"/>
+                <ComboBox x:Name="CmbCompany" ItemsSource="{Binding Companies}" SelectedItem="{Binding SelectedCompany}"
+                          HorizontalAlignment="Stretch" Margin="0,0,0,14">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Text="Username" Classes="label"/>
+                <TextBox x:Name="TxtUsername" Text="{Binding Username}" Watermark="username" Margin="0,0,0,14"/>
+
+                <TextBlock Text="Password" Classes="label"/>
+                <TextBox x:Name="TxtPassword" PasswordChar="●" Watermark="password" Margin="0,0,0,10"/>
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#CC2020" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                <Button Content="Sign In" Classes="primary" HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center" Click="OnLoginClick"/>
+                <TextBlock Text="Authorized users only" Foreground="#BBBBBB" FontSize="11"
+                           HorizontalAlignment="Center" Margin="0,16,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

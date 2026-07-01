@@ -14,12 +14,13 @@
     <Company>MICO360 Softwares</Company>
     <Product>eCheque MICO360</Product>
   </PropertyGroup>
-  <!-- The test project lives under Tests\ inside the repo; keep it out of the app build. -->
+  <!-- The test project and the cross-platform (macOS/Avalonia) projects live inside the
+       repo but must be kept out of the Windows app build. -->
   <ItemGroup>
-    <Compile Remove="Tests\**" />
-    <EmbeddedResource Remove="Tests\**" />
-    <None Remove="Tests\**" />
-    <Page Remove="Tests\**" />
+    <Compile Remove="Tests\**;Core\**;Mac\**" />
+    <EmbeddedResource Remove="Tests\**;Core\**;Mac\**" />
+    <None Remove="Tests\**;Core\**;Mac\**" />
+    <Page Remove="Tests\**;Core\**;Mac\**" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="logo.png" />
