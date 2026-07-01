@@ -14,18 +14,8 @@ namespace eCheque.MICO360.Core.Services
             DbPath = dbPath ?? Path.Combine(AppPaths.DataFolder, "echeque.db");
 
             SecurityService.Init();
-            try
-            {
-                SecurityService.EnsureEncrypted(DbPath);
-                _cs = SecurityService.ConnectionString(DbPath);
-                CreateTables();
-            }
-            catch
-            {
-                SecurityService.Disable("DatabaseService.Initialize failed with key");
-                _cs = SecurityService.ConnectionString(DbPath);
-                CreateTables();
-            }
+            _cs = SecurityService.ResolveConnectionString(DbPath);
+            CreateTables();
             MigrateSchema();
             SeedData();
         }
@@ -66,13 +56,7 @@ namespace eCheque.MICO360.Core.Services
         private static void SeedData()
         {
             using var conn = GetConnection();
-            using (var c = new SqliteCommand("SELECT COUNT(*) FROM Users", conn))
-                if (Convert.ToInt32(c.ExecuteScalar()) == 0)
-                {
-                    var h = BCrypt.Net.BCrypt.HashPassword("Admin@123");
-                    using var ins = new SqliteCommand("INSERT INTO Users(Username,PasswordHash,FullName,Role,IsActive,CreatedDate,FailedLoginAttempts)VALUES('admin',@h,'System Administrator','Admin',1,@d,0)", conn);
-                    ins.Parameters.AddWithValue("@h", h); ins.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); ins.ExecuteNonQuery();
-                }
+            // User accounts live in the central master DB; do not seed an admin into per-company databases.
             using (var c = new SqliteCommand("SELECT COUNT(*) FROM Banks", conn))
                 if (Convert.ToInt32(c.ExecuteScalar()) == 0)
                     foreach (var b in new[]{"Bank Muscat","National Bank of Oman","Sohar International","Bank Dhofar","HSBC Oman","Oman Arab Bank","First Abu Dhabi Bank"})

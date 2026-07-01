@@ -5,9 +5,10 @@ namespace eCheque.MICO360.Core.Services
 {
     public static class ChequeService
     {
-        static string S(SqliteDataReader r,string col){var o=r.GetOrdinal(col);return r.IsDBNull(o)?"":r.GetString(o);}
-        static double D(SqliteDataReader r,string col){var o=r.GetOrdinal(col);return r.IsDBNull(o)?0:r.GetDouble(o);}
-        static int I(SqliteDataReader r,string col){var o=r.GetOrdinal(col);return r.IsDBNull(o)?0:r.GetInt32(o);}
+        static int Ord(SqliteDataReader r,string col){try{return r.GetOrdinal(col);}catch{return -1;}}
+        static string S(SqliteDataReader r,string col){var o=Ord(r,col);return o<0||r.IsDBNull(o)?"":r.GetString(o);}
+        static double D(SqliteDataReader r,string col){var o=Ord(r,col);return o<0||r.IsDBNull(o)?0:r.GetDouble(o);}
+        static int I(SqliteDataReader r,string col){var o=Ord(r,col);return o<0||r.IsDBNull(o)?0:r.GetInt32(o);}
 
         public static List<ChequeRecord> GetCheques(string? search=null,string? status=null,DateTime? from=null,DateTime? to=null)
         {
@@ -30,7 +31,7 @@ namespace eCheque.MICO360.Core.Services
         public static bool ChequeNumberExists(string num,string bank,int excludeId=0){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("SELECT COUNT(*) FROM ChequeRecords WHERE ChequeNumber=@n AND BankName=@b AND Id!=@id",conn);cmd.Parameters.AddWithValue("@n",num);cmd.Parameters.AddWithValue("@b",bank);cmd.Parameters.AddWithValue("@id",excludeId);return Convert.ToInt32(cmd.ExecuteScalar())>0;}
 
         public static bool IsLocked(string? status) => status is "Printed" or "Reprinted" or "Presented" or "Cleared" or "Bounced" or "Cancelled" or "Void";
-        public static bool IsPrintBlocked(string? status) => status is "Cancelled" or "Void";
+        public static bool IsPrintBlocked(string? status) => status is "Cancelled" or "Void" or "Cleared" or "Bounced";
         public static int CountChequesUsingProfile(int profileId){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("SELECT COUNT(*) FROM ChequeRecords WHERE ProfileId=@id",conn);cmd.Parameters.AddWithValue("@id",profileId);return Convert.ToInt32(cmd.ExecuteScalar());}
 
         public static int SaveCheque(ChequeRecord c)
@@ -71,12 +72,12 @@ namespace eCheque.MICO360.Core.Services
         public static void VoidCheque(int id,string reason){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Void',CancellationReason=@r WHERE Id=@id",conn);cmd.Parameters.AddWithValue("@r",reason);cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Voided",id.ToString(),reason);}
 
         // ── Cheque lifecycle / reconciliation + PDC ──
-        public static void MarkPresented(int id,DateTime date){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Presented',PresentedDate=@d WHERE Id=@id",conn);cmd.Parameters.AddWithValue("@d",date.ToString("o"));cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Presented",id.ToString(),date.ToString("yyyy-MM-dd"));}
-        public static void MarkCleared(int id,DateTime date){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Cleared',ClearedDate=@d WHERE Id=@id",conn);cmd.Parameters.AddWithValue("@d",date.ToString("o"));cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Cleared",id.ToString(),date.ToString("yyyy-MM-dd"));}
-        public static void MarkBounced(int id,string reason){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Bounced',BounceReason=@r WHERE Id=@id",conn);cmd.Parameters.AddWithValue("@r",reason);cmd.Parameters.AddWithValue("@id",id);cmd.ExecuteNonQuery();DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Bounced",id.ToString(),reason);}
-        public static List<ChequeRecord> GetPdcCheques() => GetCheques().Where(c => c.IsPdc).OrderBy(c => c.ChequeDate).ToList();
+        public static bool MarkPresented(int id,DateTime date){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Presented',PresentedDate=@d WHERE Id=@id AND Status IN('Printed','Reprinted')",conn);cmd.Parameters.AddWithValue("@d",date.ToString("o"));cmd.Parameters.AddWithValue("@id",id);if(cmd.ExecuteNonQuery()==0)return false;DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Presented",id.ToString(),date.ToString("yyyy-MM-dd"));return true;}
+        public static bool MarkCleared(int id,DateTime date){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Cleared',ClearedDate=@d WHERE Id=@id AND Status IN('Printed','Reprinted','Presented')",conn);cmd.Parameters.AddWithValue("@d",date.ToString("o"));cmd.Parameters.AddWithValue("@id",id);if(cmd.ExecuteNonQuery()==0)return false;DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Cleared",id.ToString(),date.ToString("yyyy-MM-dd"));return true;}
+        public static bool MarkBounced(int id,string reason){using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("UPDATE ChequeRecords SET Status='Bounced',BounceReason=@r WHERE Id=@id AND Status IN('Printed','Reprinted','Presented')",conn);cmd.Parameters.AddWithValue("@r",reason);cmd.Parameters.AddWithValue("@id",id);if(cmd.ExecuteNonQuery()==0)return false;DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Bounced",id.ToString(),reason);return true;}
+        public static List<ChequeRecord> GetPdcCheques() => GetCheques().Where(c => c.IsIssued).OrderBy(c => c.ChequeDate).ToList();
         public static List<ChequeRecord> GetOutstandingCheques() => GetCheques().Where(c => c.Status is "Printed" or "Reprinted" or "Presented").OrderBy(c => c.ChequeDate).ToList();
-        public static int GetDuePdcCount(int days) => GetPdcCheques().Count(c => c.DaysUntilDue <= days);
+        public static int GetDuePdcCount(int days) => GetCheques().Count(c => c.IsIssued && c.DaysUntilDue <= days);
 
         static string DescribeChequeChanges(ChequeRecord? o,ChequeRecord n)
         {

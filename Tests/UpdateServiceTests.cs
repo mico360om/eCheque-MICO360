@@ -39,9 +39,13 @@ namespace eCheque.MICO360.Tests
         [Theory]
         [InlineData("Cancelled", true)]
         [InlineData("Void", true)]
+        [InlineData("Cleared", true)]
+        [InlineData("Bounced", true)]
         [InlineData("Printed", false)]
+        [InlineData("Reprinted", false)]
+        [InlineData("Presented", false)]
         [InlineData("Draft", false)]
-        public void IsPrintBlocked_only_blocks_cancelled_and_void(string status, bool expected)
+        public void IsPrintBlocked_blocks_closed_and_settled(string status, bool expected)
             => Assert.Equal(expected, ChequeService.IsPrintBlocked(status));
     }
 }

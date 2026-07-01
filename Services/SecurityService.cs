@@ -5,26 +5,24 @@ using Microsoft.Data.Sqlite;
 namespace eCheque.MICO360.Services
 {
     /// <summary>
-    /// Manages database-at-rest encryption using SQLCipher.
+    /// Database-at-rest encryption using SQLCipher, resolved PER DATABASE.
     ///
-    /// Design goal: NEVER lock the user out of their data. If the native SQLCipher
-    /// provider can't load, the key can't be read, or a migration fails, the service
-    /// disables encryption for the session and the app keeps working on plaintext —
-    /// exactly as it did before. A plaintext safety copy is written before any migration.
+    /// <see cref="ResolveConnectionString"/> decides, for each individual database file, whether to
+    /// open it keyed (encrypted) or plain — migrating a plaintext file to SQLCipher when possible.
+    /// A failure for one database never affects any other database or the session (no global disable),
+    /// and the app is never locked out: worst case a single DB stays plaintext (with a .plainbak copy kept).
+    /// Probe/migration connections use Pooling=false so they never disturb the app's pooled connections.
     /// </summary>
     public static class SecurityService
     {
         static bool _initialised;
         static string? _key;
 
-        /// <summary>True when database encryption is active for this session.</summary>
-        public static bool Enabled { get; private set; }
+        public static bool KeyAvailable => _key != null;
 
         static string KeyFile => Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "eCheque_MICO360", "security.key");
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "eCheque_MICO360", "security.key");
 
-        /// <summary>Initialises the SQLite provider and loads/creates the encryption key. Safe to call repeatedly.</summary>
         public static void Init()
         {
             if (_initialised) return;
@@ -33,84 +31,36 @@ namespace eCheque.MICO360.Services
             {
                 SQLitePCL.Batteries_V2.Init();
                 _key = LoadOrCreateKey();
-                Enabled = !string.IsNullOrEmpty(_key);
             }
-            catch (Exception ex)
-            {
-                Enabled = false;
-                Log($"Encryption disabled (init failed): {ex.Message}");
-            }
+            catch (Exception ex) { _key = null; Log($"Encryption key unavailable, using plaintext: {ex.Message}"); }
         }
 
-        /// <summary>Permanently disables encryption for this session (used as a fallback on error).</summary>
-        public static void Disable(string reason)
+        /// <summary>Returns the connection string to use for one specific database, migrating it to SQLCipher if needed.</summary>
+        public static string ResolveConnectionString(string path)
         {
-            Enabled = false;
-            Log($"Encryption disabled: {reason}");
-        }
-
-        /// <summary>Builds a connection string for a path, adding the key when encryption is active.</summary>
-        public static string ConnectionString(string path)
-            => Enabled && _key != null
-                ? new SqliteConnectionStringBuilder { DataSource = path, Password = _key }.ToString()
-                : new SqliteConnectionStringBuilder { DataSource = path }.ToString();
-
-        /// <summary>
-        /// Ensures the database at <paramref name="path"/> is encrypted with the current key.
-        /// Migrates a plaintext database in place (keeping a .plainbak copy). No-op if already
-        /// encrypted, if the file doesn't exist yet, or if encryption is disabled.
-        /// </summary>
-        public static void EnsureEncrypted(string path)
-        {
-            if (!Enabled || _key == null || !File.Exists(path)) return;
-
-            // 1) Already encrypted with our key?
-            if (CanOpen(path, _key)) return;
-
-            // 2) Is it a readable plaintext database? If so, migrate it.
-            if (CanOpen(path, null))
+            Init();
+            if (_key == null) return Plain(path);            // no key available → plaintext everywhere
+            if (!File.Exists(path)) return Keyed(path);      // new file → created encrypted
+            if (CanOpen(path, _key)) return Keyed(path);     // already encrypted with our key
+            if (CanOpen(path, null))                         // readable plaintext → migrate this file
             {
-                try
-                {
-                    Log($"Migrating plaintext database to encrypted: {path}");
-                    File.Copy(path, path + ".plainbak", true);   // safety copy
-
-                    var tmp = path + ".enc_tmp";
-                    if (File.Exists(tmp)) File.Delete(tmp);
-
-                    using (var conn = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path }.ToString()))
-                    {
-                        conn.Open();
-                        using var cmd = conn.CreateCommand();
-                        cmd.CommandText =
-                            $"ATTACH DATABASE '{tmp.Replace("'", "''")}' AS encrypted KEY '{_key}';" +
-                            "SELECT sqlcipher_export('encrypted');" +
-                            "DETACH DATABASE encrypted;";
-                        cmd.ExecuteNonQuery();
-                    }
-                    SqliteConnection.ClearAllPools();
-
-                    File.Delete(path);
-                    File.Move(tmp, path);
-                    Log($"Migration complete: {path}");
-                }
-                catch (Exception ex)
-                {
-                    // Migration failed — fall back to plaintext so the user is never locked out.
-                    Disable($"migration failed for {Path.GetFileName(path)}: {ex.Message}");
-                }
+                if (TryMigrate(path)) return Keyed(path);
+                Log($"Migration failed for {Path.GetFileName(path)}; using plaintext for THIS database only.");
+                return Plain(path);                          // per-DB fallback (does not affect other DBs)
             }
-            // 3) Neither opened (new/empty file) — a keyed connection will create an encrypted DB.
+            return Keyed(path);                              // not plaintext and not our key → treat as encrypted/new
         }
+
+        static string Keyed(string path) => new SqliteConnectionStringBuilder { DataSource = path, Password = _key }.ToString();
+        static string Plain(string path) => new SqliteConnectionStringBuilder { DataSource = path }.ToString();
 
         static bool CanOpen(string path, string? key)
         {
             try
             {
-                var cs = key != null
-                    ? new SqliteConnectionStringBuilder { DataSource = path, Password = key }.ToString()
-                    : new SqliteConnectionStringBuilder { DataSource = path }.ToString();
-                using var conn = new SqliteConnection(cs);
+                var b = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false };
+                if (key != null) b.Password = key;
+                using var conn = new SqliteConnection(b.ToString());
                 conn.Open();
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "SELECT count(*) FROM sqlite_master;";
@@ -118,7 +68,34 @@ namespace eCheque.MICO360.Services
                 return true;
             }
             catch { return false; }
-            finally { SqliteConnection.ClearAllPools(); }
+        }
+
+        static bool TryMigrate(string path)
+        {
+            try
+            {
+                Log($"Migrating plaintext database to encrypted: {Path.GetFileName(path)}");
+                File.Copy(path, path + ".plainbak", true);
+                var tmp = path + ".enc_tmp";
+                if (File.Exists(tmp)) File.Delete(tmp);
+
+                var b = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false };
+                using (var conn = new SqliteConnection(b.ToString()))
+                {
+                    conn.Open();
+                    using var cmd = conn.CreateCommand();
+                    cmd.CommandText =
+                        $"ATTACH DATABASE '{tmp.Replace("'", "''")}' AS encrypted KEY '{_key}';" +
+                        "SELECT sqlcipher_export('encrypted');" +
+                        "DETACH DATABASE encrypted;";
+                    cmd.ExecuteNonQuery();
+                }
+                File.Delete(path);
+                File.Move(tmp, path);
+                Log($"Migration complete: {Path.GetFileName(path)}");
+                return true;
+            }
+            catch (Exception ex) { Log($"Migration error for {Path.GetFileName(path)}: {ex.Message}"); return false; }
         }
 
         static string LoadOrCreateKey()
@@ -130,9 +107,7 @@ namespace eCheque.MICO360.Services
                 var raw = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.CurrentUser);
                 return System.Text.Encoding.UTF8.GetString(raw);
             }
-            // Generate a fresh 256-bit key, hex-encoded (safe for PRAGMA key quoting).
-            var bytes = RandomNumberGenerator.GetBytes(32);
-            var keyHex = Convert.ToHexString(bytes).ToLowerInvariant();
+            var keyHex = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
             var enc = ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes(keyHex), null, DataProtectionScope.CurrentUser);
             File.WriteAllBytes(KeyFile, enc);
             return keyHex;

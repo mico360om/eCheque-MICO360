@@ -16,18 +16,9 @@ namespace eCheque.MICO360.Core.Services
             var masterDb = Path.Combine(AppPaths.DataFolder, "companies.db");
 
             SecurityService.Init();
-            try
-            {
-                SecurityService.EnsureEncrypted(masterDb);
-                _cs = SecurityService.ConnectionString(masterDb);
-                CreateTable();
-            }
-            catch
-            {
-                SecurityService.Disable("CompanyService.Initialize failed with key");
-                _cs = SecurityService.ConnectionString(masterDb);
-                CreateTable();
-            }
+            _cs = SecurityService.ResolveConnectionString(masterDb);
+            CreateTable();
+            MigrateLegacyUsers();
             SeedDefault();
         }
 
@@ -74,6 +65,43 @@ namespace eCheque.MICO360.Core.Services
             using var cmd = new SqliteCommand("INSERT OR REPLACE INTO MasterSettings(Key,Value)VALUES(@k,@v)", conn);
             cmd.Parameters.AddWithValue("@k", key); cmd.Parameters.AddWithValue("@v", value);
             cmd.ExecuteNonQuery();
+        }
+
+        private static void MigrateLegacyUsers()
+        {
+            try
+            {
+                using var conn = GetConn();
+                using (var c = new SqliteCommand("SELECT COUNT(*) FROM Users", conn))
+                    if (Convert.ToInt32(c.ExecuteScalar()) > 0) return;
+                if (!Directory.Exists(AppPaths.DataFolder)) return;
+                foreach (var db in Directory.GetFiles(AppPaths.DataFolder, "company_*.db"))
+                {
+                    try
+                    {
+                        using var src = new SqliteConnection(SecurityService.ResolveConnectionString(db));
+                        src.Open();
+                        using (var chk = new SqliteCommand("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Users'", src))
+                            if (Convert.ToInt32(chk.ExecuteScalar()) == 0) continue;
+                        int imported = 0;
+                        using var read = new SqliteCommand("SELECT Username,PasswordHash,FullName,Email,Role,IsActive,CreatedDate,FailedLoginAttempts,LockoutUntil FROM Users", src);
+                        using var r = read.ExecuteReader();
+                        while (r.Read())
+                        {
+                            using var ins = new SqliteCommand("INSERT OR IGNORE INTO Users(Username,PasswordHash,FullName,Email,Role,IsActive,CreatedDate,FailedLoginAttempts,LockoutUntil)VALUES(@u,@h,@fn,@e,@ro,@a,@cd,@fa,@lu)", conn);
+                            ins.Parameters.AddWithValue("@u", r.GetString(0)); ins.Parameters.AddWithValue("@h", r.GetString(1));
+                            ins.Parameters.AddWithValue("@fn", r.IsDBNull(2) ? "" : r.GetString(2)); ins.Parameters.AddWithValue("@e", r.IsDBNull(3) ? "" : r.GetString(3));
+                            ins.Parameters.AddWithValue("@ro", r.GetString(4)); ins.Parameters.AddWithValue("@a", r.GetInt32(5));
+                            ins.Parameters.AddWithValue("@cd", r.IsDBNull(6) ? "" : r.GetString(6)); ins.Parameters.AddWithValue("@fa", r.IsDBNull(7) ? 0 : r.GetInt32(7));
+                            ins.Parameters.AddWithValue("@lu", r.IsDBNull(8) ? (object)DBNull.Value : r.GetString(8));
+                            imported += ins.ExecuteNonQuery();
+                        }
+                        if (imported > 0) { MasterAudit("SYSTEM", "Users Migrated", Path.GetFileName(db), $"Imported {imported} user(s)"); return; }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
         }
 
         private static void SeedDefault()

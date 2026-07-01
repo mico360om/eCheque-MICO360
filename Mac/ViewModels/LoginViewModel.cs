@@ -7,7 +7,7 @@ namespace eCheque.MICO360.Mac.ViewModels
     public class LoginViewModel : ViewModelBase
     {
         string _username = "", _error = "", _email = "", _otpCode = "", _status = "";
-        bool _otpMode, _otpSent;
+        bool _otpMode, _otpSent, _sending;
 
         public string Username { get => _username; set => Set(ref _username, value); }
         public string ErrorMessage { get => _error; set => Set(ref _error, value); }
@@ -26,8 +26,8 @@ namespace eCheque.MICO360.Mac.ViewModels
 
         public LoginViewModel()
         {
-            UseOtpCommand      = new RelayCommand(() => { OtpMode = true; ErrorMessage = ""; StatusMessage = ""; });
-            UsePasswordCommand = new RelayCommand(() => { OtpMode = false; OtpSent = false; ErrorMessage = ""; StatusMessage = ""; });
+            UseOtpCommand      = new RelayCommand(() => { OtpMode = true;  ResetOtp(); });
+            UsePasswordCommand = new RelayCommand(() => { OtpMode = false; ResetOtp(); });
             SendOtpCommand     = new RelayCommand(async () => await SendOtp());
             VerifyOtpCommand   = new RelayCommand(VerifyOtp);
         }
@@ -42,15 +42,24 @@ namespace eCheque.MICO360.Mac.ViewModels
             CompleteLogin();
         }
 
+        void ResetOtp() { Email = ""; OtpCode = ""; OtpSent = false; ErrorMessage = ""; StatusMessage = ""; }
+
         async Task SendOtp()
         {
+            if (_sending) return;
             ErrorMessage = ""; StatusMessage = "";
             if (string.IsNullOrWhiteSpace(Email)) { ErrorMessage = "Please enter your email."; return; }
+            _sending = true;
             StatusMessage = "Sending code…";
-            var error = await AuthService.RequestEmailOtpAsync(Email);
-            if (error != null) { ErrorMessage = error; StatusMessage = ""; return; }
-            OtpSent = true;
-            StatusMessage = "A login code has been emailed to you. Enter it below.";
+            try
+            {
+                var error = await AuthService.RequestEmailOtpAsync(Email);
+                if (error != null) { ErrorMessage = error; StatusMessage = ""; return; }
+                OtpSent = true;
+                StatusMessage = "A login code has been emailed to you. Enter it below.";
+            }
+            catch (Exception ex) { ErrorMessage = $"Could not send the code: {ex.Message}"; StatusMessage = ""; }
+            finally { _sending = false; }
         }
 
         void VerifyOtp()

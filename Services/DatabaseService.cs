@@ -15,19 +15,9 @@ namespace eCheque.MICO360.Services
             DbPath = dbPath ?? Path.Combine(folder, "echeque.db");
 
             SecurityService.Init();
-            try
-            {
-                SecurityService.EnsureEncrypted(DbPath);
-                _cs = SecurityService.ConnectionString(DbPath);
-                CreateTables();
-            }
-            catch
-            {
-                // Last-resort fallback: open without encryption so the user is never locked out.
-                SecurityService.Disable("DatabaseService.Initialize failed with key");
-                _cs = SecurityService.ConnectionString(DbPath);
-                CreateTables();
-            }
+            // Per-database resolution: encrypts/opens THIS db, never affecting other databases.
+            _cs = SecurityService.ResolveConnectionString(DbPath);
+            CreateTables();
             MigrateSchema();
             SeedData();
         }
@@ -70,13 +60,8 @@ namespace eCheque.MICO360.Services
         private static void SeedData()
         {
             using var conn = GetConnection();
-            using (var c = new SqliteCommand("SELECT COUNT(*) FROM Users", conn))
-                if (Convert.ToInt32(c.ExecuteScalar()) == 0)
-                {
-                    var h = BCrypt.Net.BCrypt.HashPassword("Admin@123");
-                    using var ins = new SqliteCommand("INSERT INTO Users(Username,PasswordHash,FullName,Role,IsActive,CreatedDate,FailedLoginAttempts)VALUES('admin',@h,'System Administrator','Admin',1,@d,0)", conn);
-                    ins.Parameters.AddWithValue("@h", h); ins.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); ins.ExecuteNonQuery();
-                }
+            // NOTE: user accounts live in the central master DB now, so we do NOT seed an admin into
+            // per-company databases (that would ship default credentials in every company file).
             using (var c = new SqliteCommand("SELECT COUNT(*) FROM Banks", conn))
                 if (Convert.ToInt32(c.ExecuteScalar()) == 0)
                     foreach (var b in new[]{"Bank Muscat","National Bank of Oman","Sohar International","Bank Dhofar","HSBC Oman","Oman Arab Bank","First Abu Dhabi Bank"})

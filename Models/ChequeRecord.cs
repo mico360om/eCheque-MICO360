@@ -50,6 +50,7 @@ namespace eCheque.MICO360.Models
         /// <summary>A post-dated cheque: issued/ready, dated in the future, and not yet settled/cancelled.</summary>
         public bool IsPdc => IsOpen && ChequeDate.Date > DateTime.Today;
         public int DaysUntilDue => (ChequeDate.Date - DateTime.Today).Days;
-        public string DueLabel => !IsPdc ? "" : DaysUntilDue == 0 ? "Due today" : DaysUntilDue < 0 ? $"Overdue {-DaysUntilDue}d" : $"In {DaysUntilDue}d";
+        // Shown for any open cheque so "Due today" / "Overdue Nd" are reachable, not just future dates.
+        public string DueLabel => !IsOpen ? "" : DaysUntilDue == 0 ? "Due today" : DaysUntilDue < 0 ? $"Overdue {-DaysUntilDue}d" : $"In {DaysUntilDue}d";
     }
 }

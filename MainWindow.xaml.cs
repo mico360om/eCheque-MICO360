@@ -106,6 +106,17 @@ namespace eCheque.MICO360
         {
             if (_initializingCompanies) return;
             if (CmbCompanySwitch.SelectedItem is not Models.Company c || c.Id == CompanyService.CurrentCompanyId) return;
+
+            if (MessageBox.Show($"Switch to '{c.Name}'?\n\nAny unsaved changes on the current screen will be discarded.",
+                    "Switch Company", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                // Revert the dropdown to the current company without re-triggering a switch.
+                _initializingCompanies = true;
+                foreach (var item in CmbCompanySwitch.Items)
+                    if (item is Models.Company cc && cc.Id == CompanyService.CurrentCompanyId) { CmbCompanySwitch.SelectedItem = item; break; }
+                _initializingCompanies = false;
+                return;
+            }
             try
             {
                 CompanyService.OpenCompany(c.Id, c.Name);

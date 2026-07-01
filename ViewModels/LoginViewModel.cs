@@ -31,8 +31,8 @@ namespace eCheque.MICO360.ViewModels
         public LoginViewModel()
         {
             LoginCommand      = new RelayCommand<string>(DoLogin);
-            UseOtpCommand     = new RelayCommand(() => { OtpMode = true; ErrorMessage = ""; StatusMessage = ""; });
-            UsePasswordCommand= new RelayCommand(() => { OtpMode = false; OtpSent = false; ErrorMessage = ""; StatusMessage = ""; });
+            UseOtpCommand     = new RelayCommand(() => { OtpMode = true;  ResetOtp(); });
+            UsePasswordCommand= new RelayCommand(() => { OtpMode = false; ResetOtp(); });
             SendOtpCommand    = new RelayCommand(async () => await SendOtp());
             VerifyOtpCommand  = new RelayCommand(VerifyOtp);
         }
@@ -54,8 +54,11 @@ namespace eCheque.MICO360.ViewModels
             finally { IsLoading = false; }
         }
 
+        void ResetOtp() { Email = ""; OtpCode = ""; OtpSent = false; ErrorMessage = ""; StatusMessage = ""; }
+
         async Task SendOtp()
         {
+            if (IsLoading) return;                       // ignore rapid double-clicks
             ErrorMessage = ""; StatusMessage = "";
             if (string.IsNullOrWhiteSpace(Email)) { ErrorMessage = "Please enter your email."; return; }
             IsLoading = true;
@@ -67,6 +70,7 @@ namespace eCheque.MICO360.ViewModels
                 OtpSent = true;
                 StatusMessage = "A login code has been emailed to you. Enter it below.";
             }
+            catch (Exception ex) { ErrorMessage = $"Could not send the code: {ex.Message}"; StatusMessage = ""; }
             finally { IsLoading = false; }
         }
 

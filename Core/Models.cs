@@ -49,7 +49,7 @@ namespace eCheque.MICO360.Core.Models
         public bool IsOpen => Status is "Printed" or "Reprinted" or "Presented" or "ReadyToPrint";
         public bool IsPdc => IsOpen && ChequeDate.Date > DateTime.Today;
         public int DaysUntilDue => (ChequeDate.Date - DateTime.Today).Days;
-        public string DueLabel => !IsPdc ? "" : DaysUntilDue == 0 ? "Due today" : DaysUntilDue < 0 ? $"Overdue {-DaysUntilDue}d" : $"In {DaysUntilDue}d";
+        public string DueLabel => !IsOpen ? "" : DaysUntilDue == 0 ? "Due today" : DaysUntilDue < 0 ? $"Overdue {-DaysUntilDue}d" : $"In {DaysUntilDue}d";
     }
 
     public class ChequeProfile

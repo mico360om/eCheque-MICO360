@@ -52,9 +52,20 @@ namespace eCheque.MICO360.Services
                 req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
                 using var resp = await Http.SendAsync(req);
-                if (resp.IsSuccessStatusCode) return (true, null);
                 var body = await resp.Content.ReadAsStringAsync();
-                return (false, $"Mailjet error {(int)resp.StatusCode}: {body}");
+                if (!resp.IsSuccessStatusCode)
+                    return (false, $"Mailjet error {(int)resp.StatusCode}: {body}");
+
+                // Mailjet v3.1 returns HTTP 200 even when a message fails — check per-message Status.
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    var status = doc.RootElement.GetProperty("Messages")[0].GetProperty("Status").GetString();
+                    if (!string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
+                        return (false, $"Mailjet did not send the message (status: {status}). Check the From address is a verified sender.");
+                }
+                catch { /* unparseable but 2xx — assume accepted */ }
+                return (true, null);
             }
             catch (Exception ex) { return (false, ex.Message); }
         }

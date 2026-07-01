@@ -45,9 +45,17 @@ namespace eCheque.MICO360.Core.Services
                     "Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($"{apiKey}:{secretKey}")));
                 req.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
                 using var resp = await Http.SendAsync(req);
-                if (resp.IsSuccessStatusCode) return (true, null);
                 var body = await resp.Content.ReadAsStringAsync();
-                return (false, $"Mailjet error {(int)resp.StatusCode}: {body}");
+                if (!resp.IsSuccessStatusCode) return (false, $"Mailjet error {(int)resp.StatusCode}: {body}");
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    var status = doc.RootElement.GetProperty("Messages")[0].GetProperty("Status").GetString();
+                    if (!string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
+                        return (false, $"Mailjet did not send the message (status: {status}). Check the From address is a verified sender.");
+                }
+                catch { }
+                return (true, null);
             }
             catch (Exception ex) { return (false, ex.Message); }
         }
