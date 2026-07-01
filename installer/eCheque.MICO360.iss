@@ -28,9 +28,11 @@ SolidCompression=yes
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-; Per-user install so no admin/UAC prompt is required.
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+; Machine-wide install into Program Files (requires admin / UAC).
+PrivilegesRequired=admin
+; Close a running instance during an update so files aren't locked.
+CloseApplications=yes
+RestartApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

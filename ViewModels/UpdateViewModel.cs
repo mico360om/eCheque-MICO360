@@ -91,7 +91,7 @@ namespace eCheque.MICO360.ViewModels
                 StatusMessage = "Update ready. The application will now restart to finish installing.";
 
                 if (System.Windows.MessageBox.Show(
-                        $"Update {_info.LatestVersion} downloaded and verified.\n\nThe app will close and restart to apply it. Your data, settings and records are kept safe.\n\nContinue?",
+                        $"Update {_info.LatestVersion} downloaded and verified.\n\nThe app will close and the installer will run to apply it (you may see a Windows admin prompt). Your data, settings and records are kept safe.\n\nContinue?",
                         "Install Update", System.Windows.MessageBoxButton.OKCancel, System.Windows.MessageBoxImage.Information)
                     != System.Windows.MessageBoxResult.OK)
                 {

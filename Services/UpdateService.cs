@@ -69,7 +69,7 @@ namespace eCheque.MICO360.Services
             info.Mandatory = body.Contains("[mandatory]", StringComparison.OrdinalIgnoreCase)
                           || body.Contains("mandatory: true", StringComparison.OrdinalIgnoreCase);
 
-            // Pick the first .zip asset as the update package; capture a .sha256 companion if present.
+            // Pick the Windows installer (Setup*.exe) as the update package; capture its .sha256 companion.
             string shaFromAsset = "";
             if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
             {
@@ -78,7 +78,8 @@ namespace eCheque.MICO360.Services
                     var name = a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
                     var url  = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() ?? "" : "";
                     var size = a.TryGetProperty("size", out var s) ? s.GetInt64() : 0;
-                    if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(info.DownloadUrl))
+                    if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && name.Contains("Setup", StringComparison.OrdinalIgnoreCase)
+                        && string.IsNullOrEmpty(info.DownloadUrl))
                     { info.DownloadUrl = url; info.AssetName = name; info.SizeBytes = size; }
                     else if (name.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(url))
                     { try { shaFromAsset = (await Http.GetStringAsync(url)).Trim().Split(' ')[0]; } catch { } }
@@ -181,57 +182,18 @@ namespace eCheque.MICO360.Services
         }
 
         /// <summary>
-        /// Writes an external updater script that waits for this process to exit, backs up the current
-        /// app folder, extracts the new package over it, relaunches the app, and rolls back on failure.
-        /// Then starts the script and signals the caller to shut down.
+        /// Launches the downloaded installer to apply the update, then signals the caller to shut down
+        /// so the installer can replace files. The installer (Inno Setup) closes any running instance,
+        /// installs over the existing version, and relaunches the app when finished.
         /// </summary>
-        public static void ApplyAndRestart(string zipPath)
+        public static void ApplyAndRestart(string installerPath)
         {
-            var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName;
-            var appDir  = Path.GetDirectoryName(exePath)!;
-            var pid     = Environment.ProcessId;
-            var workDir = Path.Combine(Path.GetTempPath(), "eCheque_Update");
-            Directory.CreateDirectory(workDir);
-            var backupDir = Path.Combine(workDir, "backup");
-            var scriptPath = Path.Combine(workDir, "apply_update.cmd");
-
-            // %~dp0 self-deletes at the end. robocopy exit codes < 8 are success.
-            var script = $@"@echo off
-setlocal
-echo {DateTime.Now:yyyy-MM-dd HH:mm:ss} ^| Applying update >> ""{LogPath}""
-:waitloop
-tasklist /FI ""PID eq {pid}"" 2>nul | find ""{pid}"" >nul
-if not errorlevel 1 (
-    timeout /t 1 /nobreak >nul
-    goto waitloop
-)
-echo Backing up current version... >> ""{LogPath}""
-if exist ""{backupDir}"" rmdir /s /q ""{backupDir}""
-robocopy ""{appDir}"" ""{backupDir}"" /E /XD ""{backupDir}"" >nul
-echo Extracting update... >> ""{LogPath}""
-powershell -NoProfile -ExecutionPolicy Bypass -Command ""Expand-Archive -LiteralPath '{zipPath}' -DestinationPath '{appDir}' -Force""
-if errorlevel 1 (
-    echo Extraction FAILED — rolling back >> ""{LogPath}""
-    robocopy ""{backupDir}"" ""{appDir}"" /E >nul
-    echo Rollback complete >> ""{LogPath}""
-) else (
-    echo Update applied successfully >> ""{LogPath}""
-)
-start """" ""{exePath}""
-rmdir /s /q ""{backupDir}"" 2>nul
-del ""{zipPath}"" 2>nul
-del ""%~f0"" 2>nul
-";
-            File.WriteAllText(scriptPath, script);
-            Log($"Launching updater script {scriptPath}");
-
+            Log($"Launching installer {installerPath}");
+            // UseShellExecute lets Windows elevate (the installer requests admin) via the normal UAC prompt.
             Process.Start(new ProcessStartInfo
             {
-                FileName = "cmd.exe",
-                Arguments = $"/c \"{scriptPath}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                WorkingDirectory = workDir
+                FileName = installerPath,
+                UseShellExecute = true
             });
         }
     }

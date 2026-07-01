@@ -51,19 +51,6 @@ jobs:
             -p:PublishSingleFile=false `
             -o publish
 
-      - name: Package zip + checksum
-        id: pack
-        shell: pwsh
-        run: |
-          $name = "eCheque-MICO360-${{ steps.ver.outputs.version }}-win-x64.zip"
-          Compress-Archive -Path publish/* -DestinationPath $name -Force
-          $hash = (Get-FileHash $name -Algorithm SHA256).Hash.ToLower()
-          "$hash  $name" | Out-File "$name.sha256" -Encoding ascii
-          echo "asset=$name" >> $env:GITHUB_OUTPUT
-          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
-          echo "Package: $name"
-          echo "SHA256: $hash"
-
       - name: Build Windows installer (Inno Setup)
         id: installer
         shell: pwsh
@@ -75,6 +62,7 @@ jobs:
           $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
           "$hash  $(Split-Path $setup -Leaf)" | Out-File "$setup.sha256" -Encoding ascii
           echo "setup=$setup" >> $env:GITHUB_OUTPUT
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
           echo "Installer: $setup ($hash)"
 
       - name: Create / update GitHub Release
@@ -87,10 +75,10 @@ jobs:
 
             Automated release build.
 
-            **Windows installer:** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
-            **Portable zip:** `${{ steps.pack.outputs.asset }}`
+            **Windows installer (complete, all modules included):** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
+            Installs machine-wide into Program Files (admin required). The in-app updater downloads and runs this installer.
 
-            Zip SHA256: ${{ steps.pack.outputs.sha256 }}
+            SHA256: ${{ steps.installer.outputs.sha256 }}
 
             <!-- Add [mandatory] anywhere in these notes to force the update. -->
           files: |
