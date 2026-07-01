@@ -38,9 +38,14 @@ namespace eCheque.MICO360.Views
             };
         }
 
-        private Canvas BuildChequeCanvas(double w, double h)
+        private Canvas BuildChequeCanvas(double w, double h, bool includeBackground = false)
         {
             const double pxPerMm = 96.0 / 25.4;
+            // New visual layout: render only the entered data at the saved field positions (plus the
+            // scanned template on screen only). Falls back to the classic decorative cheque for old profiles.
+            if (ChequeRenderer.HasLayout(_profile))
+                return ChequeRenderer.Build(_profile, _cheque, pxPerMm, includeBackground);
+
             var canvas = new Canvas { Width = w, Height = h, Background = Brushes.White, ClipToBounds = true };
 
             // Header band
@@ -104,7 +109,7 @@ namespace eCheque.MICO360.Views
                 double w = _profile.ChequeWidth  * pxPerMm;
                 double h = _profile.ChequeHeight * pxPerMm;
 
-                var canvas = BuildChequeCanvas(w, h);
+                var canvas = BuildChequeCanvas(w, h, includeBackground: true);
                 canvas.Measure(new Size(w, h));
                 canvas.Arrange(new Rect(0, 0, w, h));
                 canvas.UpdateLayout();

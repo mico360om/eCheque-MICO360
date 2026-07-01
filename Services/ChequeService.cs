@@ -281,7 +281,7 @@ namespace eCheque.MICO360.Services
 
         static ChequeRecord MapCheque(SqliteDataReader r)=>new(){Id=I(r,"Id"),ChequeNumber=S(r,"ChequeNumber"),ChequeDate=DateTime.TryParse(S(r,"ChequeDate"),out var cd)?cd:DateTime.Today,PayeeName=S(r,"PayeeName"),Amount=(decimal)D(r,"Amount"),AmountInWords=S(r,"AmountInWords"),BankName=S(r,"BankName"),AccountName=S(r,"AccountName"),AccountNumber=S(r,"AccountNumber"),ProfileId=I(r,"ProfileId"),ProfileName=S(r,"ProfileName"),Currency=S(r,"Currency"),Remarks=S(r,"Remarks"),ReferenceNumber=S(r,"ReferenceNumber"),InvoiceNumber=S(r,"InvoiceNumber"),VoucherNumber=S(r,"VoucherNumber"),PreparedBy=S(r,"PreparedBy"),ApprovedBy=S(r,"ApprovedBy"),Department=S(r,"Department"),PaymentCategory=S(r,"PaymentCategory"),Status=S(r,"Status"),CreatedBy=S(r,"CreatedBy"),CreatedDate=DateTime.TryParse(S(r,"CreatedDate"),out var crd)?crd:DateTime.Now,PrintCount=I(r,"PrintCount"),PdfFilePath=S(r,"PdfFilePath"),CancellationReason=S(r,"CancellationReason"),PrintedDate=DateTime.TryParse(S(r,"PrintedDate"),out var prd)?prd:null,PresentedDate=DateTime.TryParse(S(r,"PresentedDate"),out var psd)?psd:null,ClearedDate=DateTime.TryParse(S(r,"ClearedDate"),out var cld)?cld:null,BounceReason=S(r,"BounceReason")};
 
-        static ChequeProfile MapProfile(SqliteDataReader r)=>new(){Id=I(r,"Id"),Name=S(r,"Name"),BankName=S(r,"BankName"),AccountName=S(r,"AccountName"),AccountNumber=S(r,"AccountNumber"),ChequeWidth=D(r,"ChequeWidth"),ChequeHeight=D(r,"ChequeHeight"),DateX=D(r,"DateX"),DateY=D(r,"DateY"),PayeeX=D(r,"PayeeX"),PayeeY=D(r,"PayeeY"),AmountNumX=D(r,"AmountNumX"),AmountNumY=D(r,"AmountNumY"),AmountWordsX=D(r,"AmountWordsX"),AmountWordsY=D(r,"AmountWordsY"),ChequeNumX=D(r,"ChequeNumX"),ChequeNumY=D(r,"ChequeNumY"),FontFamily=S(r,"FontFamily"),FontSize=D(r,"FontSize"),IsBold=I(r,"IsBold")==1,PrintOffsetX=D(r,"PrintOffsetX"),PrintOffsetY=D(r,"PrintOffsetY"),PaperSize=S(r,"PaperSize"),IsActive=I(r,"IsActive")==1,LastChequeNumber=I(r,"LastChequeNumber")};
+        static ChequeProfile MapProfile(SqliteDataReader r)=>new(){Id=I(r,"Id"),Name=S(r,"Name"),BankName=S(r,"BankName"),AccountName=S(r,"AccountName"),AccountNumber=S(r,"AccountNumber"),ChequeWidth=D(r,"ChequeWidth"),ChequeHeight=D(r,"ChequeHeight"),DateX=D(r,"DateX"),DateY=D(r,"DateY"),PayeeX=D(r,"PayeeX"),PayeeY=D(r,"PayeeY"),AmountNumX=D(r,"AmountNumX"),AmountNumY=D(r,"AmountNumY"),AmountWordsX=D(r,"AmountWordsX"),AmountWordsY=D(r,"AmountWordsY"),ChequeNumX=D(r,"ChequeNumX"),ChequeNumY=D(r,"ChequeNumY"),FontFamily=S(r,"FontFamily"),FontSize=D(r,"FontSize"),IsBold=I(r,"IsBold")==1,PrintOffsetX=D(r,"PrintOffsetX"),PrintOffsetY=D(r,"PrintOffsetY"),PaperSize=S(r,"PaperSize"),IsActive=I(r,"IsActive")==1,LastChequeNumber=I(r,"LastChequeNumber"),BackgroundImage=S(r,"BackgroundImage"),FieldsJson=S(r,"FieldsJson")};
         public static List<Models.PrintHistory> GetPrintHistory(int? chequeId = null, int limit = 300)
         {
             var list = new List<Models.PrintHistory>();
@@ -338,6 +338,23 @@ namespace eCheque.MICO360.Services
             cmd.Parameters.AddWithValue("@id",p.Id);
             cmd.ExecuteNonQuery();
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Profile Layout Changed",p.Name);
+        }
+
+        /// <summary>Persists the visual designer output: background image, the full field layout (JSON), and the legacy X/Y for the print fallback.</summary>
+        public static void SaveLayout(ChequeProfile p)
+        {
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SqliteCommand(
+                "UPDATE ChequeProfiles SET BackgroundImage=@bg,FieldsJson=@fj,DateX=@dx,DateY=@dy,PayeeX=@px,PayeeY=@py,AmountNumX=@ax,AmountNumY=@ay,AmountWordsX=@wx,AmountWordsY=@wy,ChequeNumX=@nx,ChequeNumY=@ny WHERE Id=@id", conn);
+            cmd.Parameters.AddWithValue("@bg", p.BackgroundImage ?? ""); cmd.Parameters.AddWithValue("@fj", p.FieldsJson ?? "");
+            cmd.Parameters.AddWithValue("@dx",p.DateX); cmd.Parameters.AddWithValue("@dy",p.DateY);
+            cmd.Parameters.AddWithValue("@px",p.PayeeX); cmd.Parameters.AddWithValue("@py",p.PayeeY);
+            cmd.Parameters.AddWithValue("@ax",p.AmountNumX); cmd.Parameters.AddWithValue("@ay",p.AmountNumY);
+            cmd.Parameters.AddWithValue("@wx",p.AmountWordsX); cmd.Parameters.AddWithValue("@wy",p.AmountWordsY);
+            cmd.Parameters.AddWithValue("@nx",p.ChequeNumX); cmd.Parameters.AddWithValue("@ny",p.ChequeNumY);
+            cmd.Parameters.AddWithValue("@id",p.Id);
+            cmd.ExecuteNonQuery();
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username??"","Cheque Layout Saved",p.Name);
         }
 }
 }

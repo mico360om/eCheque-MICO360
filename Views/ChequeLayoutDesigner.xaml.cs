@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Shapes;
 using eCheque.MICO360.Models;
@@ -13,29 +13,36 @@ using ColorConverter = System.Windows.Media.ColorConverter;
 using SolidColorBrush = System.Windows.Media.SolidColorBrush;
 using Brushes = System.Windows.Media.Brushes;
 using DoubleCollection = System.Windows.Media.DoubleCollection;
-using Rectangle = System.Windows.Shapes.Rectangle;
+using Line = System.Windows.Shapes.Line;
 using Panel = System.Windows.Controls.Panel;
 using Thickness = System.Windows.Thickness;
+using TextBlock = System.Windows.Controls.TextBlock;
+using Border = System.Windows.Controls.Border;
+using ComboBox = System.Windows.Controls.ComboBox;
+using CheckBox = System.Windows.Controls.CheckBox;
+using PrintDialog = System.Windows.Controls.PrintDialog;
+using Viewbox = System.Windows.Controls.Viewbox;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace eCheque.MICO360.Views
 {
     public partial class ChequeLayoutDesigner : Window
     {
-        private readonly ChequeProfile _profile;
-        private readonly ChequeProfile _original;
-        private double _scale = 3.0;
+        readonly ChequeProfile _profile;
+        readonly string _originalFields, _originalImage;
+        List<ChequeField> _fields;
+        ChequeField? _selected;
+        Border? _selBox;
+        double _scale = 3.2;
+        bool _dragging, _suppress;
+        Border? _dragEl; Point _dragOffset;
 
-        private bool _dragging;
-        private Border? _dragEl;
-        private Point _dragOffset;
+        static readonly string[] FontChoices = { "Arial", "Times New Roman", "Calibri", "Courier New", "Verdana", "Tahoma", "Segoe UI" };
 
-        private static readonly (string Tag, string Label, string Color)[] Fields =
+        static readonly (string Key, string Label)[] Addable =
         {
-            ("Date",      "📅 Date",         "#1565C0"),
-            ("Payee",     "👤 Pay to:",       "#2E7D32"),
-            ("Amount",    "💰 Amount (OMR)",   "#E65100"),
-            ("Words",     "📝 Amount in Words","#6A1B9A"),
-            ("ChequeNum", "# Cheque No.",     "#8B1818")
+            ("AccountNumber", "Account Number"), ("ChequeNumber", "Cheque Number"),
+            ("Signature", "Signature line"), ("Custom", "Custom field…")
         };
 
         public bool Saved { get; private set; }
@@ -44,124 +51,103 @@ namespace eCheque.MICO360.Views
         {
             InitializeComponent();
             _profile = profile;
-            _original = Clone(profile);
-            TxtProfileName.Text = $"{profile.Name} — {profile.BankName}";
-            RunScale.Text = _scale.ToString("F1");
-            Loaded += (s, e) => BuildCanvas();
+            _fields = ChequeLayout.Parse(profile);
+            _originalFields = ChequeLayout.Serialize(_fields);
+            _originalImage = profile.BackgroundImage ?? "";
+
+            TxtProfileName.Text = $"{profile.Name} — {profile.BankName}  ({profile.ChequeWidth:N0} × {profile.ChequeHeight:N0} mm)";
+            foreach (var f in FontChoices) CmbFont.Items.Add(f);
+            foreach (var a in Addable) CmbAddField.Items.Add(new ComboBoxItem { Content = a.Label, Tag = a.Key });
+            CmbAddField.SelectedIndex = 0;
+            LstFields.ItemsSource = _fields;
+
+            Loaded += (s, e) => { LoadBackground(); BuildCanvas(); };
         }
 
+        // ── Background image ──
+        void LoadBackground() => BgImage.Source = ChequeRenderer.DecodeImage(_profile.BackgroundImage);
+
+        void BtnUpload_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog { Filter = "Images (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp", Title = "Select a scanned cheque image" };
+            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                var bytes = System.IO.File.ReadAllBytes(dlg.FileName);
+                if (bytes.Length > 4_000_000) { MessageBox.Show("Please use an image under 4 MB.", "Image too large"); return; }
+                _profile.BackgroundImage = Convert.ToBase64String(bytes);
+                LoadBackground();
+                BuildCanvas();
+                TxtPosition.Text = "Cheque image loaded. Drag each field onto the correct spot.";
+            }
+            catch (Exception ex) { MessageBox.Show($"Could not load image: {ex.Message}", "Error"); }
+        }
+
+        void BtnRemoveImage_Click(object sender, RoutedEventArgs e)
+        {
+            _profile.BackgroundImage = "";
+            BgImage.Source = null;
+            BuildCanvas();
+        }
+
+        // ── Canvas ──
         void BuildCanvas()
         {
             ChequeCanvas.Children.Clear();
-            ChequeCanvas.Width  = _profile.ChequeWidth  * _scale;
-            ChequeCanvas.Height = _profile.ChequeHeight * _scale;
+            double w = _profile.ChequeWidth * _scale, h = _profile.ChequeHeight * _scale;
+            ChequeCanvas.Width = w; ChequeCanvas.Height = h;
+            BgImage.Width = w; BgImage.Height = h;
 
-            // Cheque background lines (MICR zone)
-            var micrRect = new Rectangle
+            if (ChkGrid.IsChecked == true)
             {
-                Width = ChequeCanvas.Width, Height = 12 * _scale,
-                Fill = new SolidColorBrush(Color.FromRgb(0xF9, 0xF0, 0xF0)),
-                Stroke = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
-                StrokeThickness = 0.5
-            };
-            Canvas.SetLeft(micrRect, 0);
-            Canvas.SetTop(micrRect, (_profile.ChequeHeight - 12) * _scale);
-            ChequeCanvas.Children.Add(micrRect);
-
-            // Signature line
-            var sigLine = new Line
-            {
-                X1 = (_profile.ChequeWidth - 52) * _scale, Y1 = (_profile.ChequeHeight - 12) * _scale,
-                X2 = (_profile.ChequeWidth - 4)  * _scale, Y2 = (_profile.ChequeHeight - 12) * _scale,
-                Stroke = Brushes.Gray, StrokeThickness = 0.8
-            };
-            ChequeCanvas.Children.Add(sigLine);
-
-            // Add grid lines every 10mm
-            for (int x = 0; x <= (int)_profile.ChequeWidth; x += 10)
-            {
-                var gl = new Line { X1 = x * _scale, Y1 = 0, X2 = x * _scale, Y2 = ChequeCanvas.Height,
-                    Stroke = new SolidColorBrush(Color.FromArgb(0x18, 0, 0, 0)), StrokeThickness = 0.5, StrokeDashArray = new DoubleCollection { 2, 4 } };
-                ChequeCanvas.Children.Add(gl);
-                if (x > 0)
+                for (int x = 0; x <= (int)_profile.ChequeWidth; x += 10)
                 {
-                    var lbl = new TextBlock { Text = $"{x}", FontSize = 7, Foreground = Brushes.LightGray };
-                    Canvas.SetLeft(lbl, x * _scale + 1); Canvas.SetTop(lbl, 1);
-                    ChequeCanvas.Children.Add(lbl);
+                    ChequeCanvas.Children.Add(new Line { X1 = x * _scale, Y1 = 0, X2 = x * _scale, Y2 = h, Stroke = new SolidColorBrush(Color.FromArgb(0x22, 0, 0, 0)), StrokeThickness = 0.5, StrokeDashArray = new DoubleCollection { 2, 4 } });
+                    if (x > 0) { var lbl = new TextBlock { Text = $"{x}", FontSize = 7, Foreground = new SolidColorBrush(Color.FromArgb(0x99, 0, 0, 0)) }; Canvas.SetLeft(lbl, x * _scale + 1); Canvas.SetTop(lbl, 1); ChequeCanvas.Children.Add(lbl); }
                 }
-            }
-            for (int y = 0; y <= (int)_profile.ChequeHeight; y += 10)
-            {
-                var gl = new Line { X1 = 0, Y1 = y * _scale, X2 = ChequeCanvas.Width, Y2 = y * _scale,
-                    Stroke = new SolidColorBrush(Color.FromArgb(0x18, 0, 0, 0)), StrokeThickness = 0.5, StrokeDashArray = new DoubleCollection { 2, 4 } };
-                ChequeCanvas.Children.Add(gl);
+                for (int y = 0; y <= (int)_profile.ChequeHeight; y += 10)
+                    ChequeCanvas.Children.Add(new Line { X1 = 0, Y1 = y * _scale, X2 = w, Y2 = y * _scale, Stroke = new SolidColorBrush(Color.FromArgb(0x22, 0, 0, 0)), StrokeThickness = 0.5, StrokeDashArray = new DoubleCollection { 2, 4 } });
             }
 
-            // Place draggable field labels
-            foreach (var f in Fields)
-            {
-                var (x, y) = GetFieldPosition(f.Tag);
-                AddFieldLabel(f.Tag, f.Label, f.Color, x, y);
-            }
+            foreach (var f in _fields) AddFieldBox(f);
         }
 
-        Border AddFieldLabel(string tag, string label, string colorHex, double xMm, double yMm)
+        void AddFieldBox(ChequeField f)
         {
-            var col = (Color)ColorConverter.ConvertFromString(colorHex);
-            var border = new Border
+            var col = ColorFor(f.Key);
+            var box = new Border
             {
-                Tag = tag,
-                Background = new SolidColorBrush(Color.FromArgb(0x28, col.R, col.G, col.B)),
-                BorderBrush = new SolidColorBrush(col),
-                BorderThickness = new Thickness(1.5),
+                Tag = f,
+                Background = new SolidColorBrush(Color.FromArgb(f.Enabled ? (byte)0x30 : (byte)0x14, col.R, col.G, col.B)),
+                BorderBrush = new SolidColorBrush(f.Enabled ? col : Color.FromArgb(0x88, col.R, col.G, col.B)),
+                BorderThickness = new Thickness(_selected == f ? 2.2 : 1.4),
                 CornerRadius = new CornerRadius(3),
-                Padding = new Thickness(8, 4, 8, 4),
+                Padding = new Thickness(6, 3, 6, 3),
                 Cursor = Cursors.SizeAll
             };
-            border.Child = new TextBlock
-            {
-                Text = label,
-                Foreground = new SolidColorBrush(col),
-                FontWeight = FontWeights.SemiBold,
-                FontSize = 11
-            };
-            Canvas.SetLeft(border, xMm * _scale);
-            Canvas.SetTop(border,  yMm * _scale);
-            Panel.SetZIndex(border, 10);
-            border.MouseLeftButtonDown += Field_MouseDown;
-            ChequeCanvas.Children.Add(border);
-            return border;
+            box.Child = new TextBlock { Text = (f.Enabled ? "" : "○ ") + f.Label, Foreground = new SolidColorBrush(col), FontWeight = FontWeights.SemiBold, FontSize = 11 };
+            Canvas.SetLeft(box, f.X * _scale); Canvas.SetTop(box, f.Y * _scale);
+            Panel.SetZIndex(box, _selected == f ? 100 : 10);
+            box.MouseLeftButtonDown += Field_MouseDown;
+            ChequeCanvas.Children.Add(box);
+            if (_selected == f) _selBox = box;
         }
 
-        (double x, double y) GetFieldPosition(string tag) => tag switch
+        static Color ColorFor(string key) => (Color)ColorConverter.ConvertFromString(key switch
         {
-            "Date"      => (_profile.DateX,       _profile.DateY),
-            "Payee"     => (_profile.PayeeX,      _profile.PayeeY),
-            "Amount"    => (_profile.AmountNumX,  _profile.AmountNumY),
-            "Words"     => (_profile.AmountWordsX,_profile.AmountWordsY),
-            "ChequeNum" => (_profile.ChequeNumX,  _profile.ChequeNumY),
-            _           => (0, 0)
-        };
+            "Date" => "#1565C0", "Payee" => "#2E7D32", "AmountNum" => "#E65100",
+            "AmountWords" => "#6A1B9A", "AccountNumber" => "#00838F", "ChequeNumber" => "#8B1818",
+            "Signature" => "#455A64", _ => "#5D4037"
+        });
 
-        void SetFieldPosition(string tag, double xMm, double yMm)
-        {
-            switch (tag)
-            {
-                case "Date":      _profile.DateX=xMm;      _profile.DateY=yMm;      break;
-                case "Payee":     _profile.PayeeX=xMm;     _profile.PayeeY=yMm;     break;
-                case "Amount":    _profile.AmountNumX=xMm; _profile.AmountNumY=yMm; break;
-                case "Words":     _profile.AmountWordsX=xMm;_profile.AmountWordsY=yMm; break;
-                case "ChequeNum": _profile.ChequeNumX=xMm; _profile.ChequeNumY=yMm; break;
-            }
-        }
-
+        // ── Drag ──
         void Field_MouseDown(object sender, MouseButtonEventArgs e)
         {
             _dragEl = (Border)sender;
             _dragging = true;
             _dragOffset = e.GetPosition(_dragEl);
             _dragEl.CaptureMouse();
-            Panel.SetZIndex(_dragEl, 100);
+            Select((ChequeField)_dragEl.Tag);
             e.Handled = true;
         }
 
@@ -170,11 +156,10 @@ namespace eCheque.MICO360.Views
             if (!_dragging || _dragEl == null) return;
             var pos = e.GetPosition(ChequeCanvas);
             _dragEl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            var newX = Math.Max(0, Math.Min(pos.X - _dragOffset.X, ChequeCanvas.Width  - _dragEl.DesiredSize.Width));
-            var newY = Math.Max(0, Math.Min(pos.Y - _dragOffset.Y, ChequeCanvas.Height - _dragEl.DesiredSize.Height));
-            Canvas.SetLeft(_dragEl, newX);
-            Canvas.SetTop(_dragEl,  newY);
-            TxtPosition.Text = $"{_dragEl.Tag}: X = {newX / _scale:F1} mm,  Y = {newY / _scale:F1} mm";
+            var nx = Math.Max(0, Math.Min(pos.X - _dragOffset.X, ChequeCanvas.Width - _dragEl.DesiredSize.Width));
+            var ny = Math.Max(0, Math.Min(pos.Y - _dragOffset.Y, ChequeCanvas.Height - _dragEl.DesiredSize.Height));
+            Canvas.SetLeft(_dragEl, nx); Canvas.SetTop(_dragEl, ny);
+            TxtPosition.Text = $"{((ChequeField)_dragEl.Tag).Label}:  X = {nx / _scale:F1} mm,  Y = {ny / _scale:F1} mm";
         }
 
         void Canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -182,48 +167,146 @@ namespace eCheque.MICO360.Views
             if (!_dragging || _dragEl == null) return;
             _dragging = false;
             _dragEl.ReleaseMouseCapture();
-            Panel.SetZIndex(_dragEl, 10);
-            var xMm = Math.Round(Canvas.GetLeft(_dragEl) / _scale, 1);
-            var yMm = Math.Round(Canvas.GetTop(_dragEl)  / _scale, 1);
-            SetFieldPosition(_dragEl.Tag?.ToString() ?? "", xMm, yMm);
-            TxtPosition.Text = $"{_dragEl.Tag} placed at  X = {xMm:F1} mm,  Y = {yMm:F1} mm  ✓";
+            var f = (ChequeField)_dragEl.Tag;
+            f.X = Math.Round(Canvas.GetLeft(_dragEl) / _scale, 1);
+            f.Y = Math.Round(Canvas.GetTop(_dragEl) / _scale, 1);
             _dragEl = null;
+            PopulateProps();
+            TxtPosition.Text = $"{f.Label} placed at  X = {f.X:F1} mm,  Y = {f.Y:F1} mm  ✓";
+        }
+
+        // ── Selection + properties ──
+        void Select(ChequeField f)
+        {
+            _selected = f;
+            LstFields.SelectedItem = f;
+            PanelProps.IsEnabled = true;
+            PopulateProps();
+            BuildCanvas();
+        }
+
+        void LstFields_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (LstFields.SelectedItem is ChequeField f && f != _selected) Select(f);
+        }
+
+        void PopulateProps()
+        {
+            if (_selected == null) return;
+            _suppress = true;
+            ChkEnabled.IsChecked = _selected.Enabled;
+            TxtLabel.Text = _selected.IsCustom ? _selected.CustomText : _selected.Label;
+            CmbFont.SelectedItem = FontChoices.Contains(_selected.FontFamily) ? _selected.FontFamily : "Arial";
+            TxtSize.Text = _selected.FontSize.ToString("0.#");
+            TxtWidth.Text = _selected.Width.ToString("0.#");
+            TxtX.Text = _selected.X.ToString("0.#");
+            TxtY.Text = _selected.Y.ToString("0.#");
+            CmbAlign.SelectedIndex = _selected.Align switch { "Center" => 1, "Right" => 2, _ => 0 };
+            ChkBold.IsChecked = _selected.Bold;
+            BtnDeleteField.Visibility = Visibility.Visible;
+            _suppress = false;
+        }
+
+        void Prop_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_suppress || _selected == null) return;
+            _selected.Enabled = ChkEnabled.IsChecked == true;
+            if (_selected.IsCustom) { _selected.CustomText = TxtLabel.Text; _selected.Label = string.IsNullOrWhiteSpace(TxtLabel.Text) ? "Custom" : TxtLabel.Text; }
+            _selected.FontFamily = CmbFont.SelectedItem as string ?? "Arial";
+            if (double.TryParse(TxtSize.Text, out var sz) && sz > 0) _selected.FontSize = sz;
+            if (double.TryParse(TxtWidth.Text, out var wd) && wd > 0) _selected.Width = wd;
+            if (double.TryParse(TxtX.Text, out var xx)) _selected.X = xx;
+            if (double.TryParse(TxtY.Text, out var yy)) _selected.Y = yy;
+            _selected.Align = CmbAlign.SelectedIndex switch { 1 => "Center", 2 => "Right", _ => "Left" };
+            _selected.Bold = ChkBold.IsChecked == true;
+            LstFields.Items.Refresh();
+            BuildCanvas();
+        }
+
+        // ── Add / delete fields ──
+        void BtnAddField_Click(object sender, RoutedEventArgs e)
+        {
+            if (CmbAddField.SelectedItem is not ComboBoxItem item) return;
+            var key = item.Tag?.ToString() ?? "Custom";
+            ChequeField f;
+            if (key == "Custom")
+                f = new ChequeField { Key = "Custom", Label = "Custom", IsCustom = true, CustomText = "Text", X = 20, Y = 20, Enabled = true, FontFamily = "Arial", FontSize = 11 };
+            else
+            {
+                if (_fields.Any(x => x.Key == key)) { MessageBox.Show($"{item.Content} is already on the cheque.", "Field exists"); return; }
+                var label = Addable.First(a => a.Key == key).Label;
+                f = new ChequeField { Key = key, Label = label, X = 20, Y = 20, Enabled = true, FontFamily = "Arial", FontSize = 11 };
+            }
+            _fields.Add(f);
+            LstFields.Items.Refresh();
+            Select(f);
+        }
+
+        void BtnDeleteField_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selected == null) return;
+            _fields.Remove(_selected);
+            _selected = null; _selBox = null;
+            PanelProps.IsEnabled = false;
+            LstFields.Items.Refresh();
+            BuildCanvas();
+        }
+
+        // ── Zoom / grid ──
+        void BtnZoomIn_Click(object sender, RoutedEventArgs e) { _scale = Math.Min(8, _scale + 0.6); AfterZoom(); }
+        void BtnZoomOut_Click(object sender, RoutedEventArgs e) { _scale = Math.Max(1.4, _scale - 0.6); AfterZoom(); }
+        void AfterZoom() { TxtZoom.Text = $"{_scale / 3.2 * 100:0}%"; BuildCanvas(); }
+        void ChkGrid_Click(object sender, RoutedEventArgs e) => BuildCanvas();
+
+        // ── Test print / save / cancel ──
+        void SyncProfile()
+        {
+            // keep legacy X/Y in sync for the fallback print path
+            void Sync(string key, ref double x, ref double y) { var f = _fields.FirstOrDefault(z => z.Key == key); if (f != null) { x = f.X; y = f.Y; } }
+            double dx = _profile.DateX, dy = _profile.DateY; Sync("Date", ref dx, ref dy); _profile.DateX = dx; _profile.DateY = dy;
+            double px = _profile.PayeeX, py = _profile.PayeeY; Sync("Payee", ref px, ref py); _profile.PayeeX = px; _profile.PayeeY = py;
+            double ax = _profile.AmountNumX, ay = _profile.AmountNumY; Sync("AmountNum", ref ax, ref ay); _profile.AmountNumX = ax; _profile.AmountNumY = ay;
+            double wx = _profile.AmountWordsX, wy = _profile.AmountWordsY; Sync("AmountWords", ref wx, ref wy); _profile.AmountWordsX = wx; _profile.AmountWordsY = wy;
+            double nx = _profile.ChequeNumX, ny = _profile.ChequeNumY; Sync("ChequeNumber", ref nx, ref ny); _profile.ChequeNumX = nx; _profile.ChequeNumY = ny;
+            _profile.FieldsJson = ChequeLayout.Serialize(_fields);
+        }
+
+        void BtnTestPrint_Click(object sender, RoutedEventArgs e)
+        {
+            SyncProfile();
+            var dlg = new PrintDialog();
+            if (dlg.ShowDialog() != true) return;
+            const double pxPerMm = 96.0 / 25.4;
+            var canvas = ChequeRenderer.Build(_profile, ChequeLayout.SampleCheque(_profile), pxPerMm, includeBackground: false);
+            var vb = new Viewbox { Stretch = System.Windows.Media.Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = canvas };
+            vb.Measure(new Size(dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
+            vb.Arrange(new Rect(0, 0, dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
+            vb.UpdateLayout();
+            dlg.PrintVisual(vb, "Cheque layout test print");
+            TxtPosition.Text = "Test print sent. Hold the printout against a real cheque to verify alignment.";
         }
 
         void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            ChequeService.SaveProfilePositions(_profile);
+            SyncProfile();
+            ChequeService.SaveLayout(_profile);
             Saved = true;
             Close();
         }
 
         void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            // Restore original positions
-            _profile.DateX=_original.DateX; _profile.DateY=_original.DateY;
-            _profile.PayeeX=_original.PayeeX; _profile.PayeeY=_original.PayeeY;
-            _profile.AmountNumX=_original.AmountNumX; _profile.AmountNumY=_original.AmountNumY;
-            _profile.AmountWordsX=_original.AmountWordsX; _profile.AmountWordsY=_original.AmountWordsY;
-            _profile.ChequeNumX=_original.ChequeNumX; _profile.ChequeNumY=_original.ChequeNumY;
+            _profile.BackgroundImage = _originalImage;
+            _profile.FieldsJson = _originalFields;
             Close();
         }
 
         void BtnReset_Click(object sender, RoutedEventArgs e)
         {
-            _profile.DateX=140; _profile.DateY=18;
-            _profile.PayeeX=25; _profile.PayeeY=35;
-            _profile.AmountNumX=140; _profile.AmountNumY=35;
-            _profile.AmountWordsX=25; _profile.AmountWordsY=50;
-            _profile.ChequeNumX=25; _profile.ChequeNumY=65;
+            _fields = ChequeLayout.Default(_profile);
+            LstFields.ItemsSource = _fields;
+            _selected = null; PanelProps.IsEnabled = false;
             BuildCanvas();
         }
-
-        static ChequeProfile Clone(ChequeProfile p) => new()
-        {
-            DateX=p.DateX,DateY=p.DateY,PayeeX=p.PayeeX,PayeeY=p.PayeeY,
-            AmountNumX=p.AmountNumX,AmountNumY=p.AmountNumY,
-            AmountWordsX=p.AmountWordsX,AmountWordsY=p.AmountWordsY,
-            ChequeNumX=p.ChequeNumX,ChequeNumY=p.ChequeNumY
-        };
     }
 }

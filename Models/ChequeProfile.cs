@@ -29,5 +29,9 @@
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = "";
         public int LastChequeNumber { get; set; }
+        // Visual designer: base64 PNG of the scanned cheque used as an on-screen template (never printed),
+        // and the saved field layout (positions/fonts/alignment) as JSON.
+        public string BackgroundImage { get; set; } = "";
+        public string FieldsJson { get; set; } = "";
     }
 }
