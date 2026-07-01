@@ -11,6 +11,10 @@
         Background="Transparent"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        RenderOptions.ClearTypeHint="Enabled"
+        FontFamily="Segoe UI"
         Icon="/logo.png">
     <Window.DataContext>
         <vm:LoginViewModel/>
