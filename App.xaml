@@ -200,16 +200,14 @@
                 <Setter Property="Margin" Value="0,0,0,3"/>
             </Style>
 
-            <!-- Card Style -->
+            <!-- Card Style — a subtle border instead of a drop-shadow effect, so it renders reliably
+                 on all systems including remote-desktop / virtual machines / GPU-less machines. -->
             <Style x:Key="Card" TargetType="Border">
                 <Setter Property="Background" Value="White"/>
                 <Setter Property="CornerRadius" Value="8"/>
                 <Setter Property="Padding" Value="20"/>
-                <Setter Property="Effect">
-                    <Setter.Value>
-                        <DropShadowEffect Color="#CCCCCC" BlurRadius="8" ShadowDepth="2" Opacity="0.3"/>
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="BorderBrush" Value="#E6E6E6"/>
+                <Setter Property="BorderThickness" Value="1"/>
             </Style>
 
             <!-- DataGrid Style -->

@@ -81,9 +81,6 @@
 
         <!-- Sticky action bar -->
         <Border Grid.Row="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
-            <Border.Effect>
-                <DropShadowEffect Color="#CCCCCC" BlurRadius="8" ShadowDepth="2" Direction="90" Opacity="0.2"/>
-            </Border.Effect>
             <DockPanel Margin="24,10">
                 <TextBlock Text="{Binding StatusMessage}" DockPanel.Dock="Left" VerticalAlignment="Center"
                            Foreground="#2E7D32" FontSize="12"/>

@@ -33,8 +33,7 @@
         <!-- Preview Area -->
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                       Background="#888888">
-            <Border Margin="24" Background="White"
-                    Effect="{DynamicResource {x:Static SystemParameters.DropShadowKey}}">
+            <Border Margin="24" Background="White" BorderBrush="#BBBBBB" BorderThickness="1">
                 <Image x:Name="PreviewImage" Stretch="None"/>
             </Border>
         </ScrollViewer>

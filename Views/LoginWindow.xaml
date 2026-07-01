@@ -18,10 +18,7 @@
         <vm:LoginViewModel/>
     </Window.DataContext>
 
-    <Border CornerRadius="12" ClipToBounds="True">
-        <Border.Effect>
-            <DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="0" Opacity="0.45"/>
-        </Border.Effect>
+    <Border CornerRadius="12" ClipToBounds="True" BorderBrush="#4A0F0F" BorderThickness="1">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="330"/>
