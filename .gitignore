@@ -3,6 +3,11 @@ bin/
 obj/
 *.user
 
+# Publish / installer output
+publish/
+dist/
+installer_output/
+
 # Local databases / generated data (never publish real data)
 *.db
 *.db-shm

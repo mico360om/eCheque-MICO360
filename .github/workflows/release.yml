@@ -64,6 +64,19 @@ jobs:
           echo "Package: $name"
           echo "SHA256: $hash"
 
+      - name: Build Windows installer (Inno Setup)
+        id: installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=${{ steps.ver.outputs.version }}" "installer\eCheque.MICO360.iss"
+          $setup = "installer_output\eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe"
+          $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $setup -Leaf)" | Out-File "$setup.sha256" -Encoding ascii
+          echo "setup=$setup" >> $env:GITHUB_OUTPUT
+          echo "Installer: $setup ($hash)"
+
       - name: Create / update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -74,9 +87,14 @@ jobs:
 
             Automated release build.
 
-            SHA256: ${{ steps.pack.outputs.sha256 }}
+            **Windows installer:** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
+            **Portable zip:** `${{ steps.pack.outputs.asset }}`
+
+            Zip SHA256: ${{ steps.pack.outputs.sha256 }}
 
             <!-- Add [mandatory] anywhere in these notes to force the update. -->
           files: |
+            ${{ steps.installer.outputs.setup }}
+            ${{ steps.installer.outputs.setup }}.sha256
             ${{ steps.pack.outputs.asset }}
             ${{ steps.pack.outputs.asset }}.sha256
