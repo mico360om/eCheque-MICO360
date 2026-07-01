@@ -37,9 +37,16 @@
         <Grid Grid.Column="1" RowDefinitions="Auto,*">
             <Border Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="24,12">
                 <DockPanel>
-                    <TextBlock x:Name="TxtTitle" Text="Dashboard" Classes="h1" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TxtClock" DockPanel.Dock="Right" Foreground="#888888" FontSize="12"
-                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="TxtTitle" Text="Dashboard" Classes="h1" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
+                        <TextBlock Text="🏢" VerticalAlignment="Center"/>
+                        <ComboBox x:Name="CmbCompanySwitch" MinWidth="170" SelectionChanged="OnCompanySwitch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock x:Name="TxtClock" Foreground="#888888" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    </StackPanel>
                 </DockPanel>
             </Border>
             <ContentControl x:Name="ContentArea" Grid.Row="1"/>

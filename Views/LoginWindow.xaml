@@ -12,8 +12,6 @@
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
-        TextOptions.TextRenderingMode="ClearType"
-        RenderOptions.ClearTypeHint="Enabled"
         FontFamily="Segoe UI"
         Icon="/logo.png">
     <Window.DataContext>
@@ -103,38 +101,16 @@
                         <TextBlock Text="Sign in to your account" FontSize="13"
                                    Foreground="#888888" Margin="0,0,0,28"/>
 
-                        <!-- Company -->
-                        <TextBlock Text="COMPANY" FontSize="10" FontWeight="Bold"
-                                   Foreground="#888888" Margin="0,0,0,5" />
-                        <ComboBox ItemsSource="{Binding Companies}"
-                                  SelectedItem="{Binding SelectedCompany}"
-                                  DisplayMemberPath="Name"
-                                  Padding="10,9" FontSize="13"
-                                  Background="White" BorderBrush="#DDDDDD" BorderThickness="1"
-                                  Margin="0,0,0,14" Height="38"
-                                  UseLayoutRounding="True" SnapsToDevicePixels="True"
-                                  x:Name="CmbCompany">
-                            <ComboBox.Style>
-                                <Style TargetType="ComboBox">
-                                    <Setter Property="Background" Value="White"/>
-                                    <Setter Property="BorderBrush" Value="#DDDDDD"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
-                                    <Setter Property="Padding" Value="10,8"/>
-                                    <Setter Property="FontSize" Value="13"/>
-                                </Style>
-                            </ComboBox.Style>
-                        </ComboBox>
-
                         <!-- Username -->
                         <TextBlock Text="USERNAME" FontSize="10" FontWeight="Bold"
                                    Foreground="#888888" Margin="0,0,0,5"/>
                         <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5"
-                                x:Name="UsernameBorder" Margin="0,0,0,14">
+                                Background="White" x:Name="UsernameBorder" Margin="0,0,0,14">
                             <TextBox x:Name="TxtUsername"
                                      Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                                     Padding="10,9" FontSize="13" FontFamily="Segoe UI"
-                                     Background="White" Foreground="#1A1A1A"
-                                     BorderThickness="0" Height="38"
+                                     Padding="10,9" FontSize="14" FontFamily="Segoe UI"
+                                     Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
+                                     BorderThickness="0" Height="40"
                                      UseLayoutRounding="True" SnapsToDevicePixels="True"
                                      VerticalContentAlignment="Center">
                                 <TextBox.Style>
@@ -157,11 +133,11 @@
                         <TextBlock Text="PASSWORD" FontSize="10" FontWeight="Bold"
                                    Foreground="#888888" Margin="0,0,0,5"/>
                         <Border BorderBrush="#DDDDDD" BorderThickness="1" CornerRadius="5"
-                                x:Name="PasswordBorder" Margin="0,0,0,6">
+                                Background="White" x:Name="PasswordBorder" Margin="0,0,0,6">
                             <PasswordBox x:Name="TxtPassword"
-                                         Padding="10,9" FontSize="13" FontFamily="Segoe UI"
-                                         Background="White" Foreground="#1A1A1A"
-                                         BorderThickness="0" Height="38"
+                                         Padding="10,9" FontSize="14" FontFamily="Segoe UI"
+                                         Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
+                                         BorderThickness="0" Height="40"
                                          UseLayoutRounding="True" SnapsToDevicePixels="True">
                                 <PasswordBox.Style>
                                     <Style TargetType="PasswordBox">

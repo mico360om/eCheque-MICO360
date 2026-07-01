@@ -12,6 +12,7 @@ namespace eCheque.MICO360
     public partial class MainWindow : Window
     {
         private Button? _activeNav;
+        private bool _initializingCompanies;
         private readonly DispatcherTimer _timer = new();
         private readonly DispatcherTimer _idleTimer = new();
         private DateTime _lastActivity = DateTime.Now;
@@ -21,6 +22,7 @@ namespace eCheque.MICO360
             InitializeComponent();
             TxtCompanyName.Text = CompanyService.CurrentCompanyName;
             TxtUserInfo.Text = $"{AuthService.CurrentUser?.FullName} ({AuthService.CurrentUser?.Role})";
+            PopulateCompanySwitcher();
 
             if (!AuthService.IsAdmin)
             {
@@ -85,6 +87,34 @@ namespace eCheque.MICO360
             {
                 // Never block startup on update problems — just log.
                 UpdateService.Log($"Startup check skipped: {ex.Message}");
+            }
+        }
+
+        private void PopulateCompanySwitcher()
+        {
+            _initializingCompanies = true;
+            var companies = CompanyService.GetAll();
+            CmbCompanySwitch.ItemsSource = companies;
+            foreach (var c in companies)
+                if (c.Id == CompanyService.CurrentCompanyId) { CmbCompanySwitch.SelectedItem = c; break; }
+            // Only show the switcher when there is more than one company to move between.
+            CmbCompanySwitch.Visibility = companies.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            _initializingCompanies = false;
+        }
+
+        private void CmbCompanySwitch_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (_initializingCompanies) return;
+            if (CmbCompanySwitch.SelectedItem is not Models.Company c || c.Id == CompanyService.CurrentCompanyId) return;
+            try
+            {
+                CompanyService.OpenCompany(c.Id, c.Name);
+                TxtCompanyName.Text = c.Name;
+                Navigate("Dashboard"); SetActiveNav(NavDashboard);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not switch company: {ex.Message}", "Company Switch", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

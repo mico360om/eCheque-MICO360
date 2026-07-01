@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using eCheque.MICO360.Core.Models;
 using eCheque.MICO360.Core.Services;
 using eCheque.MICO360.Mac.ViewModels;
 
@@ -10,12 +11,14 @@ namespace eCheque.MICO360.Mac.Views
     public partial class MainWindow : Window
     {
         readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
+        bool _initializingCompanies;
 
         public MainWindow()
         {
             InitializeComponent();
             TxtCompany.Text = CompanyService.CurrentCompanyName;
             TxtUser.Text = $"{AuthService.CurrentUser?.FullName} ({AuthService.CurrentUser?.Role})";
+            PopulateCompanySwitcher();
 
             if (!AuthService.CanEdit) BtnNewCheque.IsVisible = false;   // read-only role
 
@@ -26,6 +29,25 @@ namespace eCheque.MICO360.Mac.Views
 
             // Auto-check for updates on startup and notify the user if one is available.
             _ = CheckForUpdatesOnStartupAsync();
+        }
+
+        void PopulateCompanySwitcher()
+        {
+            _initializingCompanies = true;
+            var companies = CompanyService.GetAll();
+            CmbCompanySwitch.ItemsSource = companies;
+            CmbCompanySwitch.SelectedItem = companies.FirstOrDefault(c => c.Id == CompanyService.CurrentCompanyId);
+            CmbCompanySwitch.IsVisible = companies.Count > 1;   // only when there's more than one
+            _initializingCompanies = false;
+        }
+
+        void OnCompanySwitch(object? sender, SelectionChangedEventArgs e)
+        {
+            if (_initializingCompanies) return;
+            if (CmbCompanySwitch.SelectedItem is not Company c || c.Id == CompanyService.CurrentCompanyId) return;
+            CompanyService.OpenCompany(c.Id, c.Name);
+            TxtCompany.Text = c.Name;
+            NavDashboard(this, new RoutedEventArgs());
         }
 
         async Task CheckForUpdatesOnStartupAsync()

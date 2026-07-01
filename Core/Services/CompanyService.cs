@@ -33,22 +33,48 @@ namespace eCheque.MICO360.Core.Services
 
         private static SqliteConnection GetConn() { var c = new SqliteConnection(_cs); c.Open(); return c; }
 
+        public static SqliteConnection GetMasterConnection() { var c = new SqliteConnection(_cs); c.Open(); return c; }
+
+        public static void MasterAudit(string user, string action, string reference = "", string remarks = "")
+        {
+            try
+            {
+                using var conn = GetConn();
+                using var cmd = new SqliteCommand("INSERT INTO AuditLogs(UserName,Action,RecordReference,Remarks,ActionDate)VALUES(@u,@a,@r,@rm,@d)", conn);
+                cmd.Parameters.AddWithValue("@u", user); cmd.Parameters.AddWithValue("@a", action);
+                cmd.Parameters.AddWithValue("@r", reference); cmd.Parameters.AddWithValue("@rm", remarks);
+                cmd.Parameters.AddWithValue("@d", DateTime.Now.ToString("o"));
+                cmd.ExecuteNonQuery();
+            }
+            catch { }
+        }
+
         private static void CreateTable()
         {
             using var conn = GetConn();
-            using var cmd = new SqliteCommand(@"CREATE TABLE IF NOT EXISTS Companies(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,TradeName TEXT DEFAULT '',Address TEXT DEFAULT '',Phone TEXT DEFAULT '',Email TEXT DEFAULT '',Currency TEXT DEFAULT 'OMR',CreatedDate TEXT,IsActive INTEGER DEFAULT 1)", conn);
+            using var cmd = new SqliteCommand(@"
+                CREATE TABLE IF NOT EXISTS Companies(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,TradeName TEXT DEFAULT '',Address TEXT DEFAULT '',Phone TEXT DEFAULT '',Email TEXT DEFAULT '',Currency TEXT DEFAULT 'OMR',CreatedDate TEXT,IsActive INTEGER DEFAULT 1);
+                CREATE TABLE IF NOT EXISTS Users(Id INTEGER PRIMARY KEY AUTOINCREMENT,Username TEXT NOT NULL UNIQUE,PasswordHash TEXT NOT NULL,FullName TEXT DEFAULT '',Email TEXT DEFAULT '',Role TEXT DEFAULT 'Accountant',IsActive INTEGER DEFAULT 1,CreatedDate TEXT,LastLogin TEXT,FailedLoginAttempts INTEGER DEFAULT 0,LockoutUntil TEXT);
+                CREATE TABLE IF NOT EXISTS AuditLogs(Id INTEGER PRIMARY KEY AUTOINCREMENT,UserName TEXT DEFAULT '',Action TEXT DEFAULT '',RecordReference TEXT DEFAULT '',Remarks TEXT DEFAULT '',ActionDate TEXT);", conn);
             cmd.ExecuteNonQuery();
         }
 
         private static void SeedDefault()
         {
             using var conn = GetConn();
-            using var c = new SqliteCommand("SELECT COUNT(*) FROM Companies", conn);
-            if (Convert.ToInt32(c.ExecuteScalar()) == 0)
-            {
-                using var ins = new SqliteCommand("INSERT INTO Companies(Name,TradeName,Currency,CreatedDate,IsActive)VALUES('My Company LLC','','OMR',@d,1)", conn);
-                ins.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); ins.ExecuteNonQuery();
-            }
+            using (var c = new SqliteCommand("SELECT COUNT(*) FROM Companies", conn))
+                if (Convert.ToInt32(c.ExecuteScalar()) == 0)
+                {
+                    using var ins = new SqliteCommand("INSERT INTO Companies(Name,TradeName,Currency,CreatedDate,IsActive)VALUES('My Company LLC','','OMR',@d,1)", conn);
+                    ins.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); ins.ExecuteNonQuery();
+                }
+            using (var c = new SqliteCommand("SELECT COUNT(*) FROM Users", conn))
+                if (Convert.ToInt32(c.ExecuteScalar()) == 0)
+                {
+                    var h = BCrypt.Net.BCrypt.HashPassword("Admin@123");
+                    using var ins = new SqliteCommand("INSERT INTO Users(Username,PasswordHash,FullName,Role,IsActive,CreatedDate,FailedLoginAttempts)VALUES('admin',@h,'System Administrator','Admin',1,@d,0)", conn);
+                    ins.Parameters.AddWithValue("@h", h); ins.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); ins.ExecuteNonQuery();
+                }
         }
 
         public static List<Company> GetAll()
@@ -85,6 +111,13 @@ namespace eCheque.MICO360.Core.Services
         }
 
         public static string GetDbPath(int companyId) => Path.Combine(AppPaths.DataFolder, $"company_{companyId}.db");
+
+        /// <summary>Opens a company's data DB and makes it active (used at login and by the in-app switcher).</summary>
+        public static void OpenCompany(int id, string name)
+        {
+            DatabaseService.Initialize(GetDbPath(id));
+            SelectCompany(id, name);
+        }
 
         public static void SelectCompany(int id, string name) { CurrentCompanyId = id; CurrentCompanyName = name; }
     }

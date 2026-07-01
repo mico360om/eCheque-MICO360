@@ -23,14 +23,6 @@
                 <TextBlock Text="Sign In" FontSize="24" FontWeight="Bold" Foreground="#1A1A1A" Margin="0,0,0,4"/>
                 <TextBlock Text="Access your company workspace" Foreground="#888888" FontSize="13" Margin="0,0,0,22"/>
 
-                <TextBlock Text="Company" Classes="label"/>
-                <ComboBox x:Name="CmbCompany" ItemsSource="{Binding Companies}" SelectedItem="{Binding SelectedCompany}"
-                          HorizontalAlignment="Stretch" Margin="0,0,0,14">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-
                 <TextBlock Text="Username" Classes="label"/>
                 <TextBox x:Name="TxtUsername" Text="{Binding Username}" Watermark="username" Margin="0,0,0,14"/>
 

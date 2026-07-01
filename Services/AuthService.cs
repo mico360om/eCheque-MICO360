@@ -22,7 +22,7 @@ namespace eCheque.MICO360.Services
             int failedAttempts = 0; string? lockoutStr = null;
             bool found = false;
 
-            using (var conn = DatabaseService.GetConnection())
+            using (var conn = CompanyService.GetMasterConnection())
             using (var cmd = new SqliteCommand(
                 "SELECT Id,Username,PasswordHash,FullName,Email,Role,FailedLoginAttempts,LockoutUntil FROM Users WHERE Username=@u AND IsActive=1", conn))
             {
@@ -44,7 +44,7 @@ namespace eCheque.MICO360.Services
 
             if (!found)
             {
-                DatabaseService.LogAudit(username, "Login Failed", "", "User not found");
+                CompanyService.MasterAudit(username, "Login Failed", "", "User not found");
                 return "Invalid username or password.";
             }
 
@@ -59,7 +59,7 @@ namespace eCheque.MICO360.Services
             if (!BCrypt.Net.BCrypt.Verify(password, passwordHash))
             {
                 failedAttempts++;
-                using var wconn = DatabaseService.GetConnection();
+                using var wconn = CompanyService.GetMasterConnection();
                 if (failedAttempts >= MaxFailedAttempts)
                 {
                     var newLockUntil = DateTime.Now.AddMinutes(LockoutMinutes);
@@ -69,7 +69,7 @@ namespace eCheque.MICO360.Services
                     lk.Parameters.AddWithValue("@lu", newLockUntil.ToString("o"));
                     lk.Parameters.AddWithValue("@id", userId);
                     lk.ExecuteNonQuery();
-                    DatabaseService.LogAudit(username, "Account Locked", "", $"After {failedAttempts} failed attempts");
+                    CompanyService.MasterAudit(username, "Account Locked", "", $"After {failedAttempts} failed attempts");
                     return $"Account locked for {LockoutMinutes} minutes after {MaxFailedAttempts} failed attempts.";
                 }
                 else
@@ -79,26 +79,26 @@ namespace eCheque.MICO360.Services
                     fa.Parameters.AddWithValue("@id", userId);
                     fa.ExecuteNonQuery();
                     int remaining = MaxFailedAttempts - failedAttempts;
-                    DatabaseService.LogAudit(username, "Login Failed", "", $"Attempt {failedAttempts}/{MaxFailedAttempts}");
+                    CompanyService.MasterAudit(username, "Login Failed", "", $"Attempt {failedAttempts}/{MaxFailedAttempts}");
                     return $"Invalid password. {remaining} attempt(s) remaining before lockout.";
                 }
             }
 
             // --- Step 4: Success — set session, reset lockout counters ---
             CurrentUser = new User { Id = userId, Username = dbUsername, FullName = fullName, Email = email, Role = role };
-            using var uconn = DatabaseService.GetConnection();
+            using var uconn = CompanyService.GetMasterConnection();
             using var upd = new SqliteCommand(
                 "UPDATE Users SET LastLogin=@d,FailedLoginAttempts=0,LockoutUntil=NULL WHERE Id=@id", uconn);
             upd.Parameters.AddWithValue("@d", DateTime.Now.ToString("o"));
             upd.Parameters.AddWithValue("@id", userId);
             upd.ExecuteNonQuery();
-            DatabaseService.LogAudit(username, "Login");
+            CompanyService.MasterAudit(username, "Login");
             return null;
         }
 
         public static bool VerifyPassword(int userId, string password)
         {
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("SELECT PasswordHash FROM Users WHERE Id=@id", conn);
             cmd.Parameters.AddWithValue("@id", userId);
             var hash = cmd.ExecuteScalar()?.ToString();
@@ -107,14 +107,14 @@ namespace eCheque.MICO360.Services
 
         public static void Logout()
         {
-            if (CurrentUser != null) DatabaseService.LogAudit(CurrentUser.Username, "Logout");
+            if (CurrentUser != null) CompanyService.MasterAudit(CurrentUser.Username, "Logout");
             CurrentUser = null;
         }
 
         public static List<User> GetAllUsers()
         {
             var list = new List<User>();
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("SELECT Id,Username,FullName,Email,Role,IsActive,CreatedDate,FailedLoginAttempts,LockoutUntil FROM Users ORDER BY FullName", conn);
             using var r = cmd.ExecuteReader();
             while (r.Read())
@@ -133,7 +133,7 @@ namespace eCheque.MICO360.Services
 
         public static bool UsernameExists(string username, int excludeId = 0)
         {
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("SELECT COUNT(*) FROM Users WHERE Username=@u COLLATE NOCASE AND Id!=@id", conn);
             cmd.Parameters.AddWithValue("@u", username.Trim()); cmd.Parameters.AddWithValue("@id", excludeId);
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
@@ -142,7 +142,7 @@ namespace eCheque.MICO360.Services
         public static bool EmailExists(string email, int excludeId = 0)
         {
             if (string.IsNullOrWhiteSpace(email)) return false;
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("SELECT COUNT(*) FROM Users WHERE Email=@e COLLATE NOCASE AND Id!=@id", conn);
             cmd.Parameters.AddWithValue("@e", email.Trim()); cmd.Parameters.AddWithValue("@id", excludeId);
             return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
@@ -151,7 +151,7 @@ namespace eCheque.MICO360.Services
         /// <summary>Count of active Admin users — used to prevent removing/demoting the last administrator.</summary>
         public static int ActiveAdminCount(int excludeId = 0)
         {
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("SELECT COUNT(*) FROM Users WHERE Role='Admin' AND IsActive=1 AND Id!=@id", conn);
             cmd.Parameters.AddWithValue("@id", excludeId);
             return Convert.ToInt32(cmd.ExecuteScalar());
@@ -159,7 +159,7 @@ namespace eCheque.MICO360.Services
 
         public static void SaveUser(User user, string? plainPassword = null)
         {
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             var actor = CurrentUser?.Username ?? "SYSTEM";
             if (user.Id == 0)
             {
@@ -170,7 +170,7 @@ namespace eCheque.MICO360.Services
                 cmd.Parameters.AddWithValue("@fn", user.FullName); cmd.Parameters.AddWithValue("@e", user.Email);
                 cmd.Parameters.AddWithValue("@r", user.Role); cmd.Parameters.AddWithValue("@a", user.IsActive ? 1 : 0);
                 cmd.Parameters.AddWithValue("@d", DateTime.Now.ToString("o")); cmd.ExecuteNonQuery();
-                DatabaseService.LogAudit(actor, "User Created", user.Username, $"Role={user.Role}");
+                CompanyService.MasterAudit(actor, "User Created", user.Username, $"Role={user.Role}");
             }
             else
             {
@@ -179,13 +179,13 @@ namespace eCheque.MICO360.Services
                 cmd.Parameters.AddWithValue("@fn", user.FullName); cmd.Parameters.AddWithValue("@e", user.Email);
                 cmd.Parameters.AddWithValue("@r", user.Role); cmd.Parameters.AddWithValue("@a", user.IsActive ? 1 : 0);
                 cmd.Parameters.AddWithValue("@id", user.Id); cmd.ExecuteNonQuery();
-                DatabaseService.LogAudit(actor, "User Updated", user.Username, $"Role={user.Role}, Active={user.IsActive}");
+                CompanyService.MasterAudit(actor, "User Updated", user.Username, $"Role={user.Role}, Active={user.IsActive}");
                 if (!string.IsNullOrEmpty(plainPassword))
                 {
                     using var pw = new SqliteCommand("UPDATE Users SET PasswordHash=@h,FailedLoginAttempts=0,LockoutUntil=NULL WHERE Id=@id", conn);
                     pw.Parameters.AddWithValue("@h", BCrypt.Net.BCrypt.HashPassword(plainPassword));
                     pw.Parameters.AddWithValue("@id", user.Id); pw.ExecuteNonQuery();
-                    DatabaseService.LogAudit(actor, "Password Reset", user.Username);
+                    CompanyService.MasterAudit(actor, "Password Reset", user.Username);
                 }
             }
         }
@@ -199,32 +199,32 @@ namespace eCheque.MICO360.Services
             if (!string.IsNullOrWhiteSpace(email) && !email.Contains('@')) return "Email address is not valid.";
             if (EmailExists(email, me.Id)) return $"Email '{email}' is already in use.";
 
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("UPDATE Users SET FullName=@fn,Email=@e WHERE Id=@id", conn);
             cmd.Parameters.AddWithValue("@fn", fullName.Trim()); cmd.Parameters.AddWithValue("@e", email.Trim()); cmd.Parameters.AddWithValue("@id", me.Id);
             cmd.ExecuteNonQuery();
             me.FullName = fullName.Trim(); me.Email = email.Trim();   // reflect in the live session
-            DatabaseService.LogAudit(me.Username, "Profile Updated (self)", me.Username);
+            CompanyService.MasterAudit(me.Username, "Profile Updated (self)", me.Username);
             return null;
         }
 
         public static bool ChangePassword(int userId, string current, string newPwd)
         {
             if (!VerifyPassword(userId, current)) return false;
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var u = new SqliteCommand("UPDATE Users SET PasswordHash=@h WHERE Id=@id", conn);
             u.Parameters.AddWithValue("@h", BCrypt.Net.BCrypt.HashPassword(newPwd));
             u.Parameters.AddWithValue("@id", userId); u.ExecuteNonQuery();
-            DatabaseService.LogAudit(CurrentUser?.Username ?? "SYSTEM", "Password Changed", userId.ToString());
+            CompanyService.MasterAudit(CurrentUser?.Username ?? "SYSTEM", "Password Changed", userId.ToString());
             return true;
         }
 
         public static void UnlockUser(int userId)
         {
-            using var conn = DatabaseService.GetConnection();
+            using var conn = CompanyService.GetMasterConnection();
             using var cmd = new SqliteCommand("UPDATE Users SET FailedLoginAttempts=0,LockoutUntil=NULL WHERE Id=@id", conn);
             cmd.Parameters.AddWithValue("@id", userId); cmd.ExecuteNonQuery();
-            DatabaseService.LogAudit(CurrentUser?.Username ?? "SYSTEM", "User Unlocked", userId.ToString());
+            CompanyService.MasterAudit(CurrentUser?.Username ?? "SYSTEM", "User Unlocked", userId.ToString());
         }
     }
 }

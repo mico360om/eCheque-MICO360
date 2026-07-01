@@ -70,9 +70,15 @@
             <Border Grid.Row="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="24,10">
                 <DockPanel>
                     <TextBlock x:Name="TxtPageTitle" Text="Dashboard" FontSize="20" FontWeight="Bold"
-                               Foreground="#1A1A1A" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TxtDateTime" DockPanel.Dock="Right" FontSize="12" Foreground="#888888"
-                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                               Foreground="#1A1A1A" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="🏢" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CmbCompanySwitch" MinWidth="180" Style="{StaticResource InputCombo}"
+                                  DisplayMemberPath="Name" SelectionChanged="CmbCompanySwitch_SelectionChanged"
+                                  ToolTip="Switch active company"/>
+                        <TextBlock x:Name="TxtDateTime" FontSize="12" Foreground="#888888"
+                                   VerticalAlignment="Center" Margin="18,0,0,0"/>
+                    </StackPanel>
                 </DockPanel>
             </Border>
             <ContentControl x:Name="MainContent" Grid.Row="1"/>

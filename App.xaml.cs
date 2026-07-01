@@ -45,11 +45,8 @@ namespace eCheque.MICO360
                 return;
             }
 
-            Exit += (s, args) =>
-            {
-                if (!string.IsNullOrEmpty(DatabaseService.DbPath))
-                    DatabaseProtectionService.EncryptOnExit(DatabaseService.DbPath);
-            };
+            // Databases are encrypted at rest by SQLCipher (SecurityService), so the legacy
+            // DPAPI re-wrap on exit is no longer needed (and would conflict with SQLCipher).
 
             var login = new LoginWindow();
             login.Show();
