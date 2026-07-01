@@ -24,6 +24,7 @@
                     <Button Content="🏠  Dashboard" Classes="nav" Click="NavDashboard"/>
                     <Button x:Name="BtnNewCheque" Content="✚  New Cheque" Classes="nav" Click="NavNewCheque"/>
                     <Button Content="☰  Cheque History" Classes="nav" Click="NavHistory"/>
+                    <Button Content="📅  Cheque Tracking" Classes="nav" Click="NavTracking"/>
                     <TextBlock Text="HELP" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
                     <Button Content="ℹ  About" Classes="nav" Click="NavAbout"/>
                 </StackPanel>

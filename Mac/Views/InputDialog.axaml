@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="eCheque.MICO360.Mac.Views.InputDialog"
+        Width="420" Height="210" CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="Input"
+        Background="White">
+    <StackPanel Margin="20">
+        <TextBlock x:Name="TxtMessage" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <TextBox x:Name="TxtValue" Height="60" AcceptsReturn="True" TextWrapping="Wrap"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+            <Button Content="Cancel" Classes="secondary" Click="OnCancel"/>
+            <Button Content="OK" Classes="primary" Click="OnOk"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.ChequeTrackingView">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+        <!-- Mode switch -->
+        <Border Grid.Row="0" Classes="card" Margin="0,0,0,14">
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" DockPanel.Dock="Left">
+                    <Button Content="📅  PDC Register" Classes="secondary" Command="{Binding ShowPdcCommand}"/>
+                    <Button Content="✓  Reconciliation" Classes="secondary" Command="{Binding ShowReconCommand}"/>
+                </StackPanel>
+                <Button Content="Refresh" Classes="secondary" DockPanel.Dock="Right" HorizontalAlignment="Right" Command="{Binding RefreshCommand}"/>
+                <TextBlock Text="{Binding Heading}" VerticalAlignment="Center" Margin="16,0" Foreground="#8B1818" FontWeight="SemiBold" FontSize="13"/>
+            </DockPanel>
+        </Border>
+
+        <!-- List -->
+        <Border Grid.Row="1" Classes="card" Padding="16">
+            <Grid RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="100,105,80,*,110,90,220" Margin="0,0,0,6">
+                    <TextBlock Grid.Column="0" Text="Cheque #" Classes="label"/>
+                    <TextBlock Grid.Column="1" Text="Cheque Date" Classes="label"/>
+                    <TextBlock Grid.Column="2" Text="Due" Classes="label"/>
+                    <TextBlock Grid.Column="3" Text="Payee" Classes="label"/>
+                    <TextBlock Grid.Column="4" Text="Amount" Classes="label"/>
+                    <TextBlock Grid.Column="5" Text="Status" Classes="label"/>
+                    <TextBlock Grid.Column="6" Text="Update" Classes="label"/>
+                </Grid>
+                <ScrollViewer Grid.Row="1">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Cheques}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,7">
+                                        <Grid ColumnDefinitions="100,105,80,*,110,90,220" VerticalAlignment="Center">
+                                            <TextBlock Grid.Column="0" Text="{Binding ChequeNumber}" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding ChequeDate, StringFormat='{}{0:dd/MM/yyyy}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding DueLabel}" FontSize="12" Foreground="#B26A00"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding PayeeName}" FontSize="12"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding Amount, StringFormat='{}{0:N3}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="5" Text="{Binding Status}" FontSize="11" Foreground="#8B1818"/>
+                                            <StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
+                                                <Button Content="Present" Classes="secondary" FontSize="11" Padding="7,3"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.PresentCommand}" CommandParameter="{Binding}"/>
+                                                <Button Content="Clear" Classes="primary" FontSize="11" Padding="7,3"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.ClearedCommand}" CommandParameter="{Binding}"/>
+                                                <Button Content="Bounce" Background="Transparent" Foreground="#B00020" FontSize="11" Padding="4,3"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.BounceCommand}" CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="Nothing to show here." Foreground="#AAAAAA" FontSize="12"
+                                   Margin="0,16,0,0" HorizontalAlignment="Center" IsVisible="{Binding IsEmpty}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <DockPanel Grid.Row="2" Margin="0,8,0,0">
+            <TextBlock Text="{Binding StatusMessage}" DockPanel.Dock="Left" Foreground="#2E7D32" FontSize="12"/>
+            <TextBlock Text="{Binding Cheques.Count, StringFormat='{}{0} cheque(s)'}" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="12" Foreground="#888888"/>
+        </DockPanel>
+    </Grid>
+</UserControl>

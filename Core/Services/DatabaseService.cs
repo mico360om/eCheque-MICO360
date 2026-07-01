@@ -53,7 +53,10 @@ namespace eCheque.MICO360.Core.Services
             {
                 "ALTER TABLE Users ADD COLUMN FailedLoginAttempts INTEGER DEFAULT 0",
                 "ALTER TABLE Users ADD COLUMN LockoutUntil TEXT",
-                "ALTER TABLE ChequeProfiles ADD COLUMN LastChequeNumber INTEGER DEFAULT 0"
+                "ALTER TABLE ChequeProfiles ADD COLUMN LastChequeNumber INTEGER DEFAULT 0",
+                "ALTER TABLE ChequeRecords ADD COLUMN PresentedDate TEXT",
+                "ALTER TABLE ChequeRecords ADD COLUMN ClearedDate TEXT",
+                "ALTER TABLE ChequeRecords ADD COLUMN BounceReason TEXT DEFAULT ''"
             };
             using var conn = GetConnection();
             foreach (var sql in migrations)

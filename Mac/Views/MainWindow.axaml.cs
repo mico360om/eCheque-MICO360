@@ -49,6 +49,13 @@ namespace eCheque.MICO360.Mac.Views
             ContentArea.Content = new ChequeHistoryView { DataContext = vm };
         }
 
+        void NavTracking(object? sender, RoutedEventArgs e)
+        {
+            SetTitle("Cheque Tracking");
+            var vm = new ChequeTrackingViewModel();
+            ContentArea.Content = new ChequeTrackingView { DataContext = vm };
+        }
+
         void NavAbout(object? sender, RoutedEventArgs e)
         {
             SetTitle("About Us");
