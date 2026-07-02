@@ -355,7 +355,54 @@ namespace eCheque.MICO360
             var vm = new ChequeHistoryViewModel(); vm.Load();
             vm.PrintRequested += (cheque, profile) => { if (RunPrintFlow(cheque, profile)) vm.Load(); };
             vm.EditRequested += HandleEditRequested;
+            vm.BulkPrintRequested += list => { if (RunBulkPrint(list)) vm.Load(); };
             return new ChequeHistoryView { DataContext = vm };
+        }
+
+        /// <summary>Prints several cheques in one run: choose the printer once, then print each at its own
+        /// cheque size. Cancelled/void cheques are skipped; the user confirms before any cheque is consumed.</summary>
+        private bool RunBulkPrint(System.Collections.Generic.List<Models.ChequeRecord> cheques)
+        {
+            var printable = cheques.Where(c => !ChequeService.IsPrintBlocked(c.Status)).ToList();
+            int skipped = cheques.Count - printable.Count;
+            if (printable.Count == 0)
+            {
+                MessageBox.Show("None of the selected cheques can be printed (they are cancelled or void).",
+                    "Bulk Print", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            var skipNote = skipped > 0 ? $"\n({skipped} cancelled/void cheque(s) will be skipped.)" : "";
+            if (MessageBox.Show($"Print {printable.Count} cheque(s)?{skipNote}\n\nThis will use {printable.Count} physical cheque(s).",
+                    "Confirm Bulk Print", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return false;
+
+            var dlg = new System.Windows.Controls.PrintDialog();
+            if (dlg.ShowDialog() != true) return false;
+
+            const double pxPerMm = 96.0 / 25.4;
+            int ok = 0; var failed = new System.Collections.Generic.List<string>();
+            foreach (var c in printable)
+            {
+                try
+                {
+                    var p = ChequeService.GetProfile(c.ProfileId);
+                    if (p == null) { failed.Add(c.ChequeNumber); continue; }
+                    double cw = p.ChequeWidth * pxPerMm, ch = p.ChequeHeight * pxPerMm;
+                    var resolved = Helpers.PrintHelper.SelectChequeMedia(dlg, p.ChequeWidth, p.ChequeHeight);
+                    var canvas = ChequePrintBuilder.Build(c, p, cw, ch, includeBackground: false);
+                    Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, resolved.Wdip, resolved.Hdip, $"Cheque #{c.ChequeNumber}");
+                    bool reprint = c.Status == "Printed" || c.Status == "Reprinted";
+                    ChequeService.UpdateStatus(c.Id, reprint ? "Reprinted" : "Printed", "");
+                    DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM", "Bulk Print", c.ChequeNumber,
+                        $"Printed to {dlg.PrintQueue?.FullName} on {resolved.Wmm:0}×{resolved.Hmm:0} mm");
+                    ok++;
+                }
+                catch (Exception ex) { failed.Add(c.ChequeNumber); UpdateService.Log($"Bulk print failed for {c.ChequeNumber}: {ex.Message}"); }
+            }
+            if (failed.Count == 0) ToastService.Success($"Printed {ok} cheque(s).");
+            else ToastService.Warn($"Printed {ok}; {failed.Count} failed ({string.Join(", ", failed.Take(5))}).");
+            UpdateBadges();
+            return true;
         }
 
         /// <summary>Opens a cheque for editing, blocking issued/closed cheques for non-admins.</summary>
@@ -376,7 +423,8 @@ namespace eCheque.MICO360
             }
             var entry = CreateChequeEntry(id);
             MainContent.Content = entry;
-            TxtPageTitle.Text = "Edit Cheque";
+            TxtPageTitle.Text = cheque != null ? $"Edit Cheque #{cheque.ChequeNumber}" : "Edit Cheque";
+            SetActiveNav(NavHistory);
         }
 
         private UserControl CreateProfiles()

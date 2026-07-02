@@ -1,5 +1,8 @@
-﻿using System.Windows.Controls;
+﻿using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using eCheque.MICO360.Models;
 using eCheque.MICO360.ViewModels;
 namespace eCheque.MICO360.Views
 {
@@ -14,6 +17,12 @@ namespace eCheque.MICO360.Views
             {
                 if (e.Key == Key.Enter && DataContext is ChequeHistoryViewModel vm) { vm.Load(); e.Handled = true; }
             };
+        }
+
+        private void BtnPrintSelected_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is ChequeHistoryViewModel vm)
+                vm.RequestBulkPrint(Grid.SelectedItems.OfType<ChequeRecord>());
         }
     }
 }

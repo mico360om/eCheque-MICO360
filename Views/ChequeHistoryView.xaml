@@ -37,7 +37,10 @@
                         <TextBlock Text="To Date" Style="{StaticResource FieldLabel}"/>
                         <DatePicker SelectedDate="{Binding To}" FontSize="13" Padding="6,5"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="4" VerticalAlignment="Bottom">
+                    <StackPanel Grid.Column="4" VerticalAlignment="Bottom" Orientation="Horizontal">
+                        <Button Content="🖨  Print Selected" Style="{StaticResource PrimaryBtn}" Padding="12,7" FontSize="12"
+                                Margin="0,0,8,0" Click="BtnPrintSelected_Click"
+                                ToolTip="Select rows with Ctrl/Shift-click, then print them all at once"/>
                         <Button Content="Export Excel" Style="{StaticResource SecondaryBtn}"
                                 Command="{Binding ExportCommand}"/>
                     </StackPanel>
@@ -46,6 +49,7 @@
         </Border>
         <!-- Grid -->
         <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+          <Grid>
           <DockPanel>
             <!-- Load-error banner (no more silently blank grid) -->
             <Border DockPanel.Dock="Top" Background="#FDECEA" BorderBrush="#F5C6CB" BorderThickness="0,0,0,1"
@@ -76,8 +80,8 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <DataGrid ItemsSource="{Binding Cheques}" SelectedItem="{Binding Selected}"
-                      Padding="0" BorderThickness="0">
+            <DataGrid x:Name="Grid" ItemsSource="{Binding Cheques}" SelectedItem="{Binding Selected}"
+                      SelectionMode="Extended" Padding="0" BorderThickness="0">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Cheque #" Binding="{Binding ChequeNumber}" Width="100"/>
                     <DataGridTextColumn Header="Date" Binding="{Binding ChequeDate, StringFormat=dd/MM/yyyy}" Width="90"/>
@@ -111,6 +115,21 @@
                 </DataGrid.Columns>
             </DataGrid>
           </DockPanel>
+
+          <!-- Skeleton loader overlay (keeps the filter toolbar above interactive) -->
+          <Border Background="White" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}">
+              <StackPanel Margin="14,14,14,0">
+                  <Border Height="30" Background="#8B1818" Opacity="0.12" CornerRadius="4" Margin="0,0,0,10"/>
+                  <Border Height="22" Background="#EDEDED" CornerRadius="4" Margin="0,0,0,10"/>
+                  <Border Height="22" Background="#F2F2F2" CornerRadius="4" Margin="0,0,0,10"/>
+                  <Border Height="22" Background="#EDEDED" CornerRadius="4" Margin="0,0,0,10"/>
+                  <Border Height="22" Background="#F2F2F2" CornerRadius="4" Margin="0,0,0,10"/>
+                  <Border Height="22" Background="#EDEDED" CornerRadius="4" Margin="0,0,0,10"/>
+                  <Border Height="22" Background="#F2F2F2" CornerRadius="4" Margin="0,0,0,10"/>
+                  <TextBlock Text="Loading cheques…" FontSize="12" Foreground="{StaticResource TextSub}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+              </StackPanel>
+          </Border>
+          </Grid>
         </Border>
         <!-- Status Bar -->
         <TextBlock Grid.Row="2" Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource TextSub}"

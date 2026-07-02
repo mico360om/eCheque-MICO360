@@ -32,6 +32,15 @@ namespace eCheque.MICO360.ViewModels
         public ICommand EditCommand{get;}
         public event Action<ChequeRecord,ChequeProfile>? PrintRequested;
         public event Action<int>? EditRequested;
+        public event Action<List<ChequeRecord>>? BulkPrintRequested;
+
+        /// <summary>Called by the view with the grid's multi-selection to print several cheques in one run.</summary>
+        public void RequestBulkPrint(IEnumerable<ChequeRecord> items)
+        {
+            var list = items?.Where(c => c != null).ToList() ?? new();
+            if (list.Count == 0) { ToastService.Info("Select one or more cheques to print (Ctrl/Shift-click)."); return; }
+            BulkPrintRequested?.Invoke(list);
+        }
         public ChequeHistoryViewModel()
         {
             RefreshCommand=new RelayCommand(Refresh);

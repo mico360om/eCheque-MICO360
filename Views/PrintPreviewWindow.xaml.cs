@@ -39,66 +39,7 @@ namespace eCheque.MICO360.Views
         }
 
         private Canvas BuildChequeCanvas(double w, double h, bool includeBackground = false)
-        {
-            const double pxPerMm = 96.0 / 25.4;
-            // New visual layout: render only the entered data at the saved field positions (plus the
-            // scanned template on screen only). Falls back to the classic decorative cheque for old profiles.
-            if (ChequeRenderer.HasLayout(_profile))
-                return ChequeRenderer.Build(_profile, _cheque, pxPerMm, includeBackground);
-
-            var canvas = new Canvas { Width = w, Height = h, Background = Brushes.White, ClipToBounds = true };
-
-            // Header band
-            var header = new Rectangle { Width = w, Height = 9 * pxPerMm, Fill = new SolidColorBrush(Color.FromRgb(0xF0, 0xF0, 0xF0)) };
-            Canvas.SetLeft(header, 0); Canvas.SetTop(header, 0);
-            canvas.Children.Add(header);
-
-            // Bank name in header
-            canvas.Children.Add(MakeTb(_profile.BankName + "    A/C: " + _cheque.AccountNumber,
-                _profile.FontFamily, 8, true, Colors.Black, 5, 1.5));
-
-            // Border
-            var border = new Rectangle { Width = w - 1, Height = h - 1,
-                Stroke = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
-                StrokeThickness = 1, Fill = Brushes.Transparent };
-            Canvas.SetLeft(border, 0.5); Canvas.SetTop(border, 0.5);
-            canvas.Children.Add(border);
-
-            // MICR zone
-            var micr = new Rectangle { Width = w, Height = 12 * pxPerMm,
-                Fill = new SolidColorBrush(Color.FromRgb(0xF8, 0xF0, 0xF0)) };
-            Canvas.SetLeft(micr, 0); Canvas.SetTop(micr, h - 12 * pxPerMm);
-            canvas.Children.Add(micr);
-
-            // Signature line
-            var sig = new Line { X1 = w - 52 * pxPerMm, Y1 = h - 12 * pxPerMm,
-                X2 = w - 4 * pxPerMm, Y2 = h - 12 * pxPerMm,
-                Stroke = Brushes.Gray, StrokeThickness = 0.8 };
-            canvas.Children.Add(sig);
-            canvas.Children.Add(MakeTb("Authorized Signature", _profile.FontFamily, 7, false,
-                Color.FromRgb(0x88, 0x88, 0x88), w - 52 * pxPerMm, h - 9.5 * pxPerMm));
-
-            // Field helper
-            void AddField(string label, string value, double xMm, double yMm)
-            {
-                canvas.Children.Add(MakeTb(label, _profile.FontFamily, 7, false,
-                    Color.FromRgb(0x88, 0x88, 0x88), xMm * pxPerMm, (yMm - 4) * pxPerMm));
-                canvas.Children.Add(MakeTb(value, _profile.FontFamily, _profile.FontSize,
-                    _profile.IsBold, Colors.Black, xMm * pxPerMm, yMm * pxPerMm));
-                var ul = new Line { X1 = xMm * pxPerMm, Y1 = (yMm + 5) * pxPerMm,
-                    X2 = Math.Min((xMm + 80) * pxPerMm, w - 5 * pxPerMm), Y2 = (yMm + 5) * pxPerMm,
-                    Stroke = new SolidColorBrush(Color.FromRgb(0xDD, 0xDD, 0xDD)), StrokeThickness = 0.5 };
-                canvas.Children.Add(ul);
-            }
-
-            AddField("Date:", _cheque.ChequeDate.ToString("dd / MM / yyyy"), _profile.DateX, _profile.DateY);
-            AddField("Pay to:", _cheque.PayeeName, _profile.PayeeX, _profile.PayeeY);
-            AddField("Amount:", $"{_cheque.Currency} {_cheque.Amount:N3}", _profile.AmountNumX, _profile.AmountNumY);
-            AddField("In words:", _cheque.AmountInWords, _profile.AmountWordsX, _profile.AmountWordsY);
-            AddField("Cheque No:", _cheque.ChequeNumber, _profile.ChequeNumX, _profile.ChequeNumY);
-
-            return canvas;
-        }
+            => ChequePrintBuilder.Build(_cheque, _profile, w, h, includeBackground);
 
         private void RenderPreview()
         {
