@@ -80,9 +80,34 @@ namespace eCheque.MICO360.Core.Services
             return hash != null && BCrypt.Net.BCrypt.Verify(password, hash);
         }
 
+        /// <summary>Restores a remembered session: loads the active user by id and sets CurrentUser (no password).
+        /// Returns true on success. Used by the "Remember me" auto-sign-in at startup.</summary>
+        public static bool RestoreSession(int userId)
+        {
+            try
+            {
+                using var conn = CompanyService.GetMasterConnection();
+                using var cmd = new SqliteCommand("SELECT Id,Username,FullName,Email,Role FROM Users WHERE Id=@id AND IsActive=1", conn);
+                cmd.Parameters.AddWithValue("@id", userId);
+                using var r = cmd.ExecuteReader();
+                if (!r.Read()) return false;
+                CurrentUser = new User
+                {
+                    Id = r.GetInt32(0), Username = r.GetString(1),
+                    FullName = r.IsDBNull(2) ? "" : r.GetString(2),
+                    Email = r.IsDBNull(3) ? "" : r.GetString(3),
+                    Role = r.GetString(4)
+                };
+                CompanyService.MasterAudit(CurrentUser.Username, "Auto Sign-in", "", "Remembered session");
+                return true;
+            }
+            catch { return false; }
+        }
+
         public static void Logout()
         {
             if (CurrentUser != null) CompanyService.MasterAudit(CurrentUser.Username, "Logout");
+            SessionService.Clear();   // explicit sign-out forgets the remembered session
             CurrentUser = null;
         }
 

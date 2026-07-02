@@ -123,6 +123,10 @@
                                              VerticalContentAlignment="Center"/>
                             </Border>
 
+                            <CheckBox Content="  Keep me signed in" IsChecked="{Binding RememberMe}"
+                                      Foreground="#555555" FontSize="12" Margin="2,0,0,14"
+                                      ToolTip="Stay signed in on this computer. You'll only be signed out after 30 days of not using the app, or when you sign out."/>
+
                             <Button Content="SIGN IN" Height="42" FontSize="13" FontWeight="Bold"
                                     Style="{StaticResource PrimaryBtn}" Click="LoginBtn_Click" Margin="0,0,0,10"/>
                             <TextBlock HorizontalAlignment="Center" FontSize="12">

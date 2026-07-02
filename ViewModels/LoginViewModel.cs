@@ -7,7 +7,10 @@ namespace eCheque.MICO360.ViewModels
     public class LoginViewModel : BaseViewModel
     {
         string _username = "", _error = "", _email = "", _otpCode = "", _status = "";
-        bool _loading, _otpMode, _otpSent;
+        bool _loading, _otpMode, _otpSent, _rememberMe = true;
+
+        /// <summary>Keep the user signed in across restarts (auto sign-out only after 30 days of no use).</summary>
+        public bool RememberMe { get => _rememberMe; set => Set(ref _rememberMe, value); }
 
         public string Username { get => _username; set => Set(ref _username, value); }
         public string ErrorMessage { get => _error; set => Set(ref _error, value); }
@@ -89,6 +92,9 @@ namespace eCheque.MICO360.ViewModels
             var company = CompanyService.GetAll().FirstOrDefault();
             if (company == null) { ErrorMessage = "No company is configured. Contact your administrator."; AuthService.Logout(); return; }
             CompanyService.OpenCompany(company.Id, company.Name);
+            // Remember me: persist the session so the app auto-signs-in next launch (30-day inactivity expiry).
+            if (RememberMe && AuthService.CurrentUser != null) SessionService.Remember(AuthService.CurrentUser.Id);
+            else SessionService.Clear();
             LoginSuccessful?.Invoke();
         }
     }

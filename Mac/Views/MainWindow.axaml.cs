@@ -26,6 +26,9 @@ namespace eCheque.MICO360.Mac.Views
             _clock.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("dddd, dd MMM yyyy  HH:mm:ss");
             _clock.Start();
 
+            // "Remember me": mark the app as used so the 30-day inactivity window keeps resetting.
+            Closing += (_, _) => SessionService.Touch();
+
             NavDashboard(this, new RoutedEventArgs());
 
             // Auto-check for updates on startup and notify the user if one is available.

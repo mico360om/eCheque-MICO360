@@ -28,7 +28,10 @@
                     <TextBlock Text="Username" Classes="label"/>
                     <TextBox x:Name="TxtUsername" Text="{Binding Username}" Watermark="username" Margin="0,0,0,14"/>
                     <TextBlock Text="Password" Classes="label"/>
-                    <TextBox x:Name="TxtPassword" PasswordChar="●" Watermark="password" Margin="0,0,0,12"/>
+                    <TextBox x:Name="TxtPassword" PasswordChar="●" Watermark="password" Margin="0,0,0,10"/>
+                    <CheckBox Content="Keep me signed in" IsChecked="{Binding RememberMe}"
+                              Margin="0,0,0,12"
+                              ToolTip.Tip="Stay signed in on this Mac. You'll only be signed out after 30 days of not using the app, or when you sign out."/>
                     <Button Content="Sign In" Classes="primary" HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center" Click="OnLoginClick" Margin="0,0,0,8"/>
                     <Button Content="Sign in with Email OTP" Classes="secondary" HorizontalAlignment="Center"

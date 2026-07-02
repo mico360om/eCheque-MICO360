@@ -49,6 +49,9 @@ namespace eCheque.MICO360
             PreviewMouseMove += (s, e) => _lastActivity = DateTime.Now;
             PreviewKeyDown  += (s, e) => _lastActivity = DateTime.Now;
 
+            // "Remember me": mark the app as used so the 30-day inactivity window keeps resetting.
+            Closing += (s, e) => SessionService.Touch();
+
             // Enter key on the lock overlay password box
             PwdUnlock.KeyDown += (s, e) =>
             {

@@ -45,6 +45,26 @@ namespace eCheque.MICO360
             // Databases are encrypted at rest by SQLCipher (SecurityService), so the legacy
             // DPAPI re-wrap on exit is no longer needed (and would conflict with SQLCipher).
 
+            // "Remember me": if a valid remembered session exists (used within the last 30 days),
+            // sign in automatically and go straight to the app; otherwise show the login screen.
+            var remembered = SessionService.RememberedUserId();
+            if (remembered != null && AuthService.RestoreSession(remembered.Value))
+            {
+                try
+                {
+                    var company = CompanyService.GetAll().FirstOrDefault();
+                    if (company != null)
+                    {
+                        CompanyService.OpenCompany(company.Id, company.Name);
+                        SessionService.Touch();
+                        new MainWindow().Show();
+                        return;
+                    }
+                }
+                catch (Exception ex) { BugReportService.Report(ex, "Remembered auto sign-in"); }
+                AuthService.Logout();   // couldn't complete auto sign-in → fall back to login
+            }
+
             var login = new LoginWindow();
             login.Show();
         }
