@@ -9,7 +9,17 @@
     <AssemblyName>eCheque.MICO360.Mac</AssemblyName>
     <ApplicationIcon></ApplicationIcon>
     <Version>1.0.20</Version>
+    <!-- macOS targets for `dotnet publish -r ...` (see build-mac.sh) -->
+    <RuntimeIdentifiers>osx-arm64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>
+
+  <!-- Packaging assets are not compiled; excluded from the app build. -->
+  <ItemGroup>
+    <None Remove="AppIcon.iconset\**" />
+    <None Remove="Info.plist" />
+    <None Remove="Entitlements.plist" />
+    <None Remove="build-mac.sh" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.1" />
