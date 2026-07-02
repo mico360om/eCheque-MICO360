@@ -145,6 +145,13 @@ namespace eCheque.MICO360.Mac.Views
             ContentArea.Content = new LegalView { DataContext = vm };
         }
 
+        void NavProfiles(object? sender, RoutedEventArgs e)
+        {
+            SetTitle("Cheque Profiles");
+            var vm = new ProfileManagerViewModel(); vm.Load();
+            ContentArea.Content = new ProfileManagerView { DataContext = vm };
+        }
+
         void NavSettings(object? sender, RoutedEventArgs e)
         {
             SetTitle("Settings");

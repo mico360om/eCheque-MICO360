@@ -27,6 +27,7 @@
                     <Button Content="📅  Cheque Tracking" Classes="nav" Click="NavTracking"/>
                     <Button Content="🖨  Print History" Classes="nav" Click="NavPrintHistory"/>
                     <TextBlock Text="CONFIGURATION" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
+                    <Button Content="🖋  Cheque Profiles" Classes="nav" Click="NavProfiles"/>
                     <Button Content="⚙  Settings" Classes="nav" Click="NavSettings"/>
                     <TextBlock x:Name="TxtAdminHdr" Text="ADMINISTRATION" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
                     <Button x:Name="BtnCompanies" Content="🏢  Companies" Classes="nav" Click="NavCompanies"/>
