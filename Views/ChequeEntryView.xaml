@@ -256,24 +256,8 @@
                             Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
                     <Button Content="💾  Save Draft" Style="{StaticResource SecondaryBtn}"
                             Margin="0,0,8,0" Command="{Binding SaveDraftCommand}"/>
-                    <Button Margin="0,0,8,0" Command="{Binding PreviewCommand}"
-                            Padding="16,8" Background="#1565C0" Foreground="White"
-                            FontSize="13" FontWeight="SemiBold" BorderThickness="0" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="4"
-                                        Padding="{TemplateBinding Padding}">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#1976D2"/>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                        <TextBlock Text="👁  Preview Cheque"/>
-                    </Button>
+                    <Button Content="👁  Preview Cheque" Margin="0,0,8,0" Command="{Binding PreviewCommand}"
+                            Style="{StaticResource InfoBtn}"/>
                     <Button Content="🖨  Print Cheque" Style="{StaticResource PrimaryBtn}"
                             Padding="16,8" Command="{Binding SavePrintCommand}"/>
                 </StackPanel>

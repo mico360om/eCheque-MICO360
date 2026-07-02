@@ -56,6 +56,7 @@ namespace eCheque.MICO360
 
             Navigate("Dashboard");
             SetActiveNav(NavDashboard);
+            UpdateBadges();
 
             // Silent background update check on startup.
             _ = CheckForUpdatesOnStartupAsync();
@@ -67,6 +68,9 @@ namespace eCheque.MICO360
             {
                 var info = await UpdateService.CheckForUpdatesAsync();
                 if (!info.UpdateAvailable) return;
+
+                // Persistent sidebar reminder even if the user dismisses the prompt below.
+                Helpers.NavProps.SetBadge(NavUpdates, "!");
 
                 if (info.Mandatory)
                 {
@@ -163,10 +167,20 @@ namespace eCheque.MICO360
 
         private void SetActiveNav(Button btn)
         {
-            if (_activeNav != null) _activeNav.Background = System.Windows.Media.Brushes.Transparent;
+            if (_activeNav != null) Helpers.NavProps.SetIsActive(_activeNav, false);
             _activeNav = btn;
-            btn.Background = new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(0x8B, 0x18, 0x18));
+            Helpers.NavProps.SetIsActive(btn, true);
+        }
+
+        /// <summary>Refresh the sidebar notification badges (post-dated cheques due soon, updates available).</summary>
+        private void UpdateBadges()
+        {
+            try
+            {
+                int due = ChequeService.GetDuePdcCount(7); // cheques due within a week
+                Helpers.NavProps.SetBadge(NavTracking, due > 0 ? (due > 99 ? "99+" : due.ToString()) : "");
+            }
+            catch { /* badge is best-effort */ }
         }
 
         private static readonly string[] AdminOnlyPages = { "Companies", "Users", "Audit" };
