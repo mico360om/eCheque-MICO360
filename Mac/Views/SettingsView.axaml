@@ -1,0 +1,143 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.SettingsView">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" MaxWidth="700" HorizontalAlignment="Stretch">
+
+            <!-- Company -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Company Settings" Classes="cardTitle"/>
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="Company Name" Classes="label"/>
+                        <TextBox Text="{Binding CompanyName}"/>
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Default Currency" Classes="label"/>
+                            <TextBox Text="{Binding Currency}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Date Format" Classes="label"/>
+                            <ComboBox ItemsSource="{Binding DateFormats}" SelectedItem="{Binding DateFormat}"
+                                      HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Amount in Words -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Amount in Words" Classes="cardTitle"/>
+                    <Grid ColumnDefinitions="*,*" Margin="0,0,0,10">
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Currency Wording" Classes="label"/>
+                            <TextBox Text="{Binding CurrencyWording}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Baisa Wording" Classes="label"/>
+                            <TextBox Text="{Binding BaisaWording}"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,10">
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Case Format" Classes="label"/>
+                            <ComboBox ItemsSource="{Binding CaseFormats}" SelectedItem="{Binding CaseFormat}"
+                                      HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,10,0" VerticalAlignment="Bottom">
+                            <CheckBox Content="  Include Baisa" FontSize="13" IsChecked="{Binding IncludeBaisa}"
+                                      MinHeight="34" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <CheckBox Content="  Append &quot;Only&quot;" FontSize="13" IsChecked="{Binding AddOnly}"
+                                      MinHeight="34" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                    <!-- Live preview -->
+                    <Border Background="#F5F5F5" CornerRadius="4" Padding="12,8" Margin="0,4,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Preview  (4956.250)" FontWeight="Bold" FontSize="12" Foreground="#555555"/>
+                            <TextBlock Text="{Binding WordsPreview}" FontSize="12" Foreground="#8B1818"
+                                       FontStyle="Italic" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Email OTP (Mailjet) -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Email OTP Login (Mailjet)" Classes="cardTitle" Margin="0,0,0,4"/>
+                    <TextBlock Text="Used to email one-time login codes. Get your API Key and Secret Key from your Mailjet account (Account → API Key Management). The From email must be a Mailjet-verified sender."
+                               FontSize="11" Foreground="#888888" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <Grid ColumnDefinitions="*,*" Margin="0,0,0,10">
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Mailjet API Key" Classes="label"/>
+                            <TextBox Text="{Binding MailjetApiKey}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Mailjet Secret Key" Classes="label"/>
+                            <TextBox Text="{Binding MailjetSecretKey}"/>
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="From Email (verified sender)" Classes="label"/>
+                            <TextBox Text="{Binding MailjetFromEmail}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="From Name" Classes="label"/>
+                            <TextBox Text="{Binding MailjetFromName}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Paths -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="File Paths" Classes="cardTitle"/>
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="PDF Output Path" Classes="label"/>
+                        <DockPanel>
+                            <Button Content="Browse" Classes="secondary" DockPanel.Dock="Right"
+                                    Click="OnBrowsePdf"/>
+                            <TextBox Text="{Binding PdfPath}" IsReadOnly="True" Background="#F8F8F8" Margin="0,0,8,0"/>
+                        </DockPanel>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Backup Path" Classes="label"/>
+                        <DockPanel>
+                            <Button Content="Browse" Classes="secondary" DockPanel.Dock="Right"
+                                    Click="OnBrowseBackup"/>
+                            <TextBox Text="{Binding BackupPath}" IsReadOnly="True" Background="#F8F8F8" Margin="0,0,8,0"/>
+                        </DockPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Backup -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Backup &amp; Diagnostics" Classes="cardTitle"/>
+                    <TextBlock Text="Create a backup copy of the current company's database, or open the automatic bug/error log."
+                               Foreground="#666666" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Create Backup Now" Classes="primary" Command="{Binding BackupCommand}"/>
+                        <Button Content="Open Diagnostic Log" Classes="secondary" Command="{Binding OpenLogCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Save -->
+            <DockPanel>
+                <TextBlock Text="{Binding StatusMessage}" DockPanel.Dock="Left" VerticalAlignment="Center"
+                           Foreground="#2E7D32" FontSize="12" TextWrapping="Wrap" MaxWidth="420"/>
+                <Button Content="Save Settings" Classes="primary" DockPanel.Dock="Right"
+                        HorizontalAlignment="Right" Command="{Binding SaveCommand}"/>
+            </DockPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

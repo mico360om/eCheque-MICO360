@@ -21,7 +21,7 @@ namespace eCheque.MICO360.Mac.Views
             PopulateCompanySwitcher();
 
             if (!AuthService.CanEdit) BtnNewCheque.IsVisible = false;   // read-only role
-            if (!AuthService.IsAdmin) { BtnAudit.IsVisible = false; TxtAdminHdr.IsVisible = false; }
+            if (!AuthService.IsAdmin) { BtnAudit.IsVisible = false; BtnCompanies.IsVisible = false; BtnUsers.IsVisible = false; TxtAdminHdr.IsVisible = false; }
 
             _clock.Tick += (s, e) => TxtClock.Text = DateTime.Now.ToString("dddd, dd MMM yyyy  HH:mm:ss");
             _clock.Start();
@@ -143,6 +143,29 @@ namespace eCheque.MICO360.Mac.Views
             vm.BackRequested += () => NavDashboard(this, e);
             vm.Load();
             ContentArea.Content = new LegalView { DataContext = vm };
+        }
+
+        void NavSettings(object? sender, RoutedEventArgs e)
+        {
+            SetTitle("Settings");
+            var vm = new SettingsViewModel(); vm.Load();
+            ContentArea.Content = new SettingsView { DataContext = vm };
+        }
+
+        void NavUserManagement(object? sender, RoutedEventArgs e)
+        {
+            SetTitle("User Management");
+            var vm = new UserManagementViewModel(); vm.Load();
+            ContentArea.Content = new UserManagementView { DataContext = vm };
+        }
+
+        void NavCompanies(object? sender, RoutedEventArgs e)
+        {
+            SetTitle("Company Manager");
+            var vm = new CompanyManagerViewModel();
+            vm.CompanyListChanged += () => { PopulateCompanySwitcher(); TxtCompany.Text = CompanyService.CurrentCompanyName; };
+            vm.Load();
+            ContentArea.Content = new CompanyManagerView { DataContext = vm };
         }
 
         void OnLogout(object? sender, RoutedEventArgs e)
