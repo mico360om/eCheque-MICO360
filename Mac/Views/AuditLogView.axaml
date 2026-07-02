@@ -1,0 +1,70 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.AuditLogView">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+        <!-- Filters -->
+        <Border Grid.Row="0" Classes="card" Margin="0,0,0,14">
+            <StackPanel>
+                <Grid ColumnDefinitions="2*,*,*,*">
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Search (user, action, reference, remarks)" Classes="label"/>
+                        <TextBox Text="{Binding Search}" Watermark="Type to search…"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                        <TextBlock Text="Action" Classes="label"/>
+                        <ComboBox ItemsSource="{Binding Actions}" SelectedItem="{Binding ActionFilter}" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                        <TextBlock Text="From Date" Classes="label"/>
+                        <DatePicker SelectedDate="{Binding From}" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="To Date" Classes="label"/>
+                        <DatePicker SelectedDate="{Binding To}" HorizontalAlignment="Stretch"/>
+                    </StackPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                    <Button Content="Clear Filters" Classes="secondary" Margin="0,0,8,0" Command="{Binding ClearFiltersCommand}"/>
+                    <Button Content="Refresh" Classes="secondary" Command="{Binding RefreshCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- List -->
+        <Border Grid.Row="1" Classes="card" Padding="16">
+            <Grid RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="150,120,160,130,*" Margin="0,0,0,6">
+                    <TextBlock Grid.Column="0" Text="Date/Time" Classes="label"/>
+                    <TextBlock Grid.Column="1" Text="User" Classes="label"/>
+                    <TextBlock Grid.Column="2" Text="Action" Classes="label"/>
+                    <TextBlock Grid.Column="3" Text="Reference" Classes="label"/>
+                    <TextBlock Grid.Column="4" Text="Remarks" Classes="label"/>
+                </Grid>
+                <ScrollViewer Grid.Row="1">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding Logs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,8">
+                                        <Grid ColumnDefinitions="150,120,160,130,*">
+                                            <TextBlock Grid.Column="0" Text="{Binding ActionDate, StringFormat='{}{0:dd/MM/yyyy HH:mm:ss}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding UserName}" FontSize="12"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Action}" FontSize="12"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding RecordReference}" FontSize="12"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding Remarks}" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="No audit records found." Foreground="#AAAAAA" FontSize="12"
+                                   Margin="0,16,0,0" HorizontalAlignment="Center" IsVisible="{Binding IsEmpty}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="{Binding Logs.Count, StringFormat='{}{0} audit record(s)'}"
+                   FontSize="12" Foreground="#888888" Margin="0,8,0,0"/>
+    </Grid>
+</UserControl>

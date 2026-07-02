@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="eCheque.MICO360.Mac.Views.PrintHistoryView">
+    <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+        <!-- Filters -->
+        <Border Grid.Row="0" Classes="card" Margin="0,0,0,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="Search (cheque, payee, user, reason)" Classes="label"/>
+                    <TextBox Text="{Binding Search}" Watermark="Type to search…"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
+                    <Button Content="Refresh" Classes="secondary" Command="{Binding RefreshCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- List -->
+        <Border Grid.Row="1" Classes="card" Padding="16">
+            <Grid RowDefinitions="Auto,*">
+                <Grid Grid.Row="0" ColumnDefinitions="100,*,110,150,*" Margin="0,0,0,6">
+                    <TextBlock Grid.Column="0" Text="Cheque #" Classes="label"/>
+                    <TextBlock Grid.Column="1" Text="Payee" Classes="label"/>
+                    <TextBlock Grid.Column="2" Text="Printed By" Classes="label"/>
+                    <TextBlock Grid.Column="3" Text="Date" Classes="label"/>
+                    <TextBlock Grid.Column="4" Text="Reason" Classes="label"/>
+                </Grid>
+                <ScrollViewer Grid.Row="1">
+                    <StackPanel>
+                        <ItemsControl ItemsSource="{Binding History}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,8">
+                                        <Grid ColumnDefinitions="100,*,110,150,*">
+                                            <TextBlock Grid.Column="0" Text="{Binding ChequeNumber}" FontSize="12"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding PayeeName}" FontSize="12"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding PrintedBy}" FontSize="12"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding PrintedDate, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" FontSize="12"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding Reason}" FontSize="12" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="No print records found." Foreground="#AAAAAA" FontSize="12"
+                                   Margin="0,16,0,0" HorizontalAlignment="Center" IsVisible="{Binding IsEmpty}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="2" Text="{Binding History.Count, StringFormat='{}{0} print record(s)'}"
+                   FontSize="12" Foreground="#888888" Margin="0,8,0,0"/>
+    </Grid>
+</UserControl>

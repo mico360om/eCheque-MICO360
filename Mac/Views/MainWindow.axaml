@@ -25,9 +25,14 @@
                     <Button x:Name="BtnNewCheque" Content="✚  New Cheque" Classes="nav" Click="NavNewCheque"/>
                     <Button Content="☰  Cheque History" Classes="nav" Click="NavHistory"/>
                     <Button Content="📅  Cheque Tracking" Classes="nav" Click="NavTracking"/>
+                    <Button Content="🖨  Print History" Classes="nav" Click="NavPrintHistory"/>
+                    <TextBlock x:Name="TxtAdminHdr" Text="ADMINISTRATION" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
+                    <Button x:Name="BtnAudit" Content="📋  Audit Log" Classes="nav" Click="NavAudit"/>
                     <TextBlock Text="ACCOUNT" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
                     <Button Content="👤  My Profile" Classes="nav" Click="NavMyProfile"/>
-                    <TextBlock Text="HELP" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
+                    <TextBlock Text="HELP &amp; LEGAL" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
+                    <Button Content="🔄  Software Updates" Classes="nav" Click="NavUpdates"/>
+                    <Button Content="📜  Terms &amp; Legal" Classes="nav" Click="NavLegal"/>
                     <Button Content="ℹ  About" Classes="nav" Click="NavAbout"/>
                 </StackPanel>
             </DockPanel>
