@@ -33,8 +33,10 @@ namespace eCheque.MICO360.ViewModels
         public double Progress       { get => _progress;       set => Set(ref _progress, value); }
         public bool IsBusy           { get => _busy;           set { Set(ref _busy, value); OnPropertyChanged(nameof(IsNotBusy)); } }
         public bool IsNotBusy        => !_busy;
-        public bool UpdateAvailable  { get => _updateAvailable;set { Set(ref _updateAvailable, value); OnPropertyChanged(nameof(LatestVersionBrush)); OnPropertyChanged(nameof(UpToDate)); } }
-        public bool IsMandatory      { get => _mandatory;      set => Set(ref _mandatory, value); }
+        public bool UpdateAvailable  { get => _updateAvailable;set { Set(ref _updateAvailable, value); OnPropertyChanged(nameof(LatestVersionBrush)); OnPropertyChanged(nameof(UpToDate)); OnPropertyChanged(nameof(ShowMandatory)); } }
+        public bool IsMandatory      { get => _mandatory;      set { Set(ref _mandatory, value); OnPropertyChanged(nameof(ShowMandatory)); } }
+        /// <summary>The "required update" badge should only appear when a mandatory update actually exists.</summary>
+        public bool ShowMandatory    => _updateAvailable && _mandatory;
         public bool HasChecked       { get => _checked;        set { Set(ref _checked, value); OnPropertyChanged(nameof(LatestVersionBrush)); OnPropertyChanged(nameof(UpToDate)); } }
 
         /// <summary>True only after a check that found no newer version — drives the green "up to date" chip.</summary>

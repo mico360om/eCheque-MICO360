@@ -29,9 +29,11 @@ namespace eCheque.MICO360.Mac.ViewModels
         public bool UpdateAvailable
         {
             get => _updateAvailable;
-            set { if (Set(ref _updateAvailable, value)) { OnPropertyChanged(nameof(UpToDate)); OnPropertyChanged(nameof(LatestVersionBrush)); } }
+            set { if (Set(ref _updateAvailable, value)) { OnPropertyChanged(nameof(UpToDate)); OnPropertyChanged(nameof(LatestVersionBrush)); OnPropertyChanged(nameof(ShowMandatory)); } }
         }
-        public bool IsMandatory { get => _mandatory; set => Set(ref _mandatory, value); }
+        public bool IsMandatory { get => _mandatory; set { if (Set(ref _mandatory, value)) OnPropertyChanged(nameof(ShowMandatory)); } }
+        /// <summary>The "required update" badge should only appear when a mandatory update actually exists.</summary>
+        public bool ShowMandatory => _updateAvailable && _mandatory;
 
         public bool HasChecked
         {

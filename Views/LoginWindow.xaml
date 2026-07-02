@@ -19,7 +19,9 @@
     </Window.DataContext>
 
     <Border CornerRadius="12" ClipToBounds="True" BorderBrush="#4A0F0F" BorderThickness="1">
-        <Grid>
+        <!-- Drag from anywhere on the window chrome; interactive controls (text boxes, buttons)
+             handle their own clicks so they don't start a drag. -->
+        <Grid MouseLeftButtonDown="TitleBar_MouseDown">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="330"/>
                 <ColumnDefinition Width="*"/>

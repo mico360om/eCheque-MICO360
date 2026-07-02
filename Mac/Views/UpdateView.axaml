@@ -23,23 +23,15 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Mandatory badge -->
+                    <!-- Required-update badge — only when a mandatory update actually exists -->
                     <Border Background="#FDECEA" BorderBrush="#F5C6CB" BorderThickness="1" CornerRadius="4"
                             Padding="10,7" Margin="0,14,0,0" HorizontalAlignment="Left"
-                            IsVisible="{Binding IsMandatory}">
+                            IsVisible="{Binding ShowMandatory}">
                         <TextBlock Text="⚠  This is a required update and must be installed to continue using the app."
                                    FontSize="12" Foreground="#B00020" TextWrapping="Wrap"/>
                     </Border>
 
-                    <!-- Up-to-date chip (shown only when a check found no newer version) -->
-                    <Border Background="#E9F7EC" BorderBrush="#B7E1C1" BorderThickness="1" CornerRadius="4"
-                            Padding="10,7" Margin="0,14,0,0" HorizontalAlignment="Left"
-                            IsVisible="{Binding UpToDate}">
-                        <TextBlock Text="✔  You have the latest version installed — no update needed."
-                                   FontSize="12" Foreground="#2E7D32" TextWrapping="Wrap"/>
-                    </Border>
-
-                    <!-- Status line (colour reflects state: green = good, red = error, grey = info) -->
+                    <!-- Single status line (colour reflects state: green = up to date / success, red = error, grey = info) -->
                     <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="{Binding StatusBrush}"
                                Margin="0,14,0,0" TextWrapping="Wrap"/>
 

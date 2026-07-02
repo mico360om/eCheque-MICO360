@@ -30,23 +30,15 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Mandatory badge -->
+                    <!-- Required-update badge — only when a mandatory update actually exists -->
                     <Border Background="#FDECEA" BorderBrush="#F5C6CB" BorderThickness="1" CornerRadius="4"
                             Padding="10,7" Margin="0,14,0,0"
-                            Visibility="{Binding IsMandatory, Converter={StaticResource BoolToVisibility}}">
+                            Visibility="{Binding ShowMandatory, Converter={StaticResource BoolToVisibility}}">
                         <TextBlock Text="⚠  This is a required update and must be installed to continue using the app."
                                    FontSize="12" Foreground="#B00020" TextWrapping="Wrap"/>
                     </Border>
 
-                    <!-- Up-to-date chip (green, shown only when a check found no newer version) -->
-                    <Border Background="#E9F7EC" BorderBrush="#B7E1C1" BorderThickness="1" CornerRadius="4"
-                            Padding="10,7" Margin="0,14,0,0" HorizontalAlignment="Left"
-                            Visibility="{Binding UpToDate, Converter={StaticResource BoolToVisibility}}">
-                        <TextBlock Text="✔  You have the latest version installed — no update needed."
-                                   FontSize="12" Foreground="#2E7D32" TextWrapping="Wrap"/>
-                    </Border>
-
-                    <!-- Status + progress (colour reflects state: green = good, red = error, grey = info) -->
+                    <!-- Single status line (colour reflects state: green = up to date / success, red = error, grey = info) -->
                     <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="{Binding StatusBrush}"
                                Margin="0,14,0,0" TextWrapping="Wrap"/>
                     <ProgressBar Height="10" Margin="0,10,0,0" Minimum="0" Maximum="100" Value="{Binding Progress}"
