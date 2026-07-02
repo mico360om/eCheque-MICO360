@@ -5,6 +5,10 @@ using eCheque.MICO360.Models;
 using eCheque.MICO360.Services;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using MouseButtonEventArgs = System.Windows.Input.MouseButtonEventArgs;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using Key = System.Windows.Input.Key;
+using Keyboard = System.Windows.Input.Keyboard;
+using TextBox = System.Windows.Controls.TextBox;
 using Cursors = System.Windows.Input.Cursors;
 using Point = System.Windows.Point;
 using Size = System.Windows.Size;
@@ -34,7 +38,7 @@ namespace eCheque.MICO360.Views
         ChequeField? _selected;
         Border? _selBox;
         double _scale = 3.2;
-        bool _dragging, _suppress;
+        bool _dragging, _suppress, _userZoomed;
         Border? _dragEl; Point _dragOffset;
 
         static readonly string[] FontChoices = { "Arial", "Times New Roman", "Calibri", "Courier New", "Verdana", "Tahoma", "Segoe UI" };
@@ -65,9 +69,11 @@ namespace eCheque.MICO360.Views
             }
             catch (Exception ex) { BugReportService.Report(ex, "ChequeLayoutDesigner.ctor"); }
 
+            KeyDown += Window_KeyDown;
+
             Loaded += (s, e) =>
             {
-                try { LoadBackground(); BuildCanvas(); }
+                try { LoadBackground(); BuildCanvas(); FitToWindow(); }
                 catch (Exception ex)
                 {
                     BugReportService.Report(ex, "ChequeLayoutDesigner.Loaded");
@@ -75,6 +81,16 @@ namespace eCheque.MICO360.Views
                         "Design Layout", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             };
+        }
+
+        // Press Delete to remove the selected field (unless typing in a text box).
+        void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Delete && _selected != null && Keyboard.FocusedElement is not TextBox)
+            {
+                BtnDeleteField_Click(sender, e);
+                e.Handled = true;
+            }
         }
 
         // ── Background image ──
@@ -266,10 +282,28 @@ namespace eCheque.MICO360.Views
         }
 
         // ── Zoom / grid ──
-        void BtnZoomIn_Click(object sender, RoutedEventArgs e) { _scale = Math.Min(8, _scale + 0.6); AfterZoom(); }
-        void BtnZoomOut_Click(object sender, RoutedEventArgs e) { _scale = Math.Max(1.4, _scale - 0.6); AfterZoom(); }
-        void AfterZoom() { TxtZoom.Text = $"{_scale / 3.2 * 100:0}%"; BuildCanvas(); }
+        void BtnZoomIn_Click(object sender, RoutedEventArgs e) { _userZoomed = true; _scale = Math.Min(10, _scale + 0.6); AfterZoom(); }
+        void BtnZoomOut_Click(object sender, RoutedEventArgs e) { _userZoomed = true; _scale = Math.Max(1.0, _scale - 0.6); AfterZoom(); }
+        void BtnFit_Click(object sender, RoutedEventArgs e) => FitToWindow();
+        void AfterZoom() { const double pxPerMm = 96.0 / 25.4; TxtZoom.Text = $"{_scale / pxPerMm * 100:0}%"; BuildCanvas(); }
         void ChkGrid_Click(object sender, RoutedEventArgs e) => BuildCanvas();
+
+        // Scale the cheque so the whole thing fits inside the visible work area.
+        void FitToWindow()
+        {
+            if (_profile.ChequeWidth <= 0 || _profile.ChequeHeight <= 0) return;
+            double vw = CanvasScroller.ViewportWidth  > 0 ? CanvasScroller.ViewportWidth  : CanvasScroller.ActualWidth;
+            double vh = CanvasScroller.ViewportHeight > 0 ? CanvasScroller.ViewportHeight : CanvasScroller.ActualHeight;
+            vw -= 72; vh -= 72; // padding + border/margin breathing room
+            if (vw <= 0 || vh <= 0) return;
+            double s = Math.Min(vw / _profile.ChequeWidth, vh / _profile.ChequeHeight);
+            _scale = Math.Max(1.0, Math.Min(10, s));
+            _userZoomed = false;
+            AfterZoom();
+        }
+
+        // Keep the cheque fitted while the window is resized — until the user manually zooms.
+        void CanvasScroller_SizeChanged(object sender, SizeChangedEventArgs e) { if (!_userZoomed) FitToWindow(); }
 
         // ── Test print / save / cancel ──
         void SyncProfile()

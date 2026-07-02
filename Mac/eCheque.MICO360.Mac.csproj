@@ -8,7 +8,7 @@
     <RootNamespace>eCheque.MICO360.Mac</RootNamespace>
     <AssemblyName>eCheque.MICO360.Mac</AssemblyName>
     <ApplicationIcon></ApplicationIcon>
-    <Version>1.0.11</Version>
+    <Version>1.0.12</Version>
   </PropertyGroup>
 
   <ItemGroup>

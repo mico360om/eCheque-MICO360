@@ -30,8 +30,9 @@
                     <Button Content="✕ Remove" Click="BtnRemoveImage_Click" Style="{StaticResource SecondaryBtn}"
                             Foreground="White" BorderBrush="#666" Padding="8,5" Margin="0,0,12,0"/>
                     <Button Content="−" Click="BtnZoomOut_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,4,0"/>
-                    <TextBlock x:Name="TxtZoom" Text="300%" Foreground="White" FontSize="12" VerticalAlignment="Center" MinWidth="42" TextAlignment="Center"/>
-                    <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="4,0,12,0"/>
+                    <TextBlock x:Name="TxtZoom" Text="100%" Foreground="White" FontSize="12" VerticalAlignment="Center" MinWidth="42" TextAlignment="Center"/>
+                    <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="4,0,4,0"/>
+                    <Button Content="Fit" Click="BtnFit_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,12,0"/>
                     <CheckBox x:Name="ChkGrid" Content="Grid" Foreground="White" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,0" Click="ChkGrid_Click"/>
                     <Button Content="🖨 Test Print" Click="BtnTestPrint_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5"/>
                 </StackPanel>
@@ -45,9 +46,9 @@
                 <ColumnDefinition Width="270"/>
             </Grid.ColumnDefinitions>
 
-            <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                          Background="#6E6E6E" Padding="24">
-                <Border BorderBrush="#444" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ScrollViewer x:Name="CanvasScroller" Grid.Column="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                          Background="#6E6E6E" Padding="24" SizeChanged="CanvasScroller_SizeChanged">
+                <Border BorderBrush="#444" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8">
                     <Grid>
                         <Image x:Name="BgImage" Stretch="Fill" SnapsToDevicePixels="True"/>
                         <Canvas x:Name="ChequeCanvas" Background="Transparent"
@@ -109,7 +110,7 @@
                                         <TextBox x:Name="TxtY" Style="{StaticResource InputBox}" TextChanged="Prop_Changed"/>
                                     </StackPanel>
                                 </Grid>
-                                <Button x:Name="BtnDeleteField" Content="Remove field" Click="BtnDeleteField_Click"
+                                <Button x:Name="BtnDeleteField" Content="🗑  Remove this field  (Del)" Click="BtnDeleteField_Click"
                                         Style="{StaticResource SecondaryBtn}" Foreground="#CC2020" BorderBrush="#CC2020" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </StackPanel>

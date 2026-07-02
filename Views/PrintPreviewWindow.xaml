@@ -30,13 +30,14 @@
                 </StackPanel>
             </DockPanel>
         </Border>
-        <!-- Preview Area -->
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                      Background="#888888">
-            <Border Margin="24" Background="White" BorderBrush="#BBBBBB" BorderThickness="1">
-                <Image x:Name="PreviewImage" Stretch="None"/>
-            </Border>
-        </ScrollViewer>
+        <!-- Preview Area — the whole cheque always scales to fit the window (never cut off). -->
+        <Border Grid.Row="1" Background="#888888">
+            <Viewbox Stretch="Uniform" StretchDirection="Both" Margin="24">
+                <Border Background="White" BorderBrush="#BBBBBB" BorderThickness="1">
+                    <Image x:Name="PreviewImage" Stretch="None"/>
+                </Border>
+            </Viewbox>
+        </Border>
         <!-- Info bar -->
         <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="16,8">
             <StackPanel Orientation="Horizontal">
