@@ -4,7 +4,7 @@
         Title="eCheque MICO360"
         Width="1280" Height="800" MinWidth="1000" MinHeight="620"
         WindowStartupLocation="CenterScreen"
-        Icon="/logo.png"
+        Icon="/logo.ico"
         Background="#F5F5F5"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"

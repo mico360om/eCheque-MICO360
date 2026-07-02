@@ -13,7 +13,7 @@
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
         FontFamily="Segoe UI"
-        Icon="/logo.png">
+        Icon="/logo.ico">
     <Window.DataContext>
         <vm:LoginViewModel/>
     </Window.DataContext>

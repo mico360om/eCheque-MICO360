@@ -4,7 +4,7 @@
         Title="Print Preview — eCheque MICO360"
         Width="820" Height="640"
         WindowStartupLocation="CenterOwner"
-        Icon="/logo.png"
+        Icon="/logo.ico"
         Background="#F5F5F5"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"

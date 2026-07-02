@@ -208,10 +208,28 @@ namespace eCheque.MICO360.Views
         void Select(ChequeField f)
         {
             _selected = f;
-            LstFields.SelectedItem = f;
+            if (!ReferenceEquals(LstFields.SelectedItem, f)) LstFields.SelectedItem = f;
             PanelProps.IsEnabled = true;
             PopulateProps();
-            BuildCanvas();
+            // Update the highlight in place — do NOT rebuild the canvas here, or the box being
+            // dragged would be recreated mid-drag (which is what made dragging stutter).
+            RefreshSelectionVisual();
+        }
+
+        // Re-style existing field boxes to reflect the current selection without recreating them.
+        void RefreshSelectionVisual()
+        {
+            _selBox = null;
+            foreach (var child in ChequeCanvas.Children)
+            {
+                if (child is Border b && b.Tag is ChequeField f)
+                {
+                    bool sel = ReferenceEquals(f, _selected);
+                    b.BorderThickness = new Thickness(sel ? 2.2 : 1.4);
+                    Panel.SetZIndex(b, sel ? 100 : 10);
+                    if (sel) _selBox = b;
+                }
+            }
         }
 
         void LstFields_SelectionChanged(object sender, SelectionChangedEventArgs e)

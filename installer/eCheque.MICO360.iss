@@ -23,6 +23,7 @@ DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputBaseFilename=eCheque-MICO360-Setup-{#MyAppVersion}
 OutputDir=..\installer_output
+SetupIconFile=..\logo.ico
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
