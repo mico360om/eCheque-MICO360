@@ -81,6 +81,10 @@ namespace eCheque.MICO360.Core.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = "";
         public int LastChequeNumber { get; set; }
+        // Visual designer: base64 scanned-cheque template (on-screen guide only, never printed) + saved field layout (JSON).
+        public string BackgroundImage { get; set; } = "";
+        public string FieldsJson { get; set; } = "";
+        public bool HasTemplate => !string.IsNullOrWhiteSpace(BackgroundImage) || !string.IsNullOrWhiteSpace(FieldsJson);
     }
 
     public class User

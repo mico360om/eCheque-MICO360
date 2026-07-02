@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="eCheque.MICO360.Mac.Views.ChequeDesignerWindow"
+        Width="1100" Height="720" MinWidth="900" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        Title="Cheque Designer — eCheque MICO360"
+        Background="#F5F5F5">
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#1A1A1A" Padding="12,8">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtProfile" Foreground="White" FontWeight="Bold" FontSize="13"/>
+                    <TextBlock Text="Upload your scanned cheque, then drag each field onto it." Foreground="#999999" FontSize="11"/>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <Button Content="🖼  Upload Image" Click="OnUpload"/>
+                    <Button Content="✕ Remove" Click="OnRemoveImage"/>
+                    <Button Content="−" Click="OnZoomOut"/>
+                    <TextBlock x:Name="TxtZoom" Text="100%" Foreground="White" VerticalAlignment="Center" MinWidth="42" TextAlignment="Center"/>
+                    <Button Content="+" Click="OnZoomIn"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main: canvas + properties -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,280">
+            <ScrollViewer Grid.Column="0" Background="#6E6E6E"
+                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                <Border Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        BorderBrush="#444444" BorderThickness="1">
+                    <Panel>
+                        <Image x:Name="BgImage" Stretch="Fill"/>
+                        <Canvas x:Name="FieldCanvas" Background="Transparent"
+                                PointerMoved="OnCanvasPointerMoved" PointerReleased="OnCanvasPointerReleased"/>
+                    </Panel>
+                </Border>
+            </ScrollViewer>
+
+            <!-- Properties -->
+            <Border Grid.Column="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="14" Spacing="8">
+                        <TextBlock Text="Fields on cheque" FontWeight="SemiBold" Foreground="#8B1818"/>
+                        <ListBox x:Name="LstFields" Height="150" SelectionChanged="OnFieldSelected">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Label}"/></DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <ComboBox x:Name="CmbAdd" Width="150"/>
+                            <Button Content="+ Add" Click="OnAddField"/>
+                        </StackPanel>
+
+                        <Border Height="1" Background="#EEEEEE"/>
+
+                        <StackPanel x:Name="PanelProps" IsEnabled="False" Spacing="8">
+                            <CheckBox x:Name="ChkEnabled" Content="Print this field" Click="OnPropChanged"/>
+                            <TextBlock Text="Label / custom text"/>
+                            <TextBox x:Name="TxtLabel" TextChanged="OnPropChanged"/>
+                            <Grid ColumnDefinitions="*,8,*">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="Font size"/>
+                                    <TextBox x:Name="TxtSize" TextChanged="OnPropChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="2">
+                                    <TextBlock Text="Width (mm)"/>
+                                    <TextBox x:Name="TxtWidth" TextChanged="OnPropChanged"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Alignment"/>
+                            <ComboBox x:Name="CmbAlign" HorizontalAlignment="Stretch" SelectionChanged="OnPropChanged">
+                                <ComboBoxItem>Left</ComboBoxItem>
+                                <ComboBoxItem>Center</ComboBoxItem>
+                                <ComboBoxItem>Right</ComboBoxItem>
+                            </ComboBox>
+                            <CheckBox x:Name="ChkBold" Content="Bold" Click="OnPropChanged"/>
+                            <Grid ColumnDefinitions="*,8,*">
+                                <StackPanel Grid.Column="0" Spacing="2">
+                                    <TextBlock Text="X (mm)"/>
+                                    <TextBox x:Name="TxtX" TextChanged="OnPropChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="2">
+                                    <TextBlock Text="Y (mm)"/>
+                                    <TextBox x:Name="TxtY" TextChanged="OnPropChanged"/>
+                                </StackPanel>
+                            </Grid>
+                            <Button Content="🗑 Remove this field" Click="OnDeleteField" Foreground="#CC2020" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Info -->
+        <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="16,6">
+            <TextBlock x:Name="TxtPosition" Foreground="#555555" FontSize="12"
+                       Text="Drag a field to position it. Only the entered data prints — the scanned image is a guide and is never printed."/>
+        </Border>
+
+        <!-- Actions -->
+        <Border Grid.Row="3" Background="#F5F5F5" Padding="16,10">
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Content="Reset to Defaults" Classes="secondary" Click="OnReset"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Classes="secondary" Click="OnCancel"/>
+                    <Button Content="💾 Save Layout" Classes="primary" Click="OnSave"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

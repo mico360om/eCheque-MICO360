@@ -62,28 +62,29 @@ namespace eCheque.MICO360.Mac.Services
         static Control BuildVisual(ChequeRecord c, ChequeProfile p, double cw, double ch)
         {
             var canvas = new Canvas { Width = cw, Height = ch, Background = Brushes.White, ClipToBounds = true };
-            double fs = p.FontSize <= 0 ? 11 : p.FontSize;
 
-            void Add(string? text, double xMm, double yMm, double size, bool bold, double maxWmm = 0)
+            // Render the saved visual layout (falls back to the profile's default field set for old profiles),
+            // so what the Designer positions is exactly what prints. The scanned template is never printed.
+            foreach (var f in ChequeLayout.Parse(p))
             {
-                if (string.IsNullOrWhiteSpace(text)) return;
+                if (!f.Enabled) continue;
+                var val = ChequeLayout.ValueFor(f, c);
+                if (string.IsNullOrWhiteSpace(val)) continue;
+
                 var tb = new TextBlock
                 {
-                    Text = text, FontSize = size, Foreground = Brushes.Black,
-                    FontWeight = bold ? FontWeight.Bold : FontWeight.Normal,
-                    TextWrapping = TextWrapping.Wrap
+                    Text = val,
+                    FontSize = f.FontSize <= 0 ? 11 : f.FontSize,
+                    Foreground = Brushes.Black,
+                    FontWeight = f.Bold ? FontWeight.Bold : FontWeight.Normal,
+                    TextWrapping = TextWrapping.Wrap,
+                    Width = Math.Max(10, f.Width) * Dip,
+                    TextAlignment = f.Align switch { "Center" => TextAlignment.Center, "Right" => TextAlignment.Right, _ => TextAlignment.Left }
                 };
-                if (maxWmm > 0) tb.MaxWidth = maxWmm * Dip;
-                Canvas.SetLeft(tb, (xMm + p.PrintOffsetX) * Dip);
-                Canvas.SetTop(tb, (yMm + p.PrintOffsetY) * Dip);
+                Canvas.SetLeft(tb, (f.X + p.PrintOffsetX) * Dip);
+                Canvas.SetTop(tb, (f.Y + p.PrintOffsetY) * Dip);
                 canvas.Children.Add(tb);
             }
-
-            Add(c.ChequeDate.ToString("dd / MM / yyyy"), p.DateX, p.DateY, fs, p.IsBold);
-            Add(c.PayeeName, p.PayeeX, p.PayeeY, fs, true, p.ChequeWidth - p.PayeeX - 5);
-            Add($"{c.Currency} {c.Amount:N3}", p.AmountNumX, p.AmountNumY, fs, true);
-            Add(c.AmountInWords, p.AmountWordsX, p.AmountWordsY, fs - 1, false, p.ChequeWidth - p.AmountWordsX - 5);
-            Add(c.ChequeNumber, p.ChequeNumX, p.ChequeNumY, fs, false);
             return canvas;
         }
 

@@ -149,7 +149,7 @@ namespace eCheque.MICO360.Mac.Views
         {
             SetTitle("Cheque Profiles");
             var vm = new ProfileManagerViewModel(); vm.Load();
-            ContentArea.Content = new ProfileManagerView { DataContext = vm };
+            ContentArea.Content = new ProfileManagerView(vm);
         }
 
         void NavSettings(object? sender, RoutedEventArgs e)

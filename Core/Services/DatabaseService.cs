@@ -47,7 +47,9 @@ namespace eCheque.MICO360.Core.Services
                 "ALTER TABLE ChequeProfiles ADD COLUMN LastChequeNumber INTEGER DEFAULT 0",
                 "ALTER TABLE ChequeRecords ADD COLUMN PresentedDate TEXT",
                 "ALTER TABLE ChequeRecords ADD COLUMN ClearedDate TEXT",
-                "ALTER TABLE ChequeRecords ADD COLUMN BounceReason TEXT DEFAULT ''"
+                "ALTER TABLE ChequeRecords ADD COLUMN BounceReason TEXT DEFAULT ''",
+                "ALTER TABLE ChequeProfiles ADD COLUMN BackgroundImage TEXT DEFAULT ''",
+                "ALTER TABLE ChequeProfiles ADD COLUMN FieldsJson TEXT DEFAULT ''"
             };
             using var conn = GetConnection();
             foreach (var sql in migrations)

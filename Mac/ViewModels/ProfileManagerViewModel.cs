@@ -129,11 +129,12 @@ namespace eCheque.MICO360.Mac.ViewModels
             StatusMessage = "";
         }
 
+        public event Action<ChequeProfile>? DesignLayoutRequested;
+
         void OpenDesigner()
         {
             if (Selected == null) { StatusMessage = "Select a profile first."; return; }
-            // The visual layout designer is not yet available on macOS.
-            StatusMessage = "The visual layout designer is coming to macOS in a future update.";
+            DesignLayoutRequested?.Invoke(Selected);
         }
 
         static ChequeProfile Clone(ChequeProfile p) => new()
