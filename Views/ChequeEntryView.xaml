@@ -27,8 +27,11 @@
                                 <TextBlock Text="Profile *" Style="{StaticResource FieldLabel}"/>
                                 <ComboBox Style="{StaticResource InputCombo}"
                                           ItemsSource="{Binding Profiles}"
-                                          SelectedItem="{Binding SelectedProfile}"
-                                          DisplayMemberPath="Name"/>
+                                          SelectedItem="{Binding SelectedProfile}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,12,0">
                                 <TextBlock Text="Bank Name" Style="{StaticResource FieldLabel}"/>

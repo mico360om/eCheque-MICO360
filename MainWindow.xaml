@@ -78,8 +78,11 @@
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <TextBlock Text="🏢" FontSize="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <ComboBox x:Name="CmbCompanySwitch" MinWidth="180" Style="{StaticResource InputCombo}"
-                                  DisplayMemberPath="Name" SelectionChanged="CmbCompanySwitch_SelectionChanged"
-                                  ToolTip="Switch active company"/>
+                                  SelectionChanged="CmbCompanySwitch_SelectionChanged" ToolTip="Switch active company">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <TextBlock x:Name="TxtDateTime" FontSize="12" Foreground="#888888"
                                    VerticalAlignment="Center" Margin="18,0,0,0"/>
                     </StackPanel>
