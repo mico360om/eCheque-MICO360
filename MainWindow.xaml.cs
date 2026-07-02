@@ -20,6 +20,7 @@ namespace eCheque.MICO360
         public MainWindow()
         {
             InitializeComponent();
+            ToastService.Register(ToastHostPanel);
             TxtCompanyName.Text = CompanyService.CurrentCompanyName;
             TxtUserInfo.Text = $"{AuthService.CurrentUser?.FullName} ({AuthService.CurrentUser?.Role})";
             PopulateCompanySwitcher();

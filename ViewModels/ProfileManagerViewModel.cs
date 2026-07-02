@@ -94,7 +94,7 @@ namespace eCheque.MICO360.ViewModels
         }
         public void Load(){var keepId=Selected?.Id??Edit?.Id??0;Profiles=new ObservableCollection<ChequeProfile>(ChequeService.GetProfiles(false));if(keepId>0)Selected=Profiles.FirstOrDefault(p=>p.Id==keepId);}
         void NewProfile(){Edit=new ChequeProfile{CreatedBy=AuthService.CurrentUser?.Username??"",AccountName=DatabaseService.GetSetting("CompanyName","")};IsEditing=true;StatusMessage="";}
-        void SaveProfile(){if(string.IsNullOrWhiteSpace(Edit.Name)){StatusMessage="Profile name is required.";return;}ChequeService.SaveProfile(Edit);Load();Selected=Profiles.FirstOrDefault(p=>p.Id==Edit.Id);IsEditing=false;StatusMessage="Profile saved.";}
+        void SaveProfile(){if(string.IsNullOrWhiteSpace(Edit.Name)){StatusMessage="Profile name is required.";ToastService.Error("Profile name is required.");return;}ChequeService.SaveProfile(Edit);Load();Selected=Profiles.FirstOrDefault(p=>p.Id==Edit.Id);IsEditing=false;StatusMessage="Profile saved.";ToastService.Success($"Profile '{Edit.Name}' saved.");}
         void DeleteProfile()
         {
             if(Selected==null)return;

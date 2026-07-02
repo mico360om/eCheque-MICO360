@@ -87,6 +87,10 @@
             </Border>
             <ContentControl x:Name="MainContent" Grid.Row="1"/>
         </Grid>
+        <!-- Toast / snackbar host (top-right of the content area) -->
+        <StackPanel x:Name="ToastHostPanel" Grid.Column="1" Panel.ZIndex="900"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,64,20,0" Width="380"/>
+
         <!-- Session Lock Overlay -->
         <Grid x:Name="LockOverlay" Grid.ColumnSpan="2" Background="#CC000000" Visibility="Collapsed" Panel.ZIndex="999">
             <Border Background="White" CornerRadius="10" Padding="36,28" Width="360" VerticalAlignment="Center" HorizontalAlignment="Center">

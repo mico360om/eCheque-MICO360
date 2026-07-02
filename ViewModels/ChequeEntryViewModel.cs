@@ -134,6 +134,7 @@ namespace eCheque.MICO360.ViewModels
             Cheque.Status = "Draft";
             ChequeService.SaveCheque(Cheque);
             StatusMessage = $"Draft saved — Cheque #{Cheque.ChequeNumber}";
+            ToastService.Success($"Draft saved — Cheque #{Cheque.ChequeNumber}");
         }
 
         void Save()
@@ -145,6 +146,7 @@ namespace eCheque.MICO360.ViewModels
             ChequeService.SaveCheque(Cheque);
             if (isNew && SelectedProfile != null) ChequeService.IncrementChequeNumber(SelectedProfile.Id);
             StatusMessage = $"Cheque #{Cheque.ChequeNumber} saved.";
+            ToastService.Success($"Cheque #{Cheque.ChequeNumber} saved.");
             Saved?.Invoke();
         }
 

@@ -46,6 +46,36 @@
         </Border>
         <!-- Grid -->
         <Border Grid.Row="1" Style="{StaticResource Card}" Padding="0">
+          <DockPanel>
+            <!-- Load-error banner (no more silently blank grid) -->
+            <Border DockPanel.Dock="Top" Background="#FDECEA" BorderBrush="#F5C6CB" BorderThickness="0,0,0,1"
+                    Padding="14,10" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="↻  Retry" Style="{StaticResource SecondaryBtn}"
+                            Padding="12,5" FontSize="12" Command="{Binding RefreshCommand}"/>
+                    <TextBlock Text="{Binding LoadError}" Foreground="#B00020" FontSize="12"
+                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </DockPanel>
+            </Border>
+            <!-- Empty state (no records, no error) -->
+            <TextBlock DockPanel.Dock="Top" Text="No cheques match your filters." Margin="16,20" FontSize="13"
+                       Foreground="{StaticResource TextSub}" HorizontalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Cheques.Count}" Value="0"/>
+                                    <Condition Binding="{Binding HasError}" Value="False"/>
+                                    <Condition Binding="{Binding IsLoading}" Value="False"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <DataGrid ItemsSource="{Binding Cheques}" SelectedItem="{Binding Selected}"
                       Padding="0" BorderThickness="0">
                 <DataGrid.Columns>
@@ -80,9 +110,10 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+          </DockPanel>
         </Border>
         <!-- Status Bar -->
-        <TextBlock Grid.Row="2" Margin="0,8,0,0" FontSize="12" Foreground="#888888"
+        <TextBlock Grid.Row="2" Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource TextSub}"
                    Text="{Binding Cheques.Count, StringFormat='{}{0} record(s)'}"/>
     </Grid>
 </UserControl>
