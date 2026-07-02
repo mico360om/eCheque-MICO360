@@ -33,5 +33,9 @@
         // and the saved field layout (positions/fonts/alignment) as JSON.
         public string BackgroundImage { get; set; } = "";
         public string FieldsJson { get; set; } = "";
+
+        /// <summary>True when this profile has a scanned template and/or a saved visual field layout.</summary>
+        public bool HasTemplate => !string.IsNullOrWhiteSpace(BackgroundImage) || !string.IsNullOrWhiteSpace(FieldsJson);
+        public string PaperDisplay => $"{ChequeWidth:0}×{ChequeHeight:0} mm · {PaperSize}";
     }
 }
