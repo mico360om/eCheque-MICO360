@@ -185,9 +185,18 @@ namespace eCheque.MICO360.Views
             }
 
             var dlg = new PrintDialog();
-            // Print on a page sized to the cheque itself (not a default A4 sheet).
+            // Hint the cheque-sized page before the dialog opens...
             eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
             if (dlg.ShowDialog() != true) return;
+            // ...then force + validate it against the printer the user actually chose (this is what makes it stick).
+            var resolved = eCheque.MICO360.Helpers.PrintHelper.SelectChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
+
+            // If the printer couldn't use the cheque size, warn before wasting a cheque.
+            if (!resolved.Matched &&
+                MessageBox.Show(
+                    $"Your printer could not use the cheque page size ({_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm) and will use {resolved.Wmm:0}×{resolved.Hmm:0} mm instead.\n\nThe cheque will still print at actual size in the top-left, but alignment on a real cheque may be off. Set a custom paper size of {_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm in your printer for best results.\n\nContinue printing?",
+                    "Printer Page Size", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
 
             const double pxPerMm = 96.0 / 25.4;
             double cw = _profile.ChequeWidth  * pxPerMm;
@@ -196,11 +205,11 @@ namespace eCheque.MICO360.Views
             // Build a fresh canvas for the printer and print it at true 1:1 size (top-left) so the
             // text lands where it should on a real cheque; only shrink if the cheque exceeds the page.
             var canvas = BuildChequeCanvas(cw, ch);
-            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, $"Cheque #{_cheque.ChequeNumber} — eCheque MICO360");
+            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, resolved.Wdip, resolved.Hdip, $"Cheque #{_cheque.ChequeNumber} — eCheque MICO360");
 
             WasPrinted = true;
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM",
-                "Print", _cheque.ChequeNumber, $"Printed to {dlg.PrintQueue?.FullName}");
+                "Print", _cheque.ChequeNumber, $"Printed to {dlg.PrintQueue?.FullName} on {resolved.Wmm:0}×{resolved.Hmm:0} mm page");
             Close();
         }
 

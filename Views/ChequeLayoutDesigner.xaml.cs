@@ -342,11 +342,14 @@ namespace eCheque.MICO360.Views
             var dlg = new PrintDialog();
             eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
             if (dlg.ShowDialog() != true) return;
+            var resolved = eCheque.MICO360.Helpers.PrintHelper.SelectChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
             const double pxPerMm = 96.0 / 25.4;
             var canvas = ChequeRenderer.Build(_profile, ChequeLayout.SampleCheque(_profile), pxPerMm, includeBackground: false);
             double cw = _profile.ChequeWidth * pxPerMm, ch = _profile.ChequeHeight * pxPerMm;
-            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, "Cheque layout test print");
-            TxtPosition.Text = "Test print sent at actual size. Hold the printout against a real cheque to verify alignment.";
+            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, resolved.Wdip, resolved.Hdip, "Cheque layout test print");
+            TxtPosition.Text = resolved.Matched
+                ? $"Test print sent on a {resolved.Wmm:0}×{resolved.Hmm:0} mm page (cheque size). Hold it against a real cheque to verify alignment."
+                : $"⚠ Printer used {resolved.Wmm:0}×{resolved.Hmm:0} mm instead of the cheque size ({_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm). Set a custom paper size in your printer for exact alignment.";
         }
 
         void BtnSave_Click(object sender, RoutedEventArgs e)

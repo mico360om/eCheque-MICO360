@@ -44,35 +44,96 @@ namespace eCheque.MICO360.Helpers
         }
 
         /// <summary>
-        /// Preset a CUSTOM page size equal to the cheque's own dimensions so the cheque prints on a
-        /// cheque-sized page (not a default A4 sheet). This is what keeps a real cheque aligned.
+        /// Preset a CUSTOM page size equal to the cheque's own dimensions BEFORE the dialog opens, so the
+        /// dialog attempts to show the cheque size selected. WPF re-reads the printer default when the
+        /// dialog is shown, so this is only a hint — SelectChequeMedia() (called after) is what makes it stick.
         /// </summary>
         public static void ApplyChequeMedia(System.Windows.Controls.PrintDialog dlg, double widthMm, double heightMm)
         {
             try
             {
-                double wDip = widthMm  / 25.4 * 96.0;
-                double hDip = heightMm / 25.4 * 96.0;
                 dlg.PrintTicket ??= new PrintTicket();
-                dlg.PrintTicket.PageMediaSize = new PageMediaSize(wDip, hDip);
+                dlg.PrintTicket.PageMediaSize = ChequeMediaSize(widthMm, heightMm);
             }
             catch { /* driver may not accept a custom size — falls back to the dialog default */ }
         }
 
+        static PageMediaSize ChequeMediaSize(double widthMm, double heightMm)
+            => new PageMediaSize(widthMm / 25.4 * 96.0, heightMm / 25.4 * 96.0);
+
+        /// <summary>The page size the printer actually accepted, in DIP (1/96") and in mm, plus whether it
+        /// matched the requested cheque size. Wmm/Hmm are for display; Wdip/Hdip drive the print layout.</summary>
+        public readonly record struct ResolvedPage(double Wdip, double Hdip, double Wmm, double Hmm, bool Matched);
+
         /// <summary>
-        /// Prints the content at real size at the top-left of the page; if the content is bigger than
-        /// the printable area it is scaled down uniformly to fit (never scaled up).
+        /// AFTER the user has chosen a printer: force the output media to the cheque's exact size and
+        /// VALIDATE it against that printer's capabilities. If the printer already offers a size that
+        /// matches the cheque (within ~2 mm) that named size is selected; otherwise a custom size is used.
+        /// If the driver can't honour the size it substitutes one — that substituted size is returned with
+        /// Matched=false so the caller can warn. Never throws.
         /// </summary>
-        public static void PrintActualSize(System.Windows.Controls.PrintDialog dlg, FrameworkElement content, double w, double h, string description)
+        public static ResolvedPage SelectChequeMedia(System.Windows.Controls.PrintDialog dlg, double widthMm, double heightMm)
+        {
+            double reqWdip = widthMm / 25.4 * 96.0, reqHdip = heightMm / 25.4 * 96.0;
+            ResolvedPage Requested() => new(reqWdip, reqHdip, widthMm, heightMm, true);
+            try
+            {
+                var queue = dlg.PrintQueue;
+                if (queue == null) return Requested();
+
+                double tol = 2.0 / 25.4 * 96.0; // ~2 mm tolerance
+
+                // Prefer a driver-supported size that matches the cheque; else a custom size.
+                PageMediaSize target = ChequeMediaSize(widthMm, heightMm);
+                try
+                {
+                    foreach (var m in queue.GetPrintCapabilities().PageMediaSizeCapability)
+                    {
+                        if (m.Width.HasValue && m.Height.HasValue &&
+                            Math.Abs(m.Width.Value  - reqWdip) <= tol &&
+                            Math.Abs(m.Height.Value - reqHdip) <= tol)
+                        { target = m; break; }
+                    }
+                }
+                catch { /* no capabilities — keep the custom size */ }
+
+                // Do NOT write queue.UserPrintTicket — that would mutate the user's saved printer default.
+                var basis = dlg.PrintTicket ?? queue.DefaultPrintTicket ?? new PrintTicket();
+                var delta = new PrintTicket { PageMediaSize = target };
+                var validated = queue.MergeAndValidatePrintTicket(basis, delta).ValidatedPrintTicket;
+                dlg.PrintTicket = validated;
+
+                var vs = validated.PageMediaSize;
+                if (vs != null && vs.Width.HasValue && vs.Height.HasValue)
+                {
+                    double wmm = vs.Width.Value / 96.0 * 25.4, hmm = vs.Height.Value / 96.0 * 25.4;
+                    bool matched = Math.Abs(wmm - widthMm) <= 2.0 && Math.Abs(hmm - heightMm) <= 2.0;
+                    return new ResolvedPage(vs.Width.Value, vs.Height.Value, wmm, hmm, matched);
+                }
+                return Requested();
+            }
+            catch { return Requested(); } // never block printing on a driver quirk
+        }
+
+        /// <summary>
+        /// Prints the content at real size (1:1) anchored top-left of the given page size; if the content is
+        /// larger than the page it is scaled down uniformly to fit (never scaled up). The page size is passed
+        /// in explicitly (from the validated print ticket) — dlg.PrintableArea* is NOT read, because WPF does
+        /// not refresh it after a PrintTicket is reassigned post-ShowDialog.
+        /// </summary>
+        public static void PrintActualSize(System.Windows.Controls.PrintDialog dlg, FrameworkElement content,
+            double w, double h, double pageWdip, double pageHdip, string description)
         {
             content.Measure(new Size(w, h));
             content.Arrange(new Rect(0, 0, w, h));
             content.UpdateLayout();
 
-            double aw = dlg.PrintableAreaWidth, ah = dlg.PrintableAreaHeight;
-            if (w <= aw && h <= ah)
+            double aw = pageWdip, ah = pageHdip;
+            if (aw <= 1 || ah <= 1) { aw = w; ah = h; } // safety: never arrange into a zero area
+
+            if (w <= aw + 0.5 && h <= ah + 0.5)
             {
-                dlg.PrintVisual(content, description); // 1:1, anchored top-left
+                dlg.PrintVisual(content, description); // true 1:1, anchored top-left
                 return;
             }
 
