@@ -8,9 +8,12 @@ namespace eCheque.MICO360.ViewModels
 {
     public class ProfileManagerViewModel : BaseViewModel
     {
-        ObservableCollection<ChequeProfile> _profiles=new(); ChequeProfile? _sel; ChequeProfile _edit=new(); bool _isEditing; string _status="";
+        ObservableCollection<ChequeProfile> _profiles=new(); ChequeProfile? _sel; ChequeProfile _edit=new(); bool _isEditing; string _status=""; int _defaultId;
         public ObservableCollection<ChequeProfile> Profiles{get=>_profiles;set=>Set(ref _profiles,value);}
-        public ChequeProfile? Selected{get=>_sel;set{Set(ref _sel,value);if(value!=null)Edit=Clone(value);RefreshTemplate();}}
+        public ChequeProfile? Selected{get=>_sel;set{Set(ref _sel,value);if(value!=null)Edit=Clone(value);RefreshTemplate();OnPropertyChanged(nameof(SelectedIsDefault));}}
+        /// <summary>Id of the profile New Cheque pre-selects.</summary>
+        public int DefaultProfileId{get=>_defaultId;set{Set(ref _defaultId,value);OnPropertyChanged(nameof(SelectedIsDefault));System.Windows.Input.CommandManager.InvalidateRequerySuggested();}}
+        public bool SelectedIsDefault => Selected!=null && Selected.Id==_defaultId && _defaultId!=0;
         public ChequeProfile Edit{get=>_edit;set{Set(ref _edit,value);RefreshTemplate();}}
         public bool IsEditing{get=>_isEditing;set=>Set(ref _isEditing,value);}
         public string StatusMessage{get=>_status;set=>Set(ref _status,value);}
@@ -30,6 +33,7 @@ namespace eCheque.MICO360.ViewModels
         public ICommand DesignLayoutCommand{get;}
         public ICommand UploadImageCommand{get;}
         public ICommand RemoveImageCommand{get;}
+        public ICommand SetDefaultCommand{get;}
         public ProfileManagerViewModel()
         {
             NewCommand=new RelayCommand(NewProfile);
@@ -40,6 +44,16 @@ namespace eCheque.MICO360.ViewModels
             DesignLayoutCommand=new RelayCommand(OpenDesigner,()=>Selected!=null);
             UploadImageCommand=new RelayCommand(UploadImage,()=>IsEditing||Selected!=null);
             RemoveImageCommand=new RelayCommand(RemoveImage,()=>HasTemplate);
+            SetDefaultCommand=new RelayCommand(SetDefault,()=>Selected!=null&&Selected.Id!=0&&Selected.Id!=DefaultProfileId);
+        }
+
+        void SetDefault()
+        {
+            if(Selected==null||Selected.Id==0)return;
+            ChequeService.SetDefaultProfile(Selected.Id);
+            DefaultProfileId=Selected.Id;
+            StatusMessage=$"'{Selected.Name}' is now the default profile for new cheques.";
+            ToastService.Success($"Default profile set to '{Selected.Name}'.");
         }
 
         void RefreshTemplate(){OnPropertyChanged(nameof(TemplatePreview));OnPropertyChanged(nameof(HasTemplate));OnPropertyChanged(nameof(TemplateStatus));System.Windows.Input.CommandManager.InvalidateRequerySuggested();}
@@ -92,7 +106,7 @@ namespace eCheque.MICO360.ViewModels
                 System.Windows.MessageBox.Show($"Could not open the layout designer:\n\n{ex.Message}","Design Layout",System.Windows.MessageBoxButton.OK,System.Windows.MessageBoxImage.Warning);
             }
         }
-        public void Load(){var keepId=Selected?.Id??Edit?.Id??0;Profiles=new ObservableCollection<ChequeProfile>(ChequeService.GetProfiles(false));if(keepId>0)Selected=Profiles.FirstOrDefault(p=>p.Id==keepId);}
+        public void Load(){var keepId=Selected?.Id??Edit?.Id??0;Profiles=new ObservableCollection<ChequeProfile>(ChequeService.GetProfiles(false));DefaultProfileId=ChequeService.GetDefaultProfileId();if(keepId>0)Selected=Profiles.FirstOrDefault(p=>p.Id==keepId);}
         void NewProfile(){Edit=new ChequeProfile{CreatedBy=AuthService.CurrentUser?.Username??"",AccountName=DatabaseService.GetSetting("CompanyName","")};IsEditing=true;StatusMessage="";}
         void SaveProfile(){if(string.IsNullOrWhiteSpace(Edit.Name)){StatusMessage="Profile name is required.";ToastService.Error("Profile name is required.");return;}ChequeService.SaveProfile(Edit);Load();Selected=Profiles.FirstOrDefault(p=>p.Id==Edit.Id);IsEditing=false;StatusMessage="Profile saved.";ToastService.Success($"Profile '{Edit.Name}' saved.");}
         void DeleteProfile()

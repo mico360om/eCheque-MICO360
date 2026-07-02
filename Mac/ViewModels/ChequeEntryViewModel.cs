@@ -85,7 +85,9 @@ namespace eCheque.MICO360.Mac.ViewModels
                 PreparedBy = AuthService.CurrentUser?.FullName ?? ""
             };
             AmountText = "";
-            SelectedProfile = Profiles.FirstOrDefault();
+            // Pre-select the default cheque profile if one is set, else the first.
+            var defId = ChequeService.GetDefaultProfileId();
+            SelectedProfile = (defId > 0 ? Profiles.FirstOrDefault(p => p.Id == defId) : null) ?? Profiles.FirstOrDefault();
             StatusMessage = "";
         }
 

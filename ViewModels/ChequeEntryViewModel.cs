@@ -104,6 +104,9 @@ namespace eCheque.MICO360.ViewModels
                     CreatedBy   = AuthService.CurrentUser?.Username ?? "",
                     PreparedBy  = AuthService.CurrentUser?.FullName ?? ""
                 };
+                // Pre-select the default cheque profile (fills bank/account + next cheque number).
+                var defId = ChequeService.GetDefaultProfileId();
+                if (defId > 0) SelectedProfile = Profiles.FirstOrDefault(p => p.Id == defId);
             }
             StatusMessage = "";
         }

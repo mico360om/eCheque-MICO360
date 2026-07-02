@@ -122,6 +122,13 @@
 
                     <!-- Buttons -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                        <Border Background="#FFF6DA" BorderBrush="#E6C34D" BorderThickness="1" CornerRadius="3"
+                                Padding="8,3" VerticalAlignment="Center" IsVisible="{Binding SelectedIsDefault}">
+                            <TextBlock Text="⭐ Default" FontSize="11" FontWeight="SemiBold" Foreground="#8A6D00"/>
+                        </Border>
+                        <Button Content="⭐  Set as Default" Classes="secondary" Command="{Binding SetDefaultCommand}"
+                                IsVisible="{Binding IsViewing}"
+                                ToolTip.Tip="Make this the profile New Cheque pre-selects automatically."/>
                         <Button Content="🎨  Design Layout" Classes="secondary" Command="{Binding DesignLayoutCommand}"
                                 IsVisible="{Binding IsViewing}"/>
                         <Button Content="⧉  Duplicate" Classes="secondary" Command="{Binding DuplicateCommand}"

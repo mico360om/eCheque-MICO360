@@ -14,6 +14,11 @@ namespace eCheque.MICO360.Mac.ViewModels
         ChequeProfile _edit = new();
         bool _isEditing;
         string _status = "";
+        int _defaultId;
+
+        /// <summary>Id of the profile New Cheque pre-selects.</summary>
+        public int DefaultProfileId { get => _defaultId; set { if (Set(ref _defaultId, value)) { OnPropertyChanged(nameof(SelectedIsDefault)); (SetDefaultCommand as RelayCommand)?.RaiseCanExecuteChanged(); } } }
+        public bool SelectedIsDefault => Selected != null && Selected.Id == _defaultId && _defaultId != 0;
 
         public ObservableCollection<ChequeProfile> Profiles { get => _profiles; set => Set(ref _profiles, value); }
 
@@ -27,10 +32,12 @@ namespace eCheque.MICO360.Mac.ViewModels
                 if (value != null) Edit = Clone(value);
                 IsEditing = false;
                 StatusMessage = "";
+                OnPropertyChanged(nameof(SelectedIsDefault));
                 (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (DeleteCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (DuplicateCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 (DesignLayoutCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (SetDefaultCommand as RelayCommand)?.RaiseCanExecuteChanged();
             }
         }
 
@@ -55,6 +62,7 @@ namespace eCheque.MICO360.Mac.ViewModels
         public ICommand DuplicateCommand { get; }
         public ICommand CancelEditCommand { get; }
         public ICommand DesignLayoutCommand { get; }
+        public ICommand SetDefaultCommand { get; }
 
         public event Action? ProfileListChanged;
 
@@ -66,6 +74,15 @@ namespace eCheque.MICO360.Mac.ViewModels
             DuplicateCommand = new RelayCommand(Duplicate, () => Selected != null);
             CancelEditCommand = new RelayCommand(CancelEdit);
             DesignLayoutCommand = new RelayCommand(OpenDesigner, () => Selected != null);
+            SetDefaultCommand = new RelayCommand(SetDefault, () => Selected != null && Selected.Id != 0 && Selected.Id != DefaultProfileId);
+        }
+
+        void SetDefault()
+        {
+            if (Selected == null || Selected.Id == 0) return;
+            ChequeService.SetDefaultProfile(Selected.Id);
+            DefaultProfileId = Selected.Id;
+            StatusMessage = $"'{Selected.Name}' is now the default profile for new cheques.";
         }
 
         public void Load()
@@ -75,6 +92,7 @@ namespace eCheque.MICO360.Mac.ViewModels
             Banks.Clear();
             foreach (var b in ChequeService.GetBanks()) Banks.Add(b);
             OnPropertyChanged(nameof(Banks));
+            DefaultProfileId = ChequeService.GetDefaultProfileId();
             Selected = keepId > 0 ? Profiles.FirstOrDefault(p => p.Id == keepId) ?? Profiles.FirstOrDefault() : Profiles.FirstOrDefault();
         }
 

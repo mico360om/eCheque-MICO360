@@ -15,6 +15,9 @@
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
                     <Button Content="＋  New Profile" Style="{StaticResource PrimaryBtn}" Padding="12,8" FontSize="12"
                             HorizontalAlignment="Stretch" Margin="0,0,0,6" Command="{Binding NewCommand}"/>
+                    <Button Content="⭐  Set as Default" Style="{StaticResource SecondaryBtn}" Padding="10,7" FontSize="12"
+                            HorizontalAlignment="Stretch" Margin="0,0,0,6" Command="{Binding SetDefaultCommand}"
+                            ToolTip="Make the selected profile the one New Cheque pre-selects automatically."/>
                     <Button Content="⧉  Duplicate Selected" Style="{StaticResource SecondaryBtn}" Padding="10,7" FontSize="12"
                             HorizontalAlignment="Stretch" Command="{Binding DuplicateCommand}"/>
                 </StackPanel>
@@ -62,7 +65,14 @@
             <Border DockPanel.Dock="Top" Background="White" BorderBrush="#E6E6E6" BorderThickness="1" CornerRadius="8" Padding="18,12" Margin="0,0,0,12">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Left">
-                        <TextBlock Text="Profile Details" FontSize="15" FontWeight="Bold" Foreground="#8B1818"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Profile Details" FontSize="15" FontWeight="Bold" Foreground="#8B1818"/>
+                            <Border Background="#FFF6DA" BorderBrush="#E6C34D" BorderThickness="1" CornerRadius="3"
+                                    Padding="6,1" Margin="10,0,0,0" VerticalAlignment="Center"
+                                    Visibility="{Binding SelectedIsDefault, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="⭐ Default" FontSize="10.5" FontWeight="SemiBold" Foreground="#8A6D00"/>
+                            </Border>
+                        </StackPanel>
                         <TextBlock Text="{Binding Edit.Name, TargetNullValue='New profile'}" FontSize="12" Foreground="#888888" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding Edit.PaperDisplay}" VerticalAlignment="Center"

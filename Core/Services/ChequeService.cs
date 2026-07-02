@@ -156,6 +156,10 @@ namespace eCheque.MICO360.Core.Services
         }
 
         public static List<string> GetBanks(){var list=new List<string>();using var conn=DatabaseService.GetConnection();using var cmd=new SqliteCommand("SELECT Name FROM Banks WHERE IsActive=1 ORDER BY Name",conn);using var r=cmd.ExecuteReader();while(r.Read())list.Add(r.GetString(0));return list;}
+
+        /// <summary>The profile id marked as default for New Cheque (0 = none). Stored per-company.</summary>
+        public static int GetDefaultProfileId() => int.TryParse(DatabaseService.GetSetting("DefaultProfileId",""), out var id) ? id : 0;
+        public static void SetDefaultProfile(int id) => DatabaseService.SaveSetting("DefaultProfileId", id.ToString());
         public static List<string> GetPayees()
         {
             var list=new List<string>();
