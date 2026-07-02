@@ -122,5 +122,21 @@ namespace eCheque.MICO360.Mac.ViewModels
             StatusMessage = $"Cheque #{Cheque.ChequeNumber} saved.";
             Saved?.Invoke();
         }
+
+        /// <summary>Validates + saves the cheque so the view can render/print it. Returns false (with a status
+        /// message) if it can't proceed. Does NOT navigate away — the view opens the PDF afterwards.</summary>
+        public bool PreparePrint()
+        {
+            if (!AuthService.CanEdit) { StatusMessage = "Your role is read-only."; return false; }
+            if (SelectedProfile == null) { StatusMessage = "Please select a cheque profile."; return false; }
+            if (!Validate()) return false;
+            Cheque.AmountInWords = AmountToWordsService.Convert(Cheque.Amount);
+            bool isNew = Cheque.Id == 0;
+            Cheque.Status = "Printed";
+            ChequeService.SaveCheque(Cheque);
+            if (isNew) ChequeService.IncrementChequeNumber(SelectedProfile.Id);
+            StatusMessage = $"Cheque #{Cheque.ChequeNumber} ready — opening a print PDF…";
+            return true;
+        }
     }
 }

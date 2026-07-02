@@ -110,7 +110,8 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
                     <Button Content="Cancel" Classes="secondary" Command="{Binding CancelCommand}"/>
                     <Button Content="Save Draft" Classes="secondary" Command="{Binding SaveDraftCommand}"/>
-                    <Button Content="Save Cheque" Classes="primary" Command="{Binding SaveCommand}"/>
+                    <Button Content="Save Cheque" Classes="secondary" Command="{Binding SaveCommand}"/>
+                    <Button Content="🖨  Print Cheque" Classes="primary" Click="OnPrint"/>
                 </StackPanel>
             </DockPanel>
         </Border>
