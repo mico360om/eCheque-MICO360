@@ -340,7 +340,7 @@ namespace eCheque.MICO360.Views
         {
             SyncProfile();
             var dlg = new PrintDialog();
-            eCheque.MICO360.Helpers.PrintHelper.ApplyMediaSize(dlg, _profile.PaperSize);
+            eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
             if (dlg.ShowDialog() != true) return;
             const double pxPerMm = 96.0 / 25.4;
             var canvas = ChequeRenderer.Build(_profile, ChequeLayout.SampleCheque(_profile), pxPerMm, includeBackground: false);

@@ -127,7 +127,7 @@
                                     <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.ChequeHeight, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Print Paper" Style="{StaticResource FieldLabel}"/>
+                                    <TextBlock Text="PDF Page Size" Style="{StaticResource FieldLabel}"/>
                                     <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding PaperSizes}" SelectedItem="{Binding Edit.PaperSize}"/>
                                 </StackPanel>
                             </Grid>

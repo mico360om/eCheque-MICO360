@@ -25,11 +25,16 @@ namespace eCheque.MICO360.Views
             DataContextChanged += (s, e) =>
             {
                 if (e.NewValue is ChequeEntryViewModel vm)
+                {
+                    // Initial sync: Load(id) usually runs BEFORE this view exists, so its Cheque-changed
+                    // event was already raised. Push the current amount now so editing shows it.
+                    SyncAmount(vm);
                     vm.PropertyChanged += (_, pe) =>
                     {
                         if (pe.PropertyName == nameof(ChequeEntryViewModel.Cheque))
-                            TxtAmount.Text = vm.Cheque.Amount > 0 ? vm.Cheque.Amount.ToString("N3") : "";
+                            SyncAmount(vm);
                     };
+                }
             };
 
             // Keyboard shortcuts
@@ -41,6 +46,13 @@ namespace eCheque.MICO360.Views
                 else if (e.Key == Key.P && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
                 { vm.SavePrintCommand.Execute(null); e.Handled = true; }
             };
+        }
+
+        // Show the model's amount in the (unbound) amount box.
+        private void SyncAmount(ChequeEntryViewModel vm)
+        {
+            var text = vm.Cheque.Amount > 0 ? vm.Cheque.Amount.ToString("N3") : "";
+            if (TxtAmount.Text != text) TxtAmount.Text = text;
         }
 
         // Fires on every keystroke in amount field — starts debounce timer

@@ -244,8 +244,23 @@
                     <Border Padding="16,12" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1">
                         <DockPanel>
                             <TextBlock Text="Recent Cheques" FontSize="14" FontWeight="Bold" Foreground="#1A1A1A" VerticalAlignment="Center"/>
-                            <Button Content="View All →" DockPanel.Dock="Right" Style="{StaticResource SecondaryBtn}"
-                                    Padding="12,5" FontSize="12" Command="{Binding HistoryCommand}"/>
+                            <Button Content="View All →" DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                    VerticalAlignment="Center" Foreground="#8B1818" Background="Transparent"
+                                    BorderThickness="0" Cursor="Hand" FontSize="12" FontWeight="SemiBold" Padding="6,2"
+                                    Command="{Binding HistoryCommand}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Foreground" Value="#A52020"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
                         </DockPanel>
                     </Border>
 

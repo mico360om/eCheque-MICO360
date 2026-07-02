@@ -44,6 +44,22 @@ namespace eCheque.MICO360.Helpers
         }
 
         /// <summary>
+        /// Preset a CUSTOM page size equal to the cheque's own dimensions so the cheque prints on a
+        /// cheque-sized page (not a default A4 sheet). This is what keeps a real cheque aligned.
+        /// </summary>
+        public static void ApplyChequeMedia(System.Windows.Controls.PrintDialog dlg, double widthMm, double heightMm)
+        {
+            try
+            {
+                double wDip = widthMm  / 25.4 * 96.0;
+                double hDip = heightMm / 25.4 * 96.0;
+                dlg.PrintTicket ??= new PrintTicket();
+                dlg.PrintTicket.PageMediaSize = new PageMediaSize(wDip, hDip);
+            }
+            catch { /* driver may not accept a custom size — falls back to the dialog default */ }
+        }
+
+        /// <summary>
         /// Prints the content at real size at the top-left of the page; if the content is bigger than
         /// the printable area it is scaled down uniformly to fit (never scaled up).
         /// </summary>

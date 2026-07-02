@@ -185,8 +185,8 @@ namespace eCheque.MICO360.Views
             }
 
             var dlg = new PrintDialog();
-            // Select the proper page size for this profile (A4 / Letter / Legal / A5).
-            eCheque.MICO360.Helpers.PrintHelper.ApplyMediaSize(dlg, _profile.PaperSize);
+            // Print on a page sized to the cheque itself (not a default A4 sheet).
+            eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
             if (dlg.ShowDialog() != true) return;
 
             const double pxPerMm = 96.0 / 25.4;

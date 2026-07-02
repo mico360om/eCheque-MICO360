@@ -71,10 +71,10 @@
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="New Password (leave blank to keep current)" Style="{StaticResource FieldLabel}"/>
-                        <PasswordBox x:Name="PwdBox" Padding="8,6" FontSize="13" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                        <PasswordBox x:Name="PwdBox" Style="{StaticResource InputPassword}"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Bottom">
-                        <CheckBox Content=" Active" IsChecked="{Binding Edit.IsActive}" Margin="0,6"/>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="16,0,0,0">
+                        <CheckBox Content=" Active" IsChecked="{Binding Edit.IsActive}" VerticalAlignment="Center" MinHeight="34" Padding="0,7,0,0"/>
                     </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">

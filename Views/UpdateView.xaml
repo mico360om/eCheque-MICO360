@@ -67,11 +67,34 @@
             </Border>
 
             <!-- Changelog -->
-            <Border Style="{StaticResource Card}"
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16"
                     Visibility="{Binding HasChecked, Converter={StaticResource BoolToVisibility}}">
                 <StackPanel>
                     <TextBlock Text="What's New" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,10"/>
                     <TextBlock Text="{Binding Changelog}" TextWrapping="Wrap" FontSize="13" Foreground="#333333" LineHeight="20"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Manual update via GitHub -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="Update Manually" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,6"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="#444444" Margin="0,0,0,10">
+                        If the in-app update doesn't run, download the latest installer directly from the official
+                        GitHub repository, then run it (choose “More info → Run anyway” if Windows SmartScreen appears).
+                    </TextBlock>
+                    <TextBlock Margin="0,0,0,12" FontSize="13">
+                        <Run Text="Repository: " Foreground="#666666"/>
+                        <Hyperlink NavigateUri="{Binding RepoUrl}" Command="{Binding OpenRepoCommand}" Foreground="#1565C0">
+                            <Run Text="{Binding RepoUrl, Mode=OneWay}"/>
+                        </Hyperlink>
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="⬇  Download Latest from GitHub" Style="{StaticResource PrimaryBtn}"
+                                Command="{Binding OpenReleasesCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Open Repository" Style="{StaticResource SecondaryBtn}"
+                                Command="{Binding OpenRepoCommand}"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

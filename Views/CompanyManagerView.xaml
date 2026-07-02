@@ -103,11 +103,14 @@
                         </StackPanel>
                     </Grid>
 
-                    <StackPanel Margin="0,0,0,20" HorizontalAlignment="Left" Width="160">
-                        <TextBlock Text="Default Currency" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Currencies}"
-                                  SelectedItem="{Binding Edit.Currency}" IsEnabled="{Binding IsEditing}"/>
-                    </StackPanel>
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Default Currency" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Currencies}"
+                                      SelectedItem="{Binding Edit.Currency}" IsEnabled="{Binding IsEditing}"/>
+                        </StackPanel>
+                    </Grid>
 
                     <!-- Status -->
                     <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#8B1818" Margin="0,0,0,12"

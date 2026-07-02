@@ -43,15 +43,29 @@ namespace eCheque.MICO360.ViewModels
         public Brush StatusBrush => _statusKind switch { "success" => SuccessBrush, "error" => ErrorBrush, _ => InfoBrush };
         public Brush LatestVersionBrush => !_checked ? NeutralDark : (_updateAvailable ? BrandBrush : SuccessBrush);
 
-        public ICommand CheckCommand   { get; }
-        public ICommand InstallCommand { get; }
-        public ICommand ViewLogCommand { get; }
+        // Public repository so users can always update manually if auto-update is blocked.
+        public string RepoUrl => "https://github.com/mico360om/eCheque-MICO360";
+        public string ReleasesUrl => "https://github.com/mico360om/eCheque-MICO360/releases/latest";
+
+        public ICommand CheckCommand    { get; }
+        public ICommand InstallCommand  { get; }
+        public ICommand ViewLogCommand  { get; }
+        public ICommand OpenReleasesCommand { get; }
+        public ICommand OpenRepoCommand { get; }
 
         public UpdateViewModel()
         {
-            CheckCommand   = new RelayCommand(async () => await CheckAsync());
-            InstallCommand = new RelayCommand(async () => await DownloadAndInstallAsync(), () => UpdateAvailable && IsNotBusy);
-            ViewLogCommand = new RelayCommand(OpenLog);
+            CheckCommand    = new RelayCommand(async () => await CheckAsync());
+            InstallCommand  = new RelayCommand(async () => await DownloadAndInstallAsync(), () => UpdateAvailable && IsNotBusy);
+            ViewLogCommand  = new RelayCommand(OpenLog);
+            OpenReleasesCommand = new RelayCommand(() => OpenUrl(ReleasesUrl));
+            OpenRepoCommand = new RelayCommand(() => OpenUrl(RepoUrl));
+        }
+
+        void OpenUrl(string url)
+        {
+            try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch (Exception ex) { SetStatus($"Could not open the link: {ex.Message}", "error"); }
         }
 
         void SetStatus(string message, string kind = "info")

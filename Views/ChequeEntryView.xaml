@@ -73,8 +73,7 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,12,0">
                                 <TextBlock Text="Date *" Style="{StaticResource FieldLabel}"/>
-                                <DatePicker SelectedDate="{Binding Cheque.ChequeDate}" FontSize="13" Padding="6,6"
-                                            BorderBrush="#CCCCCC" BorderThickness="1" Background="White"/>
+                                <DatePicker Style="{StaticResource InputDate}" SelectedDate="{Binding Cheque.ChequeDate}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Status" Style="{StaticResource FieldLabel}"/>
@@ -86,12 +85,10 @@
                         <!-- Payee Name — autocomplete ComboBox -->
                         <StackPanel Margin="0,0,0,10">
                             <TextBlock Text="Payee Name *" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox x:Name="CmbPayee" IsEditable="True"
+                            <ComboBox x:Name="CmbPayee" Style="{StaticResource InputCombo}" IsEditable="True"
                                       ItemsSource="{Binding Payees}"
                                       Text="{Binding Cheque.PayeeName, UpdateSourceTrigger=PropertyChanged}"
                                       IsTextSearchEnabled="True" StaysOpenOnEdit="True"
-                                      FontSize="13" Padding="8,7"
-                                      Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
                                       MaxDropDownHeight="200"/>
                         </StackPanel>
 

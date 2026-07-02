@@ -47,10 +47,10 @@
                             <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding CaseFormats}" SelectedItem="{Binding CaseFormat}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Margin="0,0,10,0" VerticalAlignment="Bottom">
-                            <CheckBox Content="  Include Baisa" FontSize="13" IsChecked="{Binding IncludeBaisa}" Margin="0,8,0,0"/>
+                            <CheckBox Content="  Include Baisa" FontSize="13" IsChecked="{Binding IncludeBaisa}" MinHeight="34" VerticalContentAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
-                            <CheckBox Content='  Append "Only"' FontSize="13" IsChecked="{Binding AddOnly}" Margin="0,8,0,0"/>
+                            <CheckBox Content='  Append "Only"' FontSize="13" IsChecked="{Binding AddOnly}" MinHeight="34" VerticalContentAlignment="Center"/>
                         </StackPanel>
                     </Grid>
                     <!-- Live preview -->
