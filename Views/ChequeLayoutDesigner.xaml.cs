@@ -322,15 +322,13 @@ namespace eCheque.MICO360.Views
         {
             SyncProfile();
             var dlg = new PrintDialog();
+            eCheque.MICO360.Helpers.PrintHelper.ApplyMediaSize(dlg, _profile.PaperSize);
             if (dlg.ShowDialog() != true) return;
             const double pxPerMm = 96.0 / 25.4;
             var canvas = ChequeRenderer.Build(_profile, ChequeLayout.SampleCheque(_profile), pxPerMm, includeBackground: false);
-            var vb = new Viewbox { Stretch = System.Windows.Media.Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = canvas };
-            vb.Measure(new Size(dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
-            vb.Arrange(new Rect(0, 0, dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
-            vb.UpdateLayout();
-            dlg.PrintVisual(vb, "Cheque layout test print");
-            TxtPosition.Text = "Test print sent. Hold the printout against a real cheque to verify alignment.";
+            double cw = _profile.ChequeWidth * pxPerMm, ch = _profile.ChequeHeight * pxPerMm;
+            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, "Cheque layout test print");
+            TxtPosition.Text = "Test print sent at actual size. Hold the printout against a real cheque to verify alignment.";
         }
 
         void BtnSave_Click(object sender, RoutedEventArgs e)

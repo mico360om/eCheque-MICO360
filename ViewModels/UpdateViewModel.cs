@@ -4,12 +4,23 @@ using System.Windows.Input;
 using eCheque.MICO360.Helpers;
 using eCheque.MICO360.Models;
 using eCheque.MICO360.Services;
+using Brush = System.Windows.Media.Brush;
+using SolidColorBrush = System.Windows.Media.SolidColorBrush;
+using Color = System.Windows.Media.Color;
 
 namespace eCheque.MICO360.ViewModels
 {
     public class UpdateViewModel : BaseViewModel
     {
-        string _status = "", _currentVersion = AppInfo.Version, _latestVersion = "", _changelog = "", _sizeDisplay = "";
+        // Status colours: neutral for info/in-progress, green for good news, red ONLY for real errors.
+        static readonly Brush InfoBrush    = Freeze(0x44, 0x44, 0x44);
+        static readonly Brush SuccessBrush = Freeze(0x2E, 0x7D, 0x32);
+        static readonly Brush ErrorBrush   = Freeze(0xC0, 0x39, 0x2B);
+        static readonly Brush BrandBrush   = Freeze(0x8B, 0x18, 0x18);
+        static readonly Brush NeutralDark  = Freeze(0x1A, 0x1A, 0x1A);
+        static Brush Freeze(byte r, byte g, byte b) { var br = new SolidColorBrush(Color.FromRgb(r, g, b)); br.Freeze(); return br; }
+
+        string _status = "", _currentVersion = AppInfo.Version, _latestVersion = "", _changelog = "", _sizeDisplay = "", _statusKind = "info";
         bool _busy, _updateAvailable, _mandatory, _checked;
         double _progress;
         UpdateInfo? _info;
@@ -22,9 +33,15 @@ namespace eCheque.MICO360.ViewModels
         public double Progress       { get => _progress;       set => Set(ref _progress, value); }
         public bool IsBusy           { get => _busy;           set { Set(ref _busy, value); OnPropertyChanged(nameof(IsNotBusy)); } }
         public bool IsNotBusy        => !_busy;
-        public bool UpdateAvailable  { get => _updateAvailable;set => Set(ref _updateAvailable, value); }
+        public bool UpdateAvailable  { get => _updateAvailable;set { Set(ref _updateAvailable, value); OnPropertyChanged(nameof(LatestVersionBrush)); OnPropertyChanged(nameof(UpToDate)); } }
         public bool IsMandatory      { get => _mandatory;      set => Set(ref _mandatory, value); }
-        public bool HasChecked       { get => _checked;        set => Set(ref _checked, value); }
+        public bool HasChecked       { get => _checked;        set { Set(ref _checked, value); OnPropertyChanged(nameof(LatestVersionBrush)); OnPropertyChanged(nameof(UpToDate)); } }
+
+        /// <summary>True only after a check that found no newer version — drives the green "up to date" chip.</summary>
+        public bool UpToDate => _checked && !_updateAvailable;
+
+        public Brush StatusBrush => _statusKind switch { "success" => SuccessBrush, "error" => ErrorBrush, _ => InfoBrush };
+        public Brush LatestVersionBrush => !_checked ? NeutralDark : (_updateAvailable ? BrandBrush : SuccessBrush);
 
         public ICommand CheckCommand   { get; }
         public ICommand InstallCommand { get; }
@@ -37,10 +54,17 @@ namespace eCheque.MICO360.ViewModels
             ViewLogCommand = new RelayCommand(OpenLog);
         }
 
+        void SetStatus(string message, string kind = "info")
+        {
+            _statusKind = kind;
+            StatusMessage = message;
+            OnPropertyChanged(nameof(StatusBrush));
+        }
+
         public async Task CheckAsync()
         {
             if (IsBusy) return;
-            IsBusy = true; Progress = 0; StatusMessage = "Checking for updates…";
+            IsBusy = true; Progress = 0; SetStatus("Checking for updates…", "info");
             try
             {
                 _info = await UpdateService.CheckForUpdatesAsync();
@@ -51,18 +75,19 @@ namespace eCheque.MICO360.ViewModels
                 UpdateAvailable = _info.UpdateAvailable;
                 IsMandatory     = _info.Mandatory;
                 HasChecked      = true;
-                StatusMessage   = _info.UpdateAvailable
-                    ? (_info.Mandatory ? "A required update is available." : "An update is available.")
-                    : "You are running the latest version.";
+                if (_info.UpdateAvailable)
+                    SetStatus(_info.Mandatory ? "A required update is available." : "An update is available.", "info");
+                else
+                    SetStatus("✔ You are running the latest version.", "success");
             }
             catch (HttpRequestException)
             {
-                StatusMessage = "No internet connection or the update server is unreachable.";
+                SetStatus("No internet connection or the update server is unreachable.", "error");
                 UpdateService.Log("Check failed: network error.");
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Update check failed: {ex.Message}";
+                SetStatus($"Update check failed: {ex.Message}", "error");
                 UpdateService.Log($"Check failed: {ex.Message}");
             }
             finally { IsBusy = false; }
@@ -74,28 +99,28 @@ namespace eCheque.MICO360.ViewModels
             IsBusy = true; Progress = 0;
             try
             {
-                StatusMessage = "Downloading update…";
+                SetStatus("Downloading update…", "info");
                 var progress = new Progress<double>(p => Progress = p * 100);
                 var file = await UpdateService.DownloadAsync(_info, progress, CancellationToken.None);
 
-                StatusMessage = "Verifying update…";
+                SetStatus("Verifying update…", "info");
                 if (!UpdateService.VerifyChecksum(file, _info.Sha256))
                 {
-                    StatusMessage = "Verification failed — the update file is corrupted. Installation aborted.";
+                    SetStatus("Verification failed — the update file is corrupted. Installation aborted.", "error");
                     UpdateService.Log($"FAILED: checksum mismatch. {_info.CurrentVersion} -> {_info.LatestVersion}");
                     IsBusy = false;
                     return;
                 }
 
                 UpdateService.Log($"SUCCESS DOWNLOAD: {_info.CurrentVersion} -> {_info.LatestVersion} verified. Awaiting restart.");
-                StatusMessage = "Update ready. The application will now restart to finish installing.";
+                SetStatus("Update ready. The application will now restart to finish installing.", "success");
 
                 if (System.Windows.MessageBox.Show(
                         $"Update {_info.LatestVersion} downloaded and verified.\n\nThe app will close and the installer will run to apply it (you may see a Windows admin prompt). Your data, settings and records are kept safe.\n\nContinue?",
                         "Install Update", System.Windows.MessageBoxButton.OKCancel, System.Windows.MessageBoxImage.Information)
                     != System.Windows.MessageBoxResult.OK)
                 {
-                    StatusMessage = "Installation postponed. It will apply next time you choose to update.";
+                    SetStatus("Installation postponed. It will apply next time you choose to update.", "info");
                     IsBusy = false;
                     return;
                 }
@@ -105,13 +130,13 @@ namespace eCheque.MICO360.ViewModels
             }
             catch (HttpRequestException)
             {
-                StatusMessage = "Download failed — check your internet connection and try again.";
+                SetStatus("Download failed — check your internet connection and try again.", "error");
                 UpdateService.Log("FAILED: download network error.");
                 IsBusy = false;
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Update failed: {ex.Message}";
+                SetStatus($"Update failed: {ex.Message}", "error");
                 UpdateService.Log($"FAILED: {ex.Message}");
                 IsBusy = false;
             }
@@ -124,9 +149,9 @@ namespace eCheque.MICO360.ViewModels
                 if (System.IO.File.Exists(UpdateService.LogPath))
                     Process.Start(new ProcessStartInfo(UpdateService.LogPath) { UseShellExecute = true });
                 else
-                    StatusMessage = "No update log yet.";
+                    SetStatus("No update log yet.", "info");
             }
-            catch (Exception ex) { StatusMessage = $"Could not open log: {ex.Message}"; }
+            catch (Exception ex) { SetStatus($"Could not open log: {ex.Message}", "error"); }
         }
     }
 }

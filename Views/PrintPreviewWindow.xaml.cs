@@ -185,30 +185,18 @@ namespace eCheque.MICO360.Views
             }
 
             var dlg = new PrintDialog();
+            // Select the proper page size for this profile (A4 / Letter / Legal / A5).
+            eCheque.MICO360.Helpers.PrintHelper.ApplyMediaSize(dlg, _profile.PaperSize);
             if (dlg.ShowDialog() != true) return;
 
             const double pxPerMm = 96.0 / 25.4;
             double cw = _profile.ChequeWidth  * pxPerMm;
             double ch = _profile.ChequeHeight * pxPerMm;
 
-            // Build a fresh canvas for the printer (no scale factor — printer DPI handles resolution)
+            // Build a fresh canvas for the printer and print it at true 1:1 size (top-left) so the
+            // text lands where it should on a real cheque; only shrink if the cheque exceeds the page.
             var canvas = BuildChequeCanvas(cw, ch);
-
-            // Wrap in a Viewbox to fit on the printed page while keeping aspect ratio
-            var vb = new System.Windows.Controls.Viewbox
-            {
-                Width  = dlg.PrintableAreaWidth,
-                Height = dlg.PrintableAreaHeight,
-                Child  = canvas,
-                Stretch = System.Windows.Media.Stretch.Uniform,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Left,
-                VerticalAlignment   = System.Windows.VerticalAlignment.Top
-            };
-            vb.Measure(new Size(dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
-            vb.Arrange(new Rect(0, 0, dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
-            vb.UpdateLayout();
-
-            dlg.PrintVisual(vb, $"Cheque #{_cheque.ChequeNumber} — eCheque MICO360");
+            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, $"Cheque #{_cheque.ChequeNumber} — eCheque MICO360");
 
             WasPrinted = true;
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM",
