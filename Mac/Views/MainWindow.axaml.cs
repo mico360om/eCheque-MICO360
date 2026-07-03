@@ -33,6 +33,9 @@ namespace eCheque.MICO360.Mac.Views
 
             // Auto-check for updates on startup and notify the user if one is available.
             _ = CheckForUpdatesOnStartupAsync();
+
+            // Send PDC due reminders if enabled and due (respects the user's chosen frequency).
+            _ = PdcReminderService.MaybeSendAsync();
         }
 
         void PopulateCompanySwitcher()

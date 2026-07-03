@@ -15,6 +15,12 @@ namespace eCheque.MICO360.Mac.ViewModels
         bool _includeBaisa = true, _addOnly = true;
         string _mjKey = "", _mjSecret = "", _mjFrom = "", _mjFromName = "eCheque MICO360";
         string _wordsPreview = "";
+        bool _pdcEnabled; string _pdcEmail = "", _pdcFreq = "Weekly"; int _pdcLook = 7;
+
+        static readonly (string Label, int Days)[] Freqs =
+            { ("Daily", 1), ("Every 3 days", 3), ("Weekly", 7), ("Every 2 weeks", 14), ("Monthly", 30) };
+        static int FreqDays(string label) { foreach (var f in Freqs) if (f.Label == label) return f.Days; return 7; }
+        static string FreqLabel(int days) { foreach (var f in Freqs) if (f.Days == days) return f.Label; return "Weekly"; }
 
         public string CompanyName     { get => _co;  set => Set(ref _co, value); }
         public string Currency        { get => _cur; set => Set(ref _cur, value); }
@@ -33,21 +39,41 @@ namespace eCheque.MICO360.Mac.ViewModels
         public string MailjetFromEmail { get => _mjFrom;     set => Set(ref _mjFrom, value); }
         public string MailjetFromName  { get => _mjFromName; set => Set(ref _mjFromName, value); }
 
+        public bool   PdcReminderEnabled { get => _pdcEnabled; set => Set(ref _pdcEnabled, value); }
+        public string PdcReminderEmail   { get => _pdcEmail;   set => Set(ref _pdcEmail, value); }
+        public string PdcFrequency       { get => _pdcFreq;    set => Set(ref _pdcFreq, value); }
+        public int    PdcLookAheadDays   { get => _pdcLook;    set => Set(ref _pdcLook, value); }
+
         public string StatusMessage { get => _status;       set => Set(ref _status, value); }
         public string WordsPreview  { get => _wordsPreview; set => Set(ref _wordsPreview, value); }
 
         public List<string> CaseFormats { get; } = new() { "UPPERCASE", "TitleCase", "lowercase" };
         public List<string> DateFormats { get; } = new() { "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd-MMM-yyyy" };
+        public List<string> ReminderFrequencies { get; } = new() { "Daily", "Every 3 days", "Weekly", "Every 2 weeks", "Monthly" };
 
         public ICommand SaveCommand    { get; }
         public ICommand BackupCommand  { get; }
         public ICommand OpenLogCommand { get; }
+        public ICommand SendReminderNowCommand { get; }
 
         public SettingsViewModel()
         {
             SaveCommand    = new RelayCommand(Save);
             BackupCommand  = new RelayCommand(DoBackup);
             OpenLogCommand = new RelayCommand(BugReportService.OpenLog);
+            SendReminderNowCommand = new RelayCommand(async () =>
+            {
+                try { PersistReminder(); StatusMessage = "Sending reminder…"; StatusMessage = await PdcReminderService.SendNowAsync(); }
+                catch (System.Exception ex) { StatusMessage = "Reminder error: " + ex.Message; }
+            });
+        }
+
+        void PersistReminder()
+        {
+            PdcReminderService.Enabled       = PdcReminderEnabled;
+            PdcReminderService.Recipient     = PdcReminderEmail;
+            PdcReminderService.FrequencyDays = FreqDays(PdcFrequency);
+            PdcReminderService.LookAheadDays = PdcLookAheadDays < 1 ? 7 : PdcLookAheadDays;
         }
 
         public void Load()
@@ -67,6 +93,11 @@ namespace eCheque.MICO360.Mac.ViewModels
             MailjetSecretKey = CompanyService.GetMasterSetting("Mailjet_SecretKey", "");
             MailjetFromEmail = CompanyService.GetMasterSetting("Mailjet_FromEmail", "");
             MailjetFromName  = CompanyService.GetMasterSetting("Mailjet_FromName", "eCheque MICO360");
+
+            PdcReminderEnabled = PdcReminderService.Enabled;
+            PdcReminderEmail   = PdcReminderService.Recipient;
+            PdcFrequency       = FreqLabel(PdcReminderService.FrequencyDays);
+            PdcLookAheadDays   = PdcReminderService.LookAheadDays;
 
             UpdatePreview();
         }
@@ -99,6 +130,8 @@ namespace eCheque.MICO360.Mac.ViewModels
             CompanyService.SetMasterSetting("Mailjet_SecretKey", (MailjetSecretKey ?? "").Trim());
             CompanyService.SetMasterSetting("Mailjet_FromEmail", (MailjetFromEmail ?? "").Trim());
             CompanyService.SetMasterSetting("Mailjet_FromName", (MailjetFromName ?? "").Trim());
+
+            PersistReminder();
 
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "", "Settings Changed", "",
                 $"Company={CompanyName}, Currency={Currency}, CaseFormat={CaseFormat}");

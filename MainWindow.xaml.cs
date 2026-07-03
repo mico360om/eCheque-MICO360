@@ -64,6 +64,8 @@ namespace eCheque.MICO360
 
             // Silent background update check on startup.
             _ = CheckForUpdatesOnStartupAsync();
+            // Send PDC due reminders if enabled and due (respects the user's chosen frequency).
+            _ = PdcReminderService.MaybeSendAsync();
         }
 
         private async System.Threading.Tasks.Task CheckForUpdatesOnStartupAsync()

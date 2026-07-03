@@ -126,6 +126,10 @@ namespace eCheque.MICO360.Services
         public static int GetDuePdcCount(int days)
             => GetCheques().Count(c => c.IsIssued && c.DaysUntilDue <= days);
 
+        /// <summary>Issued cheques due within the next <paramref name="days"/> days (incl. overdue), soonest first — for reminders.</summary>
+        public static List<ChequeRecord> GetDuePdcCheques(int days)
+            => GetCheques().Where(c => c.IsIssued && c.DaysUntilDue <= days).OrderBy(c => c.ChequeDate).ToList();
+
         public static void VoidCheque(int id,string reason)
         {
             using var conn=DatabaseService.GetConnection();

@@ -95,6 +95,33 @@
                 </StackPanel>
             </Border>
 
+            <!-- PDC email reminders -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Post-Dated Cheque Reminders" Classes="cardTitle" Margin="0,0,0,4"/>
+                    <TextBlock Text="Email a summary of post-dated cheques coming due. Reminders are sent when the app is opened, no more often than the chosen frequency. Requires the email (Mailjet) settings above."
+                               FontSize="11" Foreground="#888888" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <CheckBox Content="Enable PDC email reminders" IsChecked="{Binding PdcReminderEnabled}" Margin="0,0,0,12"/>
+                    <Grid ColumnDefinitions="2*,*,*" Margin="0,0,0,12">
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <TextBlock Text="Send reminders to (email)" Classes="label"/>
+                            <TextBox Text="{Binding PdcReminderEmail}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                            <TextBlock Text="Frequency" Classes="label"/>
+                            <ComboBox ItemsSource="{Binding ReminderFrequencies}" SelectedItem="{Binding PdcFrequency}"
+                                      HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Due within (days)" Classes="label"/>
+                            <TextBox Text="{Binding PdcLookAheadDays}"/>
+                        </StackPanel>
+                    </Grid>
+                    <Button Content="Send a reminder now (test)" Classes="secondary" HorizontalAlignment="Left"
+                            Command="{Binding SendReminderNowCommand}"/>
+                </StackPanel>
+            </Border>
+
             <!-- Paths -->
             <Border Classes="card" Margin="0,0,0,16">
                 <StackPanel>

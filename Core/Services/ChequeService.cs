@@ -79,6 +79,8 @@ namespace eCheque.MICO360.Core.Services
         public static List<ChequeRecord> GetPdcCheques() => GetCheques().Where(c => c.IsIssued).OrderBy(c => c.ChequeDate).ToList();
         public static List<ChequeRecord> GetOutstandingCheques() => GetCheques().Where(c => c.Status is "Printed" or "Reprinted" or "Presented").OrderBy(c => c.ChequeDate).ToList();
         public static int GetDuePdcCount(int days) => GetCheques().Count(c => c.IsIssued && c.DaysUntilDue <= days);
+        /// <summary>Issued cheques due within the next <paramref name="days"/> days (incl. overdue), soonest first — for reminders.</summary>
+        public static List<ChequeRecord> GetDuePdcCheques(int days) => GetCheques().Where(c => c.IsIssued && c.DaysUntilDue <= days).OrderBy(c => c.ChequeDate).ToList();
 
         static string DescribeChequeChanges(ChequeRecord? o,ChequeRecord n)
         {
