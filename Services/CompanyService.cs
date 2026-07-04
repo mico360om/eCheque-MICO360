@@ -20,7 +20,21 @@ namespace eCheque.MICO360.Services
             _cs = SecurityService.ResolveConnectionString(masterDb);
             CreateTable();
             MigrateLegacyUsers();   // bring forward users from older per-company databases
+            MigrateSyncColumns();
             SeedDefault();
+        }
+
+        /// <summary>Adds server-sync change-tracking columns to the master-tier tables (Companies, Users,
+        /// MasterSettings). Idempotent — the backfill only fires the first time each SyncId column is created.</summary>
+        private static void MigrateSyncColumns()
+        {
+            using var conn = GetConn();
+            using (var st = new SqliteCommand(
+                "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)", conn))
+                st.ExecuteNonQuery();
+            DatabaseService.ApplySyncColumns(conn, "Companies",      guid: true,  createdCol: "CreatedDate");
+            DatabaseService.ApplySyncColumns(conn, "Users",          guid: true,  createdCol: "CreatedDate");
+            DatabaseService.ApplySyncColumns(conn, "MasterSettings", guid: false, createdCol: null);
         }
 
         private static SqliteConnection GetConn() { var c = new SqliteConnection(_cs); c.Open(); return c; }

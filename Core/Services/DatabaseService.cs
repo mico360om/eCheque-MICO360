@@ -17,7 +17,64 @@ namespace eCheque.MICO360.Core.Services
             _cs = SecurityService.ResolveConnectionString(DbPath);
             CreateTables();
             MigrateSchema();
+            MigrateSyncColumns();
             SeedData();
+        }
+
+        /// <summary>
+        /// Adds change-tracking columns used by server sync to the per-company tables and backfills identities
+        /// exactly once. Runs every startup but is idempotent: the GUID/Dirty backfill only fires the first time
+        /// each SyncId column is created, so relaunching never re-marks rows dirty.
+        /// </summary>
+        private static void MigrateSyncColumns()
+        {
+            using var conn = GetConnection();
+            using (var st = new SqliteCommand(
+                "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)", conn))
+                st.ExecuteNonQuery();
+
+            // GUID-identified tables (their rows have no natural key that is stable across PCs).
+            ApplySyncColumns(conn, "ChequeProfiles", guid: true,  createdCol: "CreatedDate");
+            ApplySyncColumns(conn, "ChequeRecords",  guid: true,  createdCol: "CreatedDate", profileFk: true);
+            ApplySyncColumns(conn, "Banks",          guid: true,  createdCol: null);
+            // Natural-key tables (Payees keyed by Name, AppSettings by Key) — merge by key, so no GUID needed.
+            ApplySyncColumns(conn, "Payees",         guid: false, createdCol: "LastUsed");
+            ApplySyncColumns(conn, "AppSettings",    guid: false, createdCol: null);
+        }
+
+        /// <summary>Adds the sync columns to one table; on first creation backfills SyncId + UpdatedAtUtc and marks
+        /// existing rows Dirty so the seeding PC uploads them. <paramref name="profileFk"/> also adds ProfileSyncId
+        /// (a portable reference to the owning profile, resolved per-PC on apply).</summary>
+        internal static void ApplySyncColumns(SqliteConnection conn, string table, bool guid, string? createdCol, bool profileFk = false)
+        {
+            bool fresh = TryExec(conn, $"ALTER TABLE {table} ADD COLUMN SyncId TEXT");
+            TryExec(conn, $"ALTER TABLE {table} ADD COLUMN UpdatedAtUtc TEXT");
+            TryExec(conn, $"ALTER TABLE {table} ADD COLUMN Deleted INTEGER DEFAULT 0");
+            TryExec(conn, $"ALTER TABLE {table} ADD COLUMN Dirty INTEGER DEFAULT 0");
+            TryExec(conn, $"ALTER TABLE {table} ADD COLUMN ServerVersion INTEGER DEFAULT 0");
+            if (profileFk) TryExec(conn, $"ALTER TABLE {table} ADD COLUMN ProfileSyncId TEXT");
+
+            if (!fresh) return; // already migrated on a previous launch — never re-backfill / re-dirty
+
+            if (guid)
+                Exec(conn, $"UPDATE {table} SET SyncId = lower(hex(randomblob(16))) WHERE SyncId IS NULL OR SyncId = ''");
+            string createdExpr = createdCol != null ? $"NULLIF({createdCol},'')" : "NULL";
+            Exec(conn, $"UPDATE {table} SET UpdatedAtUtc = COALESCE({createdExpr}, strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE UpdatedAtUtc IS NULL OR UpdatedAtUtc = ''");
+            Exec(conn, $"UPDATE {table} SET Dirty = 1");
+            if (profileFk)
+                Exec(conn, $"UPDATE {table} SET ProfileSyncId = (SELECT p.SyncId FROM ChequeProfiles p WHERE p.Id = {table}.ProfileId) WHERE (ProfileSyncId IS NULL OR ProfileSyncId='') AND ProfileId > 0");
+            if (guid) TryExec(conn, $"CREATE UNIQUE INDEX IF NOT EXISTS IX_{table}_SyncId ON {table}(SyncId)");
+        }
+
+        internal static bool TryExec(SqliteConnection conn, string sql)
+        {
+            try { using var c = new SqliteCommand(sql, conn); c.ExecuteNonQuery(); return true; }
+            catch { return false; }
+        }
+
+        internal static void Exec(SqliteConnection conn, string sql)
+        {
+            try { using var c = new SqliteCommand(sql, conn); c.ExecuteNonQuery(); } catch { }
         }
 
         public static SqliteConnection GetConnection() { var c = new SqliteConnection(_cs); c.Open(); return c; }

@@ -31,5 +31,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\eCheque.MICO360.Core.csproj" />
+    <ProjectReference Include="..\Sync.Contracts\eCheque.MICO360.Sync.Contracts.csproj" />
   </ItemGroup>
 </Project>

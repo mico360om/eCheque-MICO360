@@ -18,10 +18,13 @@
   <!-- The test project and the cross-platform (macOS/Avalonia) projects live inside the
        repo but must be kept out of the Windows app build. -->
   <ItemGroup>
-    <Compile Remove="Tests\**;Core\**;Mac\**" />
-    <EmbeddedResource Remove="Tests\**;Core\**;Mac\**" />
-    <None Remove="Tests\**;Core\**;Mac\**" />
-    <Page Remove="Tests\**;Core\**;Mac\**" />
+    <Compile Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <EmbeddedResource Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <None Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <Page Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Sync.Contracts\eCheque.MICO360.Sync.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="logo.png" />
