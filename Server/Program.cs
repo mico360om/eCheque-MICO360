@@ -13,6 +13,10 @@ string dbPath = Environment.GetEnvironmentVariable("ECHEQUE_SERVER_DB")
 if (string.IsNullOrEmpty(builder.Configuration["urls"]) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
     builder.WebHost.UseUrls("http://0.0.0.0:5210");
 
+// Cap request bodies so a malformed/hostile client cannot exhaust memory. The client chunks pushes to 500
+// rows, which is far under this limit.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32 * 1024 * 1024); // 32 MB
+
 var store = new SqliteServerStore(dbPath);
 store.Initialize();
 builder.Services.AddSingleton<IServerStore>(store);

@@ -142,26 +142,32 @@ namespace eCheque.MICO360.Sync.Client
 
         // ---------------- push ----------------
 
+        const int PushBatch = 500; // bound each push request so large first-syncs don't send one giant payload
+
         async Task PushAsync(SqliteConnection conn, int companyId, IReadOnlyList<SyncEntityDef> entities, SyncReport report, CancellationToken ct)
         {
             foreach (var def in entities)
             {
-                var changes = ReadDirty(conn, def);
-                if (changes.Count == 0) continue;
+                var all = ReadDirty(conn, def);
+                if (all.Count == 0) continue;
 
-                // Remember exactly what we sent, so we don't clobber an edit the user made during the round-trip.
-                var sent = new Dictionary<string, string>(StringComparer.Ordinal);
-                foreach (var chg in changes) sent[chg.SyncId] = chg.UpdatedAtUtc;
-
-                var req = new PushRequest { CompanyId = companyId, Changes = changes };
-                var resp = await PostAsync<PushRequest, PushResponse>("/api/sync/push", req, ct)
-                           ?? throw new Exception("push returned no response");
-
-                RunGuarded(conn, () =>
+                for (int off = 0; off < all.Count; off += PushBatch)
                 {
-                    string keyCol = def.Guid ? "SyncId" : def.NaturalKey!;
-                    foreach (var r in resp.Results)
+                    var changes = all.GetRange(off, Math.Min(PushBatch, all.Count - off));
+
+                    // Remember exactly what we sent, so we don't clobber an edit the user made during the round-trip.
+                    var sent = new Dictionary<string, string>(StringComparer.Ordinal);
+                    foreach (var chg in changes) sent[chg.SyncId] = chg.UpdatedAtUtc;
+
+                    var req = new PushRequest { CompanyId = companyId, Changes = changes };
+                    var resp = await PostAsync<PushRequest, PushResponse>("/api/sync/push", req, ct)
+                               ?? throw new Exception("push returned no response");
+
+                    RunGuarded(conn, () =>
                     {
+                        string keyCol = def.Guid ? "SyncId" : def.NaturalKey!;
+                        foreach (var r in resp.Results)
+                        {
                         report.Pushed++;
                         if (r.Status == PushStatus.Conflict) report.Conflicts++;
 
@@ -184,8 +190,9 @@ namespace eCheque.MICO360.Sync.Client
                         // Applied (or incoming won): clear dirty + record the authoritative version.
                         Exec(conn, $"UPDATE {def.Table} SET Dirty=0, ServerVersion=@v WHERE {keyCol}=@k AND UpdatedAtUtc=@u",
                             ("@v", r.ServerVersion), ("@k", r.SyncId), ("@u", pushedUpdated ?? ""));
-                    }
-                });
+                        }
+                    });
+                }
             }
         }
 

@@ -126,9 +126,9 @@ conflict, idempotent replay, tombstone).
 - **User login state syncs, volatile fields don't.** User accounts + password *hashes* sync so staff can log
   in on any PC; last-login / failed-attempt / lockout fields are kept per-PC and never sync. Because hashes
   cross the wire, **use TLS** (section 3.4).
-- **Deleting a bank/payee/setting (natural-key rows) does not propagate** across PCs in this version — the row
-  can reappear on the next sync from a PC that still has it. Cheque and profile deletes (GUID rows) do
-  propagate. Avoid relying on cross-PC deletion of banks/payees; deactivate instead where the app supports it.
+- **Deletes:** the app never hard-deletes records — it deactivates (banks/profiles via IsActive) or changes
+  status (cheques: Cancelled/Void), which are edits and **do** sync across PCs. Only a manual hard-delete of a
+  natural-key row (payee/setting/bank) directly in the database would not propagate; that isn't a user action.
 - **Conflicts are last-write-wins by edit time and are logged** in the server's `Conflicts` table for audit.
 
 ## 7. Security summary

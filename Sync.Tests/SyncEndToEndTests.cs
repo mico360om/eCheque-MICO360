@@ -140,6 +140,23 @@ namespace eCheque.MICO360.Sync.Tests
         }
 
         [Fact]
+        public async Task Large_first_sync_chunks_and_loses_nothing()
+        {
+            using var a = NewClientDb(); using var b = NewClientDb();
+            const int n = 1200; // > the 500-row push batch, so the client must chunk into multiple requests
+            for (int i = 0; i < n; i++) InsertProfile(a, $"P{i:0000}", "Bank");
+
+            var ra = await ClientFor(_tokenA).SyncScopeAsync(a, Company, Entities);
+            Assert.True(ra.Ok, ra.Error);
+            Assert.Equal(n, ra.Pushed);            // every row pushed across chunks
+            Assert.Equal(n, CountProfiles(a));
+
+            var rb = await ClientFor(_tokenB).SyncScopeAsync(b, Company, Entities);
+            Assert.True(rb.Ok, rb.Error);
+            Assert.Equal(n, CountProfiles(b));     // all arrived on B, no loss, no duplication
+        }
+
+        [Fact]
         public async Task Three_pcs_converge_no_loss_no_duplication()
         {
             using var a = NewClientDb(); using var b = NewClientDb(); using var c = NewClientDb();
