@@ -16,6 +16,8 @@
     <!-- Plain SQLite server store (no SQLCipher dependency on the server side; secure the host + use TLS).
          Data access sits behind IServerStore so this can be swapped for SQL Server without touching endpoints. -->
     <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <!-- Lets the same EXE run as a proper Windows Service (auto-start, restart on failure). -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

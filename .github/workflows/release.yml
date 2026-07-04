@@ -105,3 +105,5 @@ jobs:
             ${{ steps.installer.outputs.setup }}.sha256
             ${{ steps.server.outputs.exe }}
             ${{ steps.server.outputs.exe }}.sha256
+            Server/Install-Server.ps1
+            Server/Uninstall-Server.ps1

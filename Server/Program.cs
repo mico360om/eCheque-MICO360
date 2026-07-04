@@ -3,13 +3,21 @@ using eCheque.MICO360.Sync.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Run as a Windows Service when installed as one (auto-detected; no effect when run from a console).
+builder.Host.UseWindowsService();
+
 // --- configuration ---------------------------------------------------------
-// DB path: env ECHEQUE_SERVER_DB, else ./data/server.db next to the executable.
-string dbPath = Environment.GetEnvironmentVariable("ECHEQUE_SERVER_DB")
+// Read config from echeque.server.json NEXT TO THE EXE (written by the installer), plus env vars / args.
+// A file is used because a freshly-created Windows Service does not reliably see newly-set machine env vars.
+builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "echeque.server.json"), optional: true, reloadOnChange: false);
+
+// Org key + DB path come from config (file > env > default). "Urls" in the file / ASPNETCORE_URLS is auto-bound.
+string? orgKey = builder.Configuration["ECHEQUE_ORG_KEY"];
+string dbPath = builder.Configuration["ECHEQUE_SERVER_DB"]
                 ?? Path.Combine(AppContext.BaseDirectory, "data", "server.db");
 
-// Bind URLs from ASPNETCORE_URLS if set; otherwise a sensible LAN default. Put TLS in front for production
-// (reverse proxy or a Kestrel cert) — the client speaks plain HTTP or HTTPS depending on the URL it's given.
+// Bind URLs from config ("Urls") / ASPNETCORE_URLS if set; otherwise a sensible LAN default. Put TLS in front
+// for production — the client speaks plain HTTP or HTTPS depending on the URL it is given.
 if (string.IsNullOrEmpty(builder.Configuration["urls"]) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
     builder.WebHost.UseUrls("http://0.0.0.0:5210");
 
@@ -18,7 +26,7 @@ if (string.IsNullOrEmpty(builder.Configuration["urls"]) && string.IsNullOrEmpty(
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32 * 1024 * 1024); // 32 MB
 
 var store = new SqliteServerStore(dbPath);
-store.Initialize();
+store.Initialize(orgKey);
 builder.Services.AddSingleton<IServerStore>(store);
 
 string appVersion = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";

@@ -8,7 +8,7 @@ namespace eCheque.MICO360.Server
     /// touching the HTTP endpoints — they depend only on this interface.</summary>
     public interface IServerStore
     {
-        void Initialize();
+        void Initialize(string? orgKeyOverride = null);
         string OrgKey { get; }
         (string deviceId, string token) RegisterDevice(string deviceName, string machineId);
         bool ValidateToken(string? token, out string deviceId);
@@ -46,7 +46,7 @@ namespace eCheque.MICO360.Server
             return c;
         }
 
-        public void Initialize()
+        public void Initialize(string? orgKeyOverride = null)
         {
             using var c = Open();
             Exec(c, @"
@@ -66,8 +66,11 @@ namespace eCheque.MICO360.Server
                     Id INTEGER PRIMARY KEY AUTOINCREMENT, Entity TEXT, CompanyId INTEGER, SyncId TEXT,
                     ServerVersion INTEGER, Winner TEXT, LoserPayloadJson TEXT, DetectedUtc TEXT);");
 
-            // Org key: env var wins; otherwise generate + persist once so the value is stable across restarts.
-            var envKey = Environment.GetEnvironmentVariable("ECHEQUE_ORG_KEY");
+            // Org key: explicit override (from config) wins, then env var; otherwise generate + persist once
+            // so the value is stable across restarts.
+            var envKey = string.IsNullOrWhiteSpace(orgKeyOverride)
+                ? Environment.GetEnvironmentVariable("ECHEQUE_ORG_KEY")
+                : orgKeyOverride;
             _orgKey = string.IsNullOrWhiteSpace(envKey) ? GetMeta(c, "orgkey") : envKey.Trim();
             if (string.IsNullOrWhiteSpace(_orgKey))
             {

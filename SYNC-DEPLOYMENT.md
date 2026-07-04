@@ -51,14 +51,25 @@ eCheque.MICO360.Server.exe
 On start it prints the listen URL and the org key. Open `http://<server>:5210/` for a live status page
 (devices registered, rows synced). Health check: `GET /api/health`.
 
-### 3.3 Run as a Windows service (recommended for production)
+### 3.3 Install as a Windows service (recommended for production)
 
-```
-sc create eChequeSync binPath= "C:\eChequeServer\eCheque.MICO360.Server.exe" start= auto
-sc description eChequeSync "eCheque MICO360 Sync Server"
-```
-Set the three environment variables at machine scope (System → Environment Variables) before starting the
-service. Use `sc start eChequeSync`.
+The easiest way — a one-shot PowerShell installer ships alongside the server EXE:
+
+1. Copy `eCheque.MICO360.Server.exe`, `Install-Server.ps1`, `Uninstall-Server.ps1` into one folder on the server.
+2. Edit `$OrgKey` (and `$Port` if needed) at the top of `Install-Server.ps1`.
+3. Open **PowerShell as Administrator** in that folder and run:
+   ```powershell
+   .\Install-Server.ps1
+   ```
+
+It creates `C:\eCheque\Server` (EXE + `echeque.server.json` config) and `C:\eCheque\Data` (the database),
+registers the **eChequeSync** service (auto-start + auto-restart on failure), opens the firewall port, starts
+the service, and prints a health check. To remove: `.\Uninstall-Server.ps1`.
+
+Config lives in `C:\eCheque\Server\echeque.server.json` (org key, DB path, listen URL) — edit it and restart
+the service (`Restart-Service eChequeSync`) to change settings. A config **file** is used rather than
+environment variables because a freshly-created Windows service does not reliably pick up newly-set machine
+env vars.
 
 ### 3.4 TLS (do this for anything beyond a trusted LAN)
 
