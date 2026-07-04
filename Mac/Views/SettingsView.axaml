@@ -136,6 +136,31 @@
                 </StackPanel>
             </Border>
 
+            <!-- Cloud sync (central server) -->
+            <Border Classes="card" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Text="Cloud Sync (central server)" Classes="cardTitle" Margin="0,0,0,4"/>
+                    <TextBlock Text="Keep this device in sync with your central eCheque server. Data stays on this device for offline use and syncs automatically in the background. Ask your administrator for the server URL and organisation key."
+                               FontSize="11" Foreground="#888888" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <CheckBox Content="Enable cloud sync on this device" IsChecked="{Binding SyncEnabled}" Margin="0,0,0,12"/>
+                    <Grid ColumnDefinitions="2*,16,*" Margin="0,0,0,10">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Server URL" Classes="label"/>
+                            <TextBox Text="{Binding SyncServerUrl}" Watermark="https://sync.mycompany.com:5210"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Organisation key" Classes="label"/>
+                            <TextBox Text="{Binding SyncOrgKey}"/>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                        <Button Content="🔗  Connect this device" Classes="secondary" HorizontalAlignment="Left" Command="{Binding ConnectSyncCommand}"/>
+                        <Button Content="⟳  Sync now" Classes="secondary" HorizontalAlignment="Left" Command="{Binding SyncNowCommand}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding SyncStatus}" FontSize="11" Foreground="#2E7D32" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
             <!-- Paths -->
             <Border Classes="card" Margin="0,0,0,16">
                 <StackPanel>

@@ -36,6 +36,8 @@ namespace eCheque.MICO360.Mac.Views
 
             // Send PDC due reminders if enabled and due (respects the user's chosen frequency).
             _ = PdcReminderService.MaybeSendAsync();
+            // Start background cloud sync (no-op unless enabled + this device is registered).
+            SyncService.StartBackground();
         }
 
         void PopulateCompanySwitcher()

@@ -16,6 +16,7 @@ namespace eCheque.MICO360.Mac.ViewModels
         string _mjKey = "", _mjSecret = "", _mjFrom = "", _mjFromName = "eCheque MICO360";
         string _wordsPreview = "";
         bool _pdcEnabled; string _pdcEmail = "", _pdcFreq = "Weekly", _pdcWa = ""; int _pdcLook = 7;
+        bool _syncEnabled; string _syncUrl = "", _syncKey = "", _syncStatus = "";
 
         static readonly (string Label, int Days)[] Freqs =
             { ("Daily", 1), ("Every 3 days", 3), ("Weekly", 7), ("Every 2 weeks", 14), ("Monthly", 30) };
@@ -45,6 +46,11 @@ namespace eCheque.MICO360.Mac.ViewModels
         public string PdcFrequency       { get => _pdcFreq;    set => Set(ref _pdcFreq, value); }
         public int    PdcLookAheadDays   { get => _pdcLook;    set => Set(ref _pdcLook, value); }
 
+        public bool   SyncEnabled   { get => _syncEnabled; set => Set(ref _syncEnabled, value); }
+        public string SyncServerUrl { get => _syncUrl;     set => Set(ref _syncUrl, value); }
+        public string SyncOrgKey    { get => _syncKey;     set => Set(ref _syncKey, value); }
+        public string SyncStatus    { get => _syncStatus;  set => Set(ref _syncStatus, value); }
+
         public string StatusMessage { get => _status;       set => Set(ref _status, value); }
         public string WordsPreview  { get => _wordsPreview; set => Set(ref _wordsPreview, value); }
 
@@ -57,6 +63,8 @@ namespace eCheque.MICO360.Mac.ViewModels
         public ICommand OpenLogCommand { get; }
         public ICommand SendReminderNowCommand { get; }
         public ICommand SendWhatsAppReminderCommand { get; }
+        public ICommand ConnectSyncCommand { get; }
+        public ICommand SyncNowCommand { get; }
 
         public SettingsViewModel()
         {
@@ -79,6 +87,21 @@ namespace eCheque.MICO360.Mac.ViewModels
                     StatusMessage = "Opening WhatsApp — review the message and tap Send.";
                 }
                 catch (System.Exception ex) { StatusMessage = "WhatsApp error: " + ex.Message; }
+            });
+            ConnectSyncCommand = new RelayCommand(async () =>
+            {
+                try { SyncStatus = "Connecting…"; SyncStatus = await SyncService.RegisterAsync(SyncServerUrl, SyncOrgKey); }
+                catch (System.Exception ex) { SyncStatus = "Error: " + ex.Message; }
+            });
+            SyncNowCommand = new RelayCommand(async () =>
+            {
+                try
+                {
+                    SyncService.ServerUrl = SyncServerUrl; SyncService.Enabled = SyncEnabled;
+                    if (!SyncService.IsRegistered) { SyncStatus = "Connect this device first (enter URL + organisation key, then Connect)."; return; }
+                    SyncStatus = "Syncing…"; SyncStatus = (await SyncService.SyncOnceAsync()).ToString();
+                }
+                catch (System.Exception ex) { SyncStatus = "Error: " + ex.Message; }
             });
         }
 
@@ -115,6 +138,11 @@ namespace eCheque.MICO360.Mac.ViewModels
             PdcFrequency       = FreqLabel(PdcReminderService.FrequencyDays);
             PdcLookAheadDays   = PdcReminderService.LookAheadDays;
 
+            SyncEnabled   = SyncService.Enabled;
+            SyncServerUrl = SyncService.ServerUrl;
+            SyncStatus    = SyncService.IsRegistered ? ("This device is registered. " + SyncService.LastResult)
+                                                     : "Not connected. Enter the server URL + organisation key, then Connect.";
+
             UpdatePreview();
         }
 
@@ -148,6 +176,7 @@ namespace eCheque.MICO360.Mac.ViewModels
             CompanyService.SetMasterSetting("Mailjet_FromName", (MailjetFromName ?? "").Trim());
 
             PersistReminder();
+            SyncService.Enabled = SyncEnabled; SyncService.ServerUrl = SyncServerUrl;
 
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "", "Settings Changed", "",
                 $"Company={CompanyName}, Currency={Currency}, CaseFormat={CaseFormat}");

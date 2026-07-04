@@ -25,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Sync.Contracts\eCheque.MICO360.Sync.Contracts.csproj" />
+    <ProjectReference Include="Sync.Client\eCheque.MICO360.Sync.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="logo.png" />

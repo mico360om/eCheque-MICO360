@@ -12,4 +12,9 @@
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.9" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.10" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sync.Contracts\eCheque.MICO360.Sync.Contracts.csproj" />
+    <ProjectReference Include="..\Sync.Client\eCheque.MICO360.Sync.Client.csproj" />
+  </ItemGroup>
 </Project>

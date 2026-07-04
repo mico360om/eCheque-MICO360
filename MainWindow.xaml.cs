@@ -66,6 +66,8 @@ namespace eCheque.MICO360
             _ = CheckForUpdatesOnStartupAsync();
             // Send PDC due reminders if enabled and due (respects the user's chosen frequency).
             _ = PdcReminderService.MaybeSendAsync();
+            // Start background cloud sync (no-op unless enabled + this PC is registered).
+            Services.SyncService.StartBackground();
         }
 
         private async System.Threading.Tasks.Task CheckForUpdatesOnStartupAsync()
