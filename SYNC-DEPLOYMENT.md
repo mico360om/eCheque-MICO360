@@ -5,10 +5,13 @@ This document covers the server-based version of eCheque MICO360: a central **sy
 
 ## 1. What you get
 
-| Deliverable | File | Notes |
+| Deliverable | Installer | Notes |
 |---|---|---|
-| **Server** | `dist/server/eCheque.MICO360.Server.exe` | Self-contained (~100 MB). No .NET install needed. |
-| **Client** | `dist/client/eCheque.MICO360.exe` | Self-contained desktop app. Also ships via the normal installer. |
+| **Client** | `installer/eCheque-MICO360-Setup-1.1.0.exe` | GUI installer → Program Files, shortcuts, uninstaller. |
+| **Server** | `installer/eCheque-MICO360-Server-Setup-1.1.0.exe` | GUI installer → prompts org key + port, installs a Windows service, opens firewall, starts it. |
+
+Both require administrator (UAC). No .NET install is needed on the target — the runtime is bundled.
+The raw self-contained EXEs are also under `dist/` if you prefer a manual/portable setup.
 
 ## 2. Architecture (how it stays correct)
 
@@ -53,7 +56,13 @@ On start it prints the listen URL and the org key. Open `http://<server>:5210/` 
 
 ### 3.3 Install as a Windows service (recommended for production)
 
-The easiest way — a one-shot PowerShell installer ships alongside the server EXE:
+**Easiest — the GUI installer.** Run `eCheque-MICO360-Server-Setup-1.1.0.exe` on the server (admin/UAC). It
+asks for the **organisation key** and **port**, installs to Program Files, writes the config, registers the
+**eChequeSync** Windows service (auto-start + auto-restart), opens the firewall, and starts it. Uninstall from
+Add/Remove Programs removes the service and firewall rule. The database lives in
+`C:\ProgramData\eCheque MICO360 Server\server.db`.
+
+**Alternative — PowerShell.** A one-shot script also ships alongside the server EXE:
 
 1. Copy `eCheque.MICO360.Server.exe`, `Install-Server.ps1`, `Uninstall-Server.ps1` into one folder on the server.
 2. Edit `$OrgKey` (and `$Port` if needed) at the top of `Install-Server.ps1`.

@@ -65,7 +65,7 @@ jobs:
           echo "sha256=$hash" >> $env:GITHUB_OUTPUT
           echo "Installer: $setup ($hash)"
 
-      - name: Publish sync server (self-contained EXE)
+      - name: Build server installer (Inno Setup)
         id: server
         shell: pwsh
         run: |
@@ -73,13 +73,15 @@ jobs:
             -c Release -r win-x64 --self-contained true `
             -p:Version=${{ steps.ver.outputs.version }} `
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-            -o publish_server
-          $exe = "publish_server\eCheque.MICO360.Server.exe"
-          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  $(Split-Path $exe -Leaf)" | Out-File "$exe.sha256" -Encoding ascii
-          echo "exe=$exe" >> $env:GITHUB_OUTPUT
+            -o dist\server
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc "/DMyAppVersion=${{ steps.ver.outputs.version }}" "installer\eCheque.MICO360.Server.iss"
+          $setup = "installer\eCheque-MICO360-Server-Setup-${{ steps.ver.outputs.version }}.exe"
+          $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $setup -Leaf)" | Out-File "$setup.sha256" -Encoding ascii
+          echo "setup=$setup" >> $env:GITHUB_OUTPUT
           echo "sha256=$hash" >> $env:GITHUB_OUTPUT
-          echo "Server: $exe ($hash)"
+          echo "Server installer: $setup ($hash)"
 
       - name: Create / update GitHub Release
         uses: softprops/action-gh-release@v2
@@ -89,21 +91,20 @@ jobs:
           body: |
             ## eCheque MICO360 ${{ steps.ver.outputs.version }}
 
-            Automated release build.
+            Automated release build. Two Windows installers — both require admin (UAC).
 
-            **Client — Windows installer (complete, all modules included):** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
-            Installs machine-wide into Program Files (admin required). The in-app updater downloads and runs this installer.
+            **Client installer:** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
+            Installs the desktop app machine-wide into Program Files. The in-app updater downloads and runs this.
             SHA256: ${{ steps.installer.outputs.sha256 }}
 
-            **Server — self-contained sync server EXE:** `eCheque.MICO360.Server.exe`
-            Run on the central machine (see SYNC-DEPLOYMENT.md). No .NET install required.
+            **Server installer:** `eCheque-MICO360-Server-Setup-${{ steps.ver.outputs.version }}.exe`
+            Installs the sync server as a Windows service (prompts for the organisation key + port, opens the
+            firewall, and starts it). See SYNC-DEPLOYMENT.md.
             SHA256: ${{ steps.server.outputs.sha256 }}
 
             <!-- Add [mandatory] anywhere in these notes to force the update. -->
           files: |
             ${{ steps.installer.outputs.setup }}
             ${{ steps.installer.outputs.setup }}.sha256
-            ${{ steps.server.outputs.exe }}
-            ${{ steps.server.outputs.exe }}.sha256
-            Server/Install-Server.ps1
-            Server/Uninstall-Server.ps1
+            ${{ steps.server.outputs.setup }}
+            ${{ steps.server.outputs.setup }}.sha256
