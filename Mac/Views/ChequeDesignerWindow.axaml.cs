@@ -274,6 +274,14 @@ namespace eCheque.MICO360.Mac.Views
             Close();
         }
 
+        void OnCalibrate(object? sender, RoutedEventArgs e)
+        {
+            // Reflect the current on-screen layout (incl. offset) so the calibration sheet matches what will print.
+            SyncLegacy();
+            _profile.FieldsJson = ChequeLayout.Serialize(_fields);
+            try { eCheque.MICO360.Mac.Services.ChequePrintService.PreviewCalibration(_profile); } catch { }
+        }
+
         // keep the legacy per-field X/Y columns in sync for the print fallback
         void SyncLegacy()
         {

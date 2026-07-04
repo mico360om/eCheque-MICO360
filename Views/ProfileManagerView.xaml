@@ -163,7 +163,7 @@
 
                             <Border Height="1" Background="#EEEEEE" Margin="0,0,0,14"/>
                             <TextBlock Text="Print Alignment Nudge (mm)" FontSize="13" FontWeight="Bold" Foreground="#1A1A1A" Margin="0,0,0,2"/>
-                            <TextBlock Text="Shift everything slightly if the print is a little off on your printer." FontSize="11" Foreground="#888888" Margin="0,0,0,10"/>
+                            <TextBlock Text="Shifts every printed field. To find the exact numbers, open Design Layout → 📐 Calibration Sheet, print it, and lay it over a real cheque. Positive X moves right, positive Y moves down." FontSize="11" Foreground="#888888" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/><ColumnDefinition Width="1.2*"/></Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">

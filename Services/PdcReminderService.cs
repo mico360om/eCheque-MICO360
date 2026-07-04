@@ -14,14 +14,46 @@ namespace eCheque.MICO360.Services
         const string KeyFreq      = "PdcReminderFrequencyDays";
         const string KeyLookAhead = "PdcReminderLookAheadDays";
         const string KeyLastSent  = "PdcReminderLastSent";
+        const string KeyWhatsApp  = "PdcReminderWhatsApp";
 
         public static bool  Enabled       { get => DatabaseService.GetSetting(KeyEnabled, "0") == "1"; set => DatabaseService.SaveSetting(KeyEnabled, value ? "1" : "0"); }
         public static string Recipient    { get => DatabaseService.GetSetting(KeyEmail, ""); set => DatabaseService.SaveSetting(KeyEmail, (value ?? "").Trim()); }
+        public static string WhatsAppNumber { get => DatabaseService.GetSetting(KeyWhatsApp, ""); set => DatabaseService.SaveSetting(KeyWhatsApp, (value ?? "").Trim()); }
         public static int   FrequencyDays { get => Clamp(DatabaseService.GetSetting(KeyFreq, "7"), 7, 1, 90); set => DatabaseService.SaveSetting(KeyFreq, value.ToString()); }
         public static int   LookAheadDays { get => Clamp(DatabaseService.GetSetting(KeyLookAhead, "7"), 7, 1, 365); set => DatabaseService.SaveSetting(KeyLookAhead, value.ToString()); }
         public static DateTime? LastSent  => DateTime.TryParse(DatabaseService.GetSetting(KeyLastSent, ""), out var d) ? d : null;
 
         static int Clamp(string s, int def, int min, int max) => int.TryParse(s, out var v) ? Math.Min(max, Math.Max(min, v)) : def;
+
+        /// <summary>
+        /// Builds a WhatsApp "click-to-send" URL (https://wa.me/&lt;number&gt;?text=…) carrying the same due-cheque
+        /// summary the email reminder sends. Returns (url, "") on success, or (null, reason) if the number is
+        /// invalid or nothing is due. The caller opens the URL so the user can review and tap Send in WhatsApp.
+        /// </summary>
+        public static (string? url, string message) BuildWhatsAppReminder()
+        {
+            var digits = DigitsOnly(WhatsAppNumber);
+            if (digits.Length < 8) return (null, "Enter a valid WhatsApp number (with country code, e.g. 96891234567) in Settings.");
+            var due = ChequeService.GetDuePdcCheques(LookAheadDays);
+            if (due.Count == 0) return (null, $"No cheques are due within {LookAheadDays} day(s) — nothing to remind about.");
+            return ("https://wa.me/" + digits + "?text=" + Uri.EscapeDataString(BuildPlainSummary(due)), "");
+        }
+
+        static string DigitsOnly(string? s) => new(string.Concat((s ?? "").Where(char.IsDigit)));
+
+        static string BuildPlainSummary(List<Models.ChequeRecord> due)
+        {
+            var company = CompanyService.CurrentCompanyName;
+            decimal total = due.Sum(c => c.Amount);
+            var currency = due.FirstOrDefault()?.Currency ?? "OMR";
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"*PDC reminder — {company}*");
+            sb.AppendLine($"{due.Count} post-dated cheque(s) due within {LookAheadDays} day(s). Total {currency} {total:N3}.");
+            sb.AppendLine();
+            foreach (var c in due)
+                sb.AppendLine($"• #{c.ChequeNumber}  {c.PayeeName}  {currency} {c.Amount:N3}  {c.ChequeDate:dd/MM/yyyy}  ({c.DueLabel})");
+            return sb.ToString().TrimEnd();
+        }
 
         /// <summary>Called at startup. Sends a reminder only if enabled, configured, the frequency interval has
         /// elapsed since the last send, and cheques are actually due. Never throws.</summary>

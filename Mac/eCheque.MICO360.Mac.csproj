@@ -8,7 +8,7 @@
     <RootNamespace>eCheque.MICO360.Mac</RootNamespace>
     <AssemblyName>eCheque.MICO360.Mac</AssemblyName>
     <ApplicationIcon></ApplicationIcon>
-    <Version>1.0.26</Version>
+    <Version>1.0.27</Version>
     <!-- macOS targets for `dotnet publish -r ...` (see build-mac.sh) -->
     <RuntimeIdentifiers>osx-arm64;osx-x64</RuntimeIdentifiers>
   </PropertyGroup>

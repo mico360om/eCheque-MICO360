@@ -352,6 +352,20 @@ namespace eCheque.MICO360.Views
                 : $"⚠ Printer used {resolved.Wmm:0}×{resolved.Hmm:0} mm instead of the cheque size ({_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm). Set a custom paper size in your printer for exact alignment.";
         }
 
+        void BtnCalibrate_Click(object sender, RoutedEventArgs e)
+        {
+            SyncProfile();
+            var dlg = new PrintDialog();
+            eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
+            if (dlg.ShowDialog() != true) return;
+            var resolved = eCheque.MICO360.Helpers.PrintHelper.SelectChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
+            const double pxPerMm = 96.0 / 25.4;
+            var canvas = CalibrationRenderer.Build(_profile, pxPerMm);
+            double cw = _profile.ChequeWidth * pxPerMm, ch = _profile.ChequeHeight * pxPerMm;
+            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, resolved.Wdip, resolved.Hdip, "Cheque alignment calibration sheet");
+            TxtPosition.Text = "Calibration sheet sent. Lay it over a real cheque: if a marker sits X mm from where it should, add that X to the Print Offset (Profile Manager) and reprint.";
+        }
+
         void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             SyncProfile();

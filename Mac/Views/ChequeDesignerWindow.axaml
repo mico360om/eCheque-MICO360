@@ -104,6 +104,8 @@
             <DockPanel>
                 <Button DockPanel.Dock="Left" Content="Reset to Defaults" Classes="secondary" Click="OnReset"/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Content="📐 Calibration Sheet" Classes="secondary" Click="OnCalibrate"
+                            ToolTip.Tip="Print a ruler + crosshair sheet. Lay it over a real cheque to measure and correct the print offset."/>
                     <Button Content="Cancel" Classes="secondary" Click="OnCancel"/>
                     <Button Content="💾 Save Layout" Classes="primary" Click="OnSave"/>
                 </StackPanel>

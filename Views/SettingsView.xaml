@@ -117,8 +117,22 @@
                             <TextBox Style="{StaticResource InputBox}" Text="{Binding PdcLookAheadDays}"/>
                         </StackPanel>
                     </Grid>
-                    <Button Content="✉  Send a reminder now (test)" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
-                            Padding="14,7" FontSize="12" Command="{Binding SendReminderNowCommand}"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="3*"/></Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="WhatsApp number (with country code)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding PdcWhatsApp}" ToolTip="Digits only or +country code, e.g. 96891234567"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
+                            <TextBlock Text="Opens WhatsApp with the due-cheque summary pre-filled — review and tap Send. No account or keys needed." FontSize="11" Foreground="{StaticResource TextSub}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="✉  Send a reminder now (test)" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
+                                Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding SendReminderNowCommand}"/>
+                        <Button Content="🟢  Send via WhatsApp" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
+                                Padding="14,7" FontSize="12" Command="{Binding SendWhatsAppReminderCommand}"/>
+                    </StackPanel>
                 </StackPanel>
             </Border>
 

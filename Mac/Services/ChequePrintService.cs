@@ -3,6 +3,8 @@ using System.IO;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Line = Avalonia.Controls.Shapes.Line;
+using Rectangle = Avalonia.Controls.Shapes.Rectangle;
 using Avalonia.Media.Imaging;
 using eCheque.MICO360.Core.Models;
 using PdfSharp.Drawing;
@@ -58,6 +60,94 @@ namespace eCheque.MICO360.Mac.Services
             try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch { }
             return path;
         }
+
+        /// <summary>Build a calibration PDF (ruler + labelled crosshairs at each field) and open it so the user
+        /// can print it, lay it over a real cheque, and read off the correct Print Offset. Returns the PDF path.</summary>
+        public static string PreviewCalibration(ChequeProfile profile)
+        {
+            double cw = Math.Max(1, profile.ChequeWidth)  * Dip;
+            double ch = Math.Max(1, profile.ChequeHeight) * Dip;
+            var visual = BuildCalibrationVisual(profile, cw, ch);
+            byte[] png = RenderPng(visual, cw, ch, 3.0);
+
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                                   "eCheque MICO360", "PDFs");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, $"Calibration_{Safe(profile.Name)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf");
+
+            using var doc = new PdfDocument();
+            doc.Info.Title = $"Calibration — {profile.Name}";
+            var page = doc.AddPage();
+            page.Width  = XUnit.FromMillimeter(profile.ChequeWidth);
+            page.Height = XUnit.FromMillimeter(profile.ChequeHeight);
+            var ms = new MemoryStream(png);
+            using (var gfx = XGraphics.FromPdfPage(page))
+            {
+                var img = XImage.FromStream(ms);
+                gfx.DrawImage(img, 0, 0, page.Width.Point, page.Height.Point);
+            }
+            doc.Save(path);
+            ms.Dispose();
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch { }
+            return path;
+        }
+
+        static Control BuildCalibrationVisual(ChequeProfile p, double cw, double ch)
+        {
+            double wmm = Math.Max(1, p.ChequeWidth), hmm = Math.Max(1, p.ChequeHeight);
+            var canvas = new Canvas { Width = cw, Height = ch, Background = Brushes.White, ClipToBounds = true };
+
+            canvas.Children.Add(new Rectangle { Width = cw, Height = ch, Stroke = Brushes.Black, StrokeThickness = 0.6 });
+
+            for (int mm = 0; mm <= wmm; mm += 5)
+            {
+                bool major = mm % 10 == 0;
+                double x = mm * Dip, len = (major ? 4.0 : 2.0) * Dip;
+                canvas.Children.Add(Seg(x, 0, x, len));
+                if (major && mm > 0) canvas.Children.Add(Text($"{mm}", x + 0.4 * Dip, 0.2 * Dip, 6.5));
+            }
+            for (int mm = 0; mm <= hmm; mm += 5)
+            {
+                bool major = mm % 10 == 0;
+                double y = mm * Dip, len = (major ? 4.0 : 2.0) * Dip;
+                canvas.Children.Add(Seg(0, y, len, y));
+                if (major && mm > 0) canvas.Children.Add(Text($"{mm}", 0.3 * Dip, y + 0.2 * Dip, 6.5));
+            }
+
+            foreach (var f in ChequeLayout.Parse(p))
+            {
+                if (!f.Enabled) continue;
+                double x = (f.X + p.PrintOffsetX) * Dip, y = (f.Y + p.PrintOffsetY) * Dip, arm = 3.0 * Dip;
+                canvas.Children.Add(Seg(x - arm, y, x + arm, y));
+                canvas.Children.Add(Seg(x, y - arm, x, y + arm));
+                canvas.Children.Add(Text($"{FieldName(f.Key)}  ({f.X:0}, {f.Y:0})", x + 1.2 * Dip, y + 0.6 * Dip, 7));
+            }
+
+            string off = (p.PrintOffsetX == 0 && p.PrintOffsetY == 0) ? "no offset" : $"offset X={p.PrintOffsetX:0.#}, Y={p.PrintOffsetY:0.#} mm";
+            canvas.Children.Add(Text($"CALIBRATION — {p.Name}  •  {wmm:0}×{hmm:0} mm  •  {off}  •  ruler in mm from top-left",
+                2 * Dip, ch - 5.5 * Dip, 7));
+            return canvas;
+        }
+
+        static Line Seg(double x1, double y1, double x2, double y2) => new()
+        { StartPoint = new Point(x1, y1), EndPoint = new Point(x2, y2), Stroke = Brushes.Black, StrokeThickness = 0.5 };
+
+        static TextBlock Text(string t, double x, double y, double size)
+        {
+            var tb = new TextBlock { Text = t, FontSize = size, Foreground = Brushes.Black };
+            Canvas.SetLeft(tb, x); Canvas.SetTop(tb, y);
+            return tb;
+        }
+
+        static string FieldName(string key) => key switch
+        {
+            "Date" => "Date",
+            "Payee" => "Payee",
+            "AmountNum" => "Amount (fig)",
+            "AmountWords" => "Amount (words)",
+            "ChequeNumber" => "Cheque #",
+            _ => key
+        };
 
         static Control BuildVisual(ChequeRecord c, ChequeProfile p, double cw, double ch)
         {

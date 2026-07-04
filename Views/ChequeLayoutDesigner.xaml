@@ -34,7 +34,9 @@
                     <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="4,0,4,0"/>
                     <Button Content="Fit" Click="BtnFit_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,12,0"/>
                     <CheckBox x:Name="ChkGrid" Content="Grid" Foreground="White" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,0" Click="ChkGrid_Click"/>
-                    <Button Content="🖨 Test Print" Click="BtnTestPrint_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5"/>
+                    <Button Content="🖨 Test Print" Click="BtnTestPrint_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5" Margin="0,0,4,0"/>
+                    <Button Content="📐 Calibration Sheet" Click="BtnCalibrate_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5"
+                            ToolTip="Print a ruler + crosshair sheet. Lay it over a real cheque to measure and correct the print offset."/>
                 </StackPanel>
             </DockPanel>
         </Border>

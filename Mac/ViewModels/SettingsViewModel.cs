@@ -15,7 +15,7 @@ namespace eCheque.MICO360.Mac.ViewModels
         bool _includeBaisa = true, _addOnly = true;
         string _mjKey = "", _mjSecret = "", _mjFrom = "", _mjFromName = "eCheque MICO360";
         string _wordsPreview = "";
-        bool _pdcEnabled; string _pdcEmail = "", _pdcFreq = "Weekly"; int _pdcLook = 7;
+        bool _pdcEnabled; string _pdcEmail = "", _pdcFreq = "Weekly", _pdcWa = ""; int _pdcLook = 7;
 
         static readonly (string Label, int Days)[] Freqs =
             { ("Daily", 1), ("Every 3 days", 3), ("Weekly", 7), ("Every 2 weeks", 14), ("Monthly", 30) };
@@ -41,6 +41,7 @@ namespace eCheque.MICO360.Mac.ViewModels
 
         public bool   PdcReminderEnabled { get => _pdcEnabled; set => Set(ref _pdcEnabled, value); }
         public string PdcReminderEmail   { get => _pdcEmail;   set => Set(ref _pdcEmail, value); }
+        public string PdcWhatsApp        { get => _pdcWa;      set => Set(ref _pdcWa, value); }
         public string PdcFrequency       { get => _pdcFreq;    set => Set(ref _pdcFreq, value); }
         public int    PdcLookAheadDays   { get => _pdcLook;    set => Set(ref _pdcLook, value); }
 
@@ -55,6 +56,7 @@ namespace eCheque.MICO360.Mac.ViewModels
         public ICommand BackupCommand  { get; }
         public ICommand OpenLogCommand { get; }
         public ICommand SendReminderNowCommand { get; }
+        public ICommand SendWhatsAppReminderCommand { get; }
 
         public SettingsViewModel()
         {
@@ -66,14 +68,27 @@ namespace eCheque.MICO360.Mac.ViewModels
                 try { PersistReminder(); StatusMessage = "Sending reminder…"; StatusMessage = await PdcReminderService.SendNowAsync(); }
                 catch (System.Exception ex) { StatusMessage = "Reminder error: " + ex.Message; }
             });
+            SendWhatsAppReminderCommand = new RelayCommand(() =>
+            {
+                try
+                {
+                    PersistReminder();
+                    var (url, msg) = PdcReminderService.BuildWhatsAppReminder();
+                    if (url == null) { StatusMessage = msg; return; }
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+                    StatusMessage = "Opening WhatsApp — review the message and tap Send.";
+                }
+                catch (System.Exception ex) { StatusMessage = "WhatsApp error: " + ex.Message; }
+            });
         }
 
         void PersistReminder()
         {
-            PdcReminderService.Enabled       = PdcReminderEnabled;
-            PdcReminderService.Recipient     = PdcReminderEmail;
-            PdcReminderService.FrequencyDays = FreqDays(PdcFrequency);
-            PdcReminderService.LookAheadDays = PdcLookAheadDays < 1 ? 7 : PdcLookAheadDays;
+            PdcReminderService.Enabled         = PdcReminderEnabled;
+            PdcReminderService.Recipient       = PdcReminderEmail;
+            PdcReminderService.WhatsAppNumber  = PdcWhatsApp;
+            PdcReminderService.FrequencyDays   = FreqDays(PdcFrequency);
+            PdcReminderService.LookAheadDays   = PdcLookAheadDays < 1 ? 7 : PdcLookAheadDays;
         }
 
         public void Load()
@@ -96,6 +111,7 @@ namespace eCheque.MICO360.Mac.ViewModels
 
             PdcReminderEnabled = PdcReminderService.Enabled;
             PdcReminderEmail   = PdcReminderService.Recipient;
+            PdcWhatsApp        = PdcReminderService.WhatsAppNumber;
             PdcFrequency       = FreqLabel(PdcReminderService.FrequencyDays);
             PdcLookAheadDays   = PdcReminderService.LookAheadDays;
 

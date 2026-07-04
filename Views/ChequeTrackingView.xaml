@@ -16,7 +16,10 @@
                     <Button Content="📅  PDC Register" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ShowPdcCommand}"/>
                     <Button Content="✓  Reconciliation" Style="{StaticResource SecondaryBtn}" Command="{Binding ShowReconCommand}"/>
                 </StackPanel>
-                <Button Content="Refresh" Style="{StaticResource SecondaryBtn}" DockPanel.Dock="Right" HorizontalAlignment="Right" Command="{Binding RefreshCommand}"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button Content="⭳  Export CSV" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ExportCommand}"/>
+                    <Button Content="Refresh" Style="{StaticResource SecondaryBtn}" Command="{Binding RefreshCommand}"/>
+                </StackPanel>
                 <TextBlock Text="{Binding Heading}" VerticalAlignment="Center" Margin="16,0" Foreground="#8B1818" FontWeight="SemiBold" FontSize="13"/>
             </DockPanel>
         </Border>
@@ -60,7 +63,7 @@
 
         <DockPanel Grid.Row="2" Margin="0,8,0,0">
             <TextBlock Text="{Binding StatusMessage}" DockPanel.Dock="Left" Foreground="#2E7D32" FontSize="12" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding Cheques.Count, StringFormat='{}{0} cheque(s)'}" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="12" Foreground="#888888"/>
+            <TextBlock Text="{Binding SummaryText}" DockPanel.Dock="Right" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" Foreground="#8B1818"/>
         </DockPanel>
     </Grid>
 </UserControl>
