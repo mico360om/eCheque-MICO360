@@ -6,7 +6,6 @@ obj/
 # Publish / installer output
 publish/
 dist/
-installer_output/
 
 # Local databases / generated data (never publish real data)
 *.db
@@ -23,3 +22,5 @@ Thumbs.db
 desktop.ini
 *.suo
 *_wpftmp.csproj
+installer/*.exe
+installer/*.sha256

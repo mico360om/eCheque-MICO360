@@ -58,7 +58,7 @@ jobs:
           choco install innosetup --no-progress -y
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           & $iscc "/DMyAppVersion=${{ steps.ver.outputs.version }}" "installer\eCheque.MICO360.iss"
-          $setup = "installer_output\eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe"
+          $setup = "installer\eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe"
           $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLower()
           "$hash  $(Split-Path $setup -Leaf)" | Out-File "$setup.sha256" -Encoding ascii
           echo "setup=$setup" >> $env:GITHUB_OUTPUT
