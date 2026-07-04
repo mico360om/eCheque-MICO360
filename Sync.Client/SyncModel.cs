@@ -10,6 +10,7 @@ namespace eCheque.MICO360.Sync.Client
         public bool Guid { get; init; } = true;           // GUID identity (SyncId) vs a natural key
         public string? NaturalKey { get; init; }          // e.g. "Name" for Payees, "Key" for settings
         public bool HasProfileFk { get; init; }           // carries ProfileSyncId (portable FK to ChequeProfiles)
+        public HashSet<string>? Exclude { get; init; }    // columns that must NOT sync (kept per-PC)
     }
 
     /// <summary>The tables that sync, split by database tier. Master-tier tables live in companies.db
@@ -19,7 +20,9 @@ namespace eCheque.MICO360.Sync.Client
         public static readonly SyncEntityDef[] Master =
         {
             new() { Name = SyncEntities.Company,       Table = "Companies" },
-            new() { Name = SyncEntities.User,          Table = "Users" },
+            // Users sync (so any PC can log in), but the volatile per-PC login state stays local.
+            new() { Name = SyncEntities.User,          Table = "Users",
+                    Exclude = new(System.StringComparer.OrdinalIgnoreCase) { "LastLogin", "FailedLoginAttempts", "LockoutUntil" } },
             new() { Name = SyncEntities.MasterSetting, Table = "MasterSettings", Guid = false, NaturalKey = "Key" },
         };
 

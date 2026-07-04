@@ -31,9 +31,10 @@ namespace eCheque.MICO360.Services
         private static void MigrateSyncColumns()
         {
             using var conn = GetConnection();
-            using (var st = new SqliteCommand(
-                "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)", conn))
-                st.ExecuteNonQuery();
+            Exec(conn, "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)");
+            Exec(conn, "CREATE TABLE IF NOT EXISTS _SyncGuard(Id INTEGER PRIMARY KEY CHECK(Id=1), Active INTEGER DEFAULT 0)");
+            Exec(conn, "INSERT OR IGNORE INTO _SyncGuard(Id,Active) VALUES(1,0)");
+            Exec(conn, "UPDATE _SyncGuard SET Active=0 WHERE Id=1"); // re-enable triggers in case a prior run left it set
 
             ApplySyncColumns(conn, "ChequeProfiles", guid: true,  createdCol: "CreatedDate");
             ApplySyncColumns(conn, "ChequeRecords",  guid: true,  createdCol: "CreatedDate", profileFk: true);
@@ -51,16 +52,29 @@ namespace eCheque.MICO360.Services
             TryExec(conn, $"ALTER TABLE {table} ADD COLUMN ServerVersion INTEGER DEFAULT 0");
             if (profileFk) TryExec(conn, $"ALTER TABLE {table} ADD COLUMN ProfileSyncId TEXT");
 
-            if (!fresh) return;
-
+            // Self-healing backfill (idempotent — the WHERE matches nothing once every row is stamped).
             if (guid)
                 Exec(conn, $"UPDATE {table} SET SyncId = lower(hex(randomblob(16))) WHERE SyncId IS NULL OR SyncId = ''");
             string createdExpr = createdCol != null ? $"NULLIF({createdCol},'')" : "NULL";
             Exec(conn, $"UPDATE {table} SET UpdatedAtUtc = COALESCE({createdExpr}, strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE UpdatedAtUtc IS NULL OR UpdatedAtUtc = ''");
-            Exec(conn, $"UPDATE {table} SET Dirty = 1");
             if (profileFk)
                 Exec(conn, $"UPDATE {table} SET ProfileSyncId = (SELECT p.SyncId FROM ChequeProfiles p WHERE p.Id = {table}.ProfileId) WHERE (ProfileSyncId IS NULL OR ProfileSyncId='') AND ProfileId > 0");
+            if (fresh) Exec(conn, $"UPDATE {table} SET Dirty = 1"); // first migration: upload existing rows once
             if (guid) TryExec(conn, $"CREATE UNIQUE INDEX IF NOT EXISTS IX_{table}_SyncId ON {table}(SyncId)");
+
+            CreateSyncTriggers(conn, table, guid);
+        }
+
+        /// <summary>Triggers that stamp change-tracking on every INSERT/UPDATE unless the sync engine's guard is set.
+        /// Relies on SQLite's default recursive_triggers=OFF so the trigger's own UPDATE does not re-fire.</summary>
+        internal static void CreateSyncTriggers(SqliteConnection conn, string table, bool guid)
+        {
+            const string guard = "(SELECT Active FROM _SyncGuard WHERE Id=1)=0";
+            string setId = guid ? "SyncId=CASE WHEN NEW.SyncId IS NULL OR NEW.SyncId='' THEN lower(hex(randomblob(16))) ELSE NEW.SyncId END, " : "";
+            TryExec(conn, $"CREATE TRIGGER IF NOT EXISTS trg_{table}_si AFTER INSERT ON {table} FOR EACH ROW WHEN {guard} " +
+                          $"BEGIN UPDATE {table} SET {setId}UpdatedAtUtc=strftime('%Y-%m-%dT%H:%M:%fZ','now'), Dirty=1 WHERE rowid=NEW.rowid; END");
+            TryExec(conn, $"CREATE TRIGGER IF NOT EXISTS trg_{table}_su AFTER UPDATE ON {table} FOR EACH ROW WHEN {guard} " +
+                          $"BEGIN UPDATE {table} SET UpdatedAtUtc=strftime('%Y-%m-%dT%H:%M:%fZ','now'), Dirty=1 WHERE rowid=NEW.rowid; END");
         }
 
         internal static bool TryExec(SqliteConnection conn, string sql)

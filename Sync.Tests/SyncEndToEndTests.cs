@@ -245,7 +245,63 @@ namespace eCheque.MICO360.Sync.Tests
             Assert.Equal(1, CountProfiles(b));
         }
 
+        [Fact]
+        public async Task Trigger_stamped_app_writes_sync_and_applied_rows_stay_clean()
+        {
+            // Mirrors production: the DB has change-tracking triggers + guard, and "app writes" are plain
+            // INSERT/UPDATE that set NO sync columns — the triggers must stamp them; the engine's guard must
+            // stop applied rows from being re-dirtied (which would echo forever).
+            var e = new[] { new SyncEntityDef { Name = SyncEntities.ChequeProfile, Table = "ChequeProfiles" } };
+            using var a = NewTriggeredClientDb(); using var b = NewTriggeredClientDb();
+
+            Exec(a, "INSERT INTO ChequeProfiles(Name,BankName) VALUES('Muscat Main','Bank Muscat')"); // no SyncId!
+            Assert.False(string.IsNullOrEmpty((string?)Scalar(a, "SELECT SyncId FROM ChequeProfiles WHERE Name='Muscat Main'")));
+            Assert.Equal(1L, System.Convert.ToInt64(Scalar(a, "SELECT Dirty FROM ChequeProfiles WHERE Name='Muscat Main'")));
+
+            var ra = await ClientFor(_tokenA).SyncScopeAsync(a, Company, e);
+            Assert.True(ra.Ok, ra.Error);
+            Assert.Equal(1, ra.Pushed);
+            Assert.Equal(0L, System.Convert.ToInt64(Scalar(a, "SELECT Dirty FROM ChequeProfiles WHERE Name='Muscat Main'"))); // cleared, trigger didn't re-dirty
+
+            var rb = await ClientFor(_tokenB).SyncScopeAsync(b, Company, e);
+            Assert.True(rb.Ok, rb.Error);
+            Assert.Equal("Bank Muscat", (string?)Scalar(b, "SELECT BankName FROM ChequeProfiles WHERE Name='Muscat Main'"));
+            Assert.Equal(0L, System.Convert.ToInt64(Scalar(b, "SELECT Dirty FROM ChequeProfiles WHERE Name='Muscat Main'"))); // applied clean — guard worked through the engine
+
+            var rb2 = await ClientFor(_tokenB).SyncScopeAsync(b, Company, e);
+            Assert.Equal(0, rb2.Pushed); // B does not re-push a row it only received
+
+            // A plain UPDATE on B (trigger dirties it) propagates back to A.
+            Exec(b, "UPDATE ChequeProfiles SET BankName='NBO' WHERE Name='Muscat Main'");
+            Assert.Equal(1L, System.Convert.ToInt64(Scalar(b, "SELECT Dirty FROM ChequeProfiles WHERE Name='Muscat Main'")));
+            await ClientFor(_tokenB).SyncScopeAsync(b, Company, e);
+            await ClientFor(_tokenA).SyncScopeAsync(a, Company, e);
+            Assert.Equal("NBO", (string?)Scalar(a, "SELECT BankName FROM ChequeProfiles WHERE Name='Muscat Main'"));
+            Assert.Equal(1, CountProfiles(a)); // no duplication
+            Assert.Equal(1, CountProfiles(b));
+        }
+
         // ---------- client-db harness (plain SQLite; the engine is encryption-agnostic) ----------
+
+        SqliteConnection NewTriggeredClientDb()
+        {
+            var path = NewTempFile("tclient");
+            var conn = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path }.ToString());
+            conn.Open();
+            Exec(conn, @"
+                CREATE TABLE _SyncGuard(Id INTEGER PRIMARY KEY CHECK(Id=1), Active INTEGER DEFAULT 0);
+                INSERT INTO _SyncGuard(Id,Active) VALUES(1,0);
+                CREATE TABLE ChequeProfiles(Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, BankName TEXT,
+                    SyncId TEXT, UpdatedAtUtc TEXT, Deleted INTEGER DEFAULT 0, Dirty INTEGER DEFAULT 0, ServerVersion INTEGER DEFAULT 0);
+                CREATE TRIGGER trg_cp_si AFTER INSERT ON ChequeProfiles FOR EACH ROW WHEN (SELECT Active FROM _SyncGuard WHERE Id=1)=0
+                  BEGIN UPDATE ChequeProfiles SET SyncId=CASE WHEN NEW.SyncId IS NULL OR NEW.SyncId='' THEN lower(hex(randomblob(16))) ELSE NEW.SyncId END,
+                    UpdatedAtUtc=strftime('%Y-%m-%dT%H:%M:%fZ','now'), Dirty=1 WHERE rowid=NEW.rowid; END;
+                CREATE TRIGGER trg_cp_su AFTER UPDATE ON ChequeProfiles FOR EACH ROW WHEN (SELECT Active FROM _SyncGuard WHERE Id=1)=0
+                  BEGIN UPDATE ChequeProfiles SET UpdatedAtUtc=strftime('%Y-%m-%dT%H:%M:%fZ','now'), Dirty=1 WHERE rowid=NEW.rowid; END;
+                CREATE TABLE SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0);");
+            return conn;
+        }
+
 
         SyncClient FlakyClientFor(string token, int failFirst)
         {

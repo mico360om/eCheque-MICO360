@@ -28,9 +28,10 @@ namespace eCheque.MICO360.Core.Services
         private static void MigrateSyncColumns()
         {
             using var conn = GetConn();
-            using (var st = new SqliteCommand(
-                "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)", conn))
-                st.ExecuteNonQuery();
+            DatabaseService.Exec(conn, "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)");
+            DatabaseService.Exec(conn, "CREATE TABLE IF NOT EXISTS _SyncGuard(Id INTEGER PRIMARY KEY CHECK(Id=1), Active INTEGER DEFAULT 0)");
+            DatabaseService.Exec(conn, "INSERT OR IGNORE INTO _SyncGuard(Id,Active) VALUES(1,0)");
+            DatabaseService.Exec(conn, "UPDATE _SyncGuard SET Active=0 WHERE Id=1");
             DatabaseService.ApplySyncColumns(conn, "Companies",      guid: true,  createdCol: "CreatedDate");
             DatabaseService.ApplySyncColumns(conn, "Users",          guid: true,  createdCol: "CreatedDate");
             DatabaseService.ApplySyncColumns(conn, "MasterSettings", guid: false, createdCol: null);

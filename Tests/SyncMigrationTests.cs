@@ -43,18 +43,28 @@ namespace eCheque.MICO360.Tests
                 Assert.Equal(Count(conn, "SELECT COUNT(*) FROM Banks"),
                              Count(conn, "SELECT COUNT(*) FROM Banks WHERE SyncId IS NOT NULL AND SyncId<>''"));
 
-                using var clear = conn.CreateCommand();
-                clear.CommandText = "UPDATE ChequeProfiles SET Dirty=0";
-                clear.ExecuteNonQuery();
+                // The change-tracking TRIGGERS work: a plain insert with no SyncId is stamped + marked dirty.
+                Exec(conn, "INSERT INTO Banks(Name,IsActive) VALUES('Trigger Test Bank',1)");
+                Assert.False(string.IsNullOrEmpty(Str(conn, "SELECT SyncId FROM Banks WHERE Name='Trigger Test Bank'")));
+                Assert.Equal(1, Count(conn, "SELECT COUNT(*) FROM Banks WHERE Name='Trigger Test Bank' AND Dirty=1"));
+
+                // Clear Dirty the way the sync engine does (guard raised) so the trigger does not re-dirty.
+                Exec(conn, "UPDATE _SyncGuard SET Active=1 WHERE Id=1");
+                Exec(conn, "UPDATE ChequeProfiles SET Dirty=0");
+                Exec(conn, "UPDATE _SyncGuard SET Active=0 WHERE Id=1");
+                Assert.Equal(0, Count(conn, "SELECT COUNT(*) FROM ChequeProfiles WHERE Dirty=1"));
             }
 
-            // Second launch must NOT re-run the backfill (idempotent) — the cleared rows stay clean.
+            // Second launch must NOT mass-re-dirty already-migrated rows.
             DatabaseService.Initialize(db);
             using (var conn2 = DatabaseService.GetConnection())
                 Assert.Equal(0, Count(conn2, "SELECT COUNT(*) FROM ChequeProfiles WHERE Dirty=1"));
 
             try { Directory.Delete(dir, true); } catch { }
         }
+
+        static void Exec(SqliteConnection c, string sql) { using var cmd = c.CreateCommand(); cmd.CommandText = sql; cmd.ExecuteNonQuery(); }
+        static string? Str(SqliteConnection c, string sql) { using var cmd = c.CreateCommand(); cmd.CommandText = sql; var v = cmd.ExecuteScalar(); return v == System.DBNull.Value ? null : (string?)v; }
 
         static int Count(SqliteConnection c, string sql)
         { using var cmd = c.CreateCommand(); cmd.CommandText = sql; return Convert.ToInt32(cmd.ExecuteScalar()); }

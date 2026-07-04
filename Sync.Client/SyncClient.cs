@@ -21,6 +21,7 @@ namespace eCheque.MICO360.Sync.Client
         readonly HttpClient _http;
         readonly string _base;
         readonly string _token;
+        bool _guard;   // does this DB have the _SyncGuard table + change-tracking triggers? (set per scope)
 
         public SyncClient(HttpClient http, string baseUrl, string token)
         {
@@ -47,6 +48,7 @@ namespace eCheque.MICO360.Sync.Client
             var report = new SyncReport();
             try
             {
+                _guard = TableExists(conn, "_SyncGuard");
                 await PullAsync(conn, companyId, entities, report, ct);
                 await PushAsync(conn, companyId, entities, report, ct);
             }
@@ -73,14 +75,28 @@ namespace eCheque.MICO360.Sync.Client
                 var resp = await PostAsync<PullRequest, PullResponse>("/api/sync/pull", req, ct)
                            ?? throw new Exception("pull returned no response");
 
-                foreach (var ch in resp.Changes)
+                var skipped = new Dictionary<string, long>(StringComparer.Ordinal); // entity -> lowest version we skipped
+                RunGuarded(conn, () =>
                 {
-                    report.Pulled++;
-                    if (byName.TryGetValue(ch.Entity, out var def) && ApplyChange(conn, def, ch))
-                        report.Applied++;
-                }
-                foreach (var (entity, v) in resp.NextCursors) SetCursor(conn, entity, v);
-                more = resp.HasMore;
+                    foreach (var ch in resp.Changes)
+                    {
+                        report.Pulled++;
+                        if (!byName.TryGetValue(ch.Entity, out var def)) continue;
+                        if (ApplyChange(conn, def, ch)) report.Applied++;
+                        else if (!skipped.TryGetValue(ch.Entity, out var m) || ch.ServerVersion < m)
+                            skipped[ch.Entity] = ch.ServerVersion; // had unpushed local edits — don't advance past it
+                    }
+                    foreach (var (entity, v) in resp.NextCursors)
+                    {
+                        long cursor = v;
+                        if (skipped.TryGetValue(entity, out var minSkip) && minSkip - 1 < cursor) cursor = minSkip - 1;
+                        SetCursor(conn, entity, cursor);
+                    }
+                });
+
+                // If we held a cursor back for skipped rows, stop draining now — they retry next cycle after
+                // push resolves the local edits (otherwise HasMore could loop on the same un-advanced cursor).
+                more = resp.HasMore && skipped.Count == 0;
             }
         }
 
@@ -133,20 +149,31 @@ namespace eCheque.MICO360.Sync.Client
                 var changes = ReadDirty(conn, def);
                 if (changes.Count == 0) continue;
 
+                // Remember exactly what we sent, so we don't clobber an edit the user made during the round-trip.
+                var sent = new Dictionary<string, string>(StringComparer.Ordinal);
+                foreach (var chg in changes) sent[chg.SyncId] = chg.UpdatedAtUtc;
+
                 var req = new PushRequest { CompanyId = companyId, Changes = changes };
                 var resp = await PostAsync<PushRequest, PushResponse>("/api/sync/push", req, ct)
                            ?? throw new Exception("push returned no response");
 
-                foreach (var r in resp.Results)
+                RunGuarded(conn, () =>
                 {
-                    report.Pushed++;
                     string keyCol = def.Guid ? "SyncId" : def.NaturalKey!;
-                    if (r.Status == PushStatus.Conflict)
+                    foreach (var r in resp.Results)
                     {
-                        report.Conflicts++;
-                        if (!string.IsNullOrEmpty(r.ServerPayloadJson))
+                        report.Pushed++;
+                        if (r.Status == PushStatus.Conflict) report.Conflicts++;
+
+                        // Was the row edited again locally since we read it for this push? If so, leave it dirty
+                        // and reconcile on the next cycle — never overwrite a fresher local edit.
+                        sent.TryGetValue(r.SyncId, out var pushedUpdated);
+                        var cur = CurrentUpdatedAt(conn, def.Table, keyCol, r.SyncId);
+                        if (cur != null && !string.Equals(cur, pushedUpdated, StringComparison.Ordinal)) continue;
+
+                        if (r.Status == PushStatus.Conflict && !string.IsNullOrEmpty(r.ServerPayloadJson))
                         {
-                            // Server copy won — overwrite our local row with the server version.
+                            // Server copy won — adopt the server version locally.
                             ApplyChange(conn, def, new ServerChange
                             {
                                 Entity = def.Name, SyncId = r.SyncId, ServerVersion = r.ServerVersion,
@@ -154,11 +181,11 @@ namespace eCheque.MICO360.Sync.Client
                             }, force: true);
                             continue;
                         }
+                        // Applied (or incoming won): clear dirty + record the authoritative version.
+                        Exec(conn, $"UPDATE {def.Table} SET Dirty=0, ServerVersion=@v WHERE {keyCol}=@k AND UpdatedAtUtc=@u",
+                            ("@v", r.ServerVersion), ("@k", r.SyncId), ("@u", pushedUpdated ?? ""));
                     }
-                    // Applied (or incoming won a conflict): clear dirty, record the authoritative version.
-                    Exec(conn, $"UPDATE {def.Table} SET Dirty=0, ServerVersion=@v WHERE {keyCol}=@k",
-                        ("@v", r.ServerVersion), ("@k", r.SyncId));
-                }
+                });
             }
         }
 
@@ -204,7 +231,7 @@ namespace eCheque.MICO360.Sync.Client
 
                 var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
                 foreach (var (col, val) in row)
-                    if (!NonPayload.Contains(col)) payload[col] = val;
+                    if (!NonPayload.Contains(col) && !(def.Exclude?.Contains(col) ?? false)) payload[col] = val;
 
                 list.Add(new ChangeItem
                 {
@@ -281,6 +308,43 @@ namespace eCheque.MICO360.Sync.Client
             return v == null || v == DBNull.Value ? 0 : Convert.ToInt64(v);
         }
 
+        /// <summary>Runs the local writes for a pull batch / push response inside one transaction. On DBs that have
+        /// the change-tracking triggers, it also raises the _SyncGuard flag so those writes are NOT re-marked dirty
+        /// (which would echo forever). Batching also makes large syncs far faster (one commit instead of per-row).</summary>
+        void RunGuarded(SqliteConnection conn, Action work)
+        {
+            Exec(conn, "BEGIN");
+            try
+            {
+                if (_guard) Exec(conn, "UPDATE _SyncGuard SET Active=1 WHERE Id=1");
+                work();
+                if (_guard) Exec(conn, "UPDATE _SyncGuard SET Active=0 WHERE Id=1");
+                Exec(conn, "COMMIT");
+            }
+            catch
+            {
+                try { Exec(conn, "ROLLBACK"); } catch { } // rollback also reverts the guard flag
+                throw;
+            }
+        }
+
+        static bool TableExists(SqliteConnection conn, string name)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=@n";
+            cmd.Parameters.AddWithValue("@n", name);
+            return Convert.ToInt64(cmd.ExecuteScalar()) > 0;
+        }
+
+        static string? CurrentUpdatedAt(SqliteConnection conn, string table, string keyCol, string keyVal)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"SELECT UpdatedAtUtc FROM {table} WHERE {keyCol}=@k";
+            cmd.Parameters.AddWithValue("@k", keyVal);
+            var v = cmd.ExecuteScalar();
+            return v == null || v == DBNull.Value ? null : v.ToString();
+        }
+
         static long GetCursor(SqliteConnection conn, string entity)
         {
             using var cmd = conn.CreateCommand();
@@ -337,12 +401,16 @@ namespace eCheque.MICO360.Sync.Client
                     resp.EnsureSuccessStatusCode();
                     return await resp.Content.ReadFromJsonAsync<TResp>(J, ct);
                 }
-                catch (Exception) when (attempt < maxAttempts)
+                catch (Exception ex) when (attempt < maxAttempts && IsTransient(ex))
                 {
                     await Backoff(attempt, ct);
                 }
             }
         }
+
+        // Retry network glitches, timeouts and 5xx; do NOT retry permanent 4xx (bad request / auth) — fail fast.
+        static bool IsTransient(Exception ex)
+            => ex is not HttpRequestException hre || hre.StatusCode is null || (int)hre.StatusCode >= 500;
 
         static Task Backoff(int attempt, CancellationToken ct)
             => Task.Delay(TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt - 1)), ct); // 200,400,800ms

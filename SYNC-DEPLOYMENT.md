@@ -116,6 +116,21 @@ conflict, idempotent replay, tombstone).
   layer is behind `IServerStore` and can be swapped to SQL Server without touching the endpoints).
 - Backup/restore drill of `server.db`.
 
+## 6a. Design notes & known limitations (from the security review)
+
+- **One server = one organisation.** The organisation key is the trust boundary; every registered PC in that
+  org can access all of that org's companies (matching the desktop app's company switcher). Do **not** point
+  two different organisations at one server instance — `CompanyId` partitions data, it is not a tenant wall.
+- **Protect the organisation key.** Anyone with it can register a PC. Keep it secret; set it via
+  `ECHEQUE_ORG_KEY` rather than using the auto-generated one in shared environments.
+- **User login state syncs, volatile fields don't.** User accounts + password *hashes* sync so staff can log
+  in on any PC; last-login / failed-attempt / lockout fields are kept per-PC and never sync. Because hashes
+  cross the wire, **use TLS** (section 3.4).
+- **Deleting a bank/payee/setting (natural-key rows) does not propagate** across PCs in this version — the row
+  can reappear on the next sync from a PC that still has it. Cheque and profile deletes (GUID rows) do
+  propagate. Avoid relying on cross-PC deletion of banks/payees; deactivate instead where the app supports it.
+- **Conflicts are last-write-wins by edit time and are logged** in the server's `Conflicts` table for audit.
+
 ## 7. Security summary
 
 - Client databases remain **SQLCipher-encrypted at rest**; the server DB should be protected by host security

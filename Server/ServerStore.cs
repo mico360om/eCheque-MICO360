@@ -200,7 +200,7 @@ namespace eCheque.MICO360.Server
             var res = new PushResult { Entity = ch.Entity, SyncId = ch.SyncId };
 
             // Current server row for this identity, if any.
-            long? curVer = null; string curUpdated = "";
+            long? curVer = null; string curUpdated = "", curPayload = "";
             using (var f = c.CreateCommand())
             {
                 f.Transaction = tx;
@@ -209,7 +209,7 @@ namespace eCheque.MICO360.Server
                 f.Parameters.AddWithValue("@c", companyId);
                 f.Parameters.AddWithValue("@s", ch.SyncId);
                 using var r = f.ExecuteReader();
-                if (r.Read()) { curVer = r.GetInt64(0); curUpdated = r.GetString(1); }
+                if (r.Read()) { curVer = r.GetInt64(0); curUpdated = r.GetString(1); curPayload = r.GetString(2); }
             }
 
             if (curVer == null)
@@ -220,8 +220,10 @@ namespace eCheque.MICO360.Server
                 return res;
             }
 
-            // Idempotent replay: the same edit (same timestamp) already stored — no-op, report current version.
-            if (curUpdated == ch.UpdatedAtUtc)
+            // Idempotent replay: the SAME edit already stored (same timestamp AND identical payload) — no-op.
+            // A different payload sharing a timestamp is NOT idempotent; it falls through to conflict resolution
+            // so it can never be silently dropped (timestamps can collide, e.g. during migration backfill).
+            if (curUpdated == ch.UpdatedAtUtc && curPayload == (ch.PayloadJson ?? ""))
             {
                 res.Status = PushStatus.Applied; res.ServerVersion = curVer.Value;
                 return res;

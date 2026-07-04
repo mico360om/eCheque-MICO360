@@ -22,29 +22,29 @@ namespace eCheque.MICO360.Core.Services
         }
 
         /// <summary>
-        /// Adds change-tracking columns used by server sync to the per-company tables and backfills identities
-        /// exactly once. Runs every startup but is idempotent: the GUID/Dirty backfill only fires the first time
-        /// each SyncId column is created, so relaunching never re-marks rows dirty.
+        /// Adds change-tracking columns + auto-maintenance triggers used by server sync to the per-company tables.
+        /// Triggers stamp SyncId/UpdatedAtUtc/Dirty on every INSERT/UPDATE so ALL write paths are covered; a one-row
+        /// _SyncGuard flag (set by the sync engine inside its write transaction) exempts sync's own writes. The
+        /// backfill is self-healing (safe every launch) and only mass-marks rows Dirty on the very first migration.
         /// </summary>
         private static void MigrateSyncColumns()
         {
             using var conn = GetConnection();
-            using (var st = new SqliteCommand(
-                "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)", conn))
-                st.ExecuteNonQuery();
+            Exec(conn, "CREATE TABLE IF NOT EXISTS SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0)");
+            Exec(conn, "CREATE TABLE IF NOT EXISTS _SyncGuard(Id INTEGER PRIMARY KEY CHECK(Id=1), Active INTEGER DEFAULT 0)");
+            Exec(conn, "INSERT OR IGNORE INTO _SyncGuard(Id,Active) VALUES(1,0)");
+            Exec(conn, "UPDATE _SyncGuard SET Active=0 WHERE Id=1"); // re-enable triggers in case a prior run left it set
 
-            // GUID-identified tables (their rows have no natural key that is stable across PCs).
             ApplySyncColumns(conn, "ChequeProfiles", guid: true,  createdCol: "CreatedDate");
             ApplySyncColumns(conn, "ChequeRecords",  guid: true,  createdCol: "CreatedDate", profileFk: true);
             ApplySyncColumns(conn, "Banks",          guid: true,  createdCol: null);
-            // Natural-key tables (Payees keyed by Name, AppSettings by Key) — merge by key, so no GUID needed.
             ApplySyncColumns(conn, "Payees",         guid: false, createdCol: "LastUsed");
             ApplySyncColumns(conn, "AppSettings",    guid: false, createdCol: null);
         }
 
-        /// <summary>Adds the sync columns to one table; on first creation backfills SyncId + UpdatedAtUtc and marks
-        /// existing rows Dirty so the seeding PC uploads them. <paramref name="profileFk"/> also adds ProfileSyncId
-        /// (a portable reference to the owning profile, resolved per-PC on apply).</summary>
+        /// <summary>Adds the sync columns + triggers to one table. Self-healing backfill runs every launch (matches
+        /// nothing once stamped); Dirty is mass-set only on the first migration. <paramref name="profileFk"/> also
+        /// adds ProfileSyncId (a portable reference to the owning profile, resolved per-PC on apply).</summary>
         internal static void ApplySyncColumns(SqliteConnection conn, string table, bool guid, string? createdCol, bool profileFk = false)
         {
             bool fresh = TryExec(conn, $"ALTER TABLE {table} ADD COLUMN SyncId TEXT");
@@ -54,16 +54,29 @@ namespace eCheque.MICO360.Core.Services
             TryExec(conn, $"ALTER TABLE {table} ADD COLUMN ServerVersion INTEGER DEFAULT 0");
             if (profileFk) TryExec(conn, $"ALTER TABLE {table} ADD COLUMN ProfileSyncId TEXT");
 
-            if (!fresh) return; // already migrated on a previous launch — never re-backfill / re-dirty
-
+            // Self-healing backfill (idempotent — the WHERE matches nothing once every row is stamped).
             if (guid)
                 Exec(conn, $"UPDATE {table} SET SyncId = lower(hex(randomblob(16))) WHERE SyncId IS NULL OR SyncId = ''");
             string createdExpr = createdCol != null ? $"NULLIF({createdCol},'')" : "NULL";
             Exec(conn, $"UPDATE {table} SET UpdatedAtUtc = COALESCE({createdExpr}, strftime('%Y-%m-%dT%H:%M:%fZ','now')) WHERE UpdatedAtUtc IS NULL OR UpdatedAtUtc = ''");
-            Exec(conn, $"UPDATE {table} SET Dirty = 1");
             if (profileFk)
                 Exec(conn, $"UPDATE {table} SET ProfileSyncId = (SELECT p.SyncId FROM ChequeProfiles p WHERE p.Id = {table}.ProfileId) WHERE (ProfileSyncId IS NULL OR ProfileSyncId='') AND ProfileId > 0");
+            if (fresh) Exec(conn, $"UPDATE {table} SET Dirty = 1"); // first migration: upload existing rows once
             if (guid) TryExec(conn, $"CREATE UNIQUE INDEX IF NOT EXISTS IX_{table}_SyncId ON {table}(SyncId)");
+
+            CreateSyncTriggers(conn, table, guid);
+        }
+
+        /// <summary>Triggers that stamp change-tracking on every INSERT/UPDATE unless the sync engine's guard is set.
+        /// Relies on SQLite's default recursive_triggers=OFF so the trigger's own UPDATE does not re-fire.</summary>
+        internal static void CreateSyncTriggers(SqliteConnection conn, string table, bool guid)
+        {
+            const string guard = "(SELECT Active FROM _SyncGuard WHERE Id=1)=0";
+            string setId = guid ? "SyncId=CASE WHEN NEW.SyncId IS NULL OR NEW.SyncId='' THEN lower(hex(randomblob(16))) ELSE NEW.SyncId END, " : "";
+            TryExec(conn, $"CREATE TRIGGER IF NOT EXISTS trg_{table}_si AFTER INSERT ON {table} FOR EACH ROW WHEN {guard} " +
+                          $"BEGIN UPDATE {table} SET {setId}UpdatedAtUtc=strftime('%Y-%m-%dT%H:%M:%fZ','now'), Dirty=1 WHERE rowid=NEW.rowid; END");
+            TryExec(conn, $"CREATE TRIGGER IF NOT EXISTS trg_{table}_su AFTER UPDATE ON {table} FOR EACH ROW WHEN {guard} " +
+                          $"BEGIN UPDATE {table} SET UpdatedAtUtc=strftime('%Y-%m-%dT%H:%M:%fZ','now'), Dirty=1 WHERE rowid=NEW.rowid; END");
         }
 
         internal static bool TryExec(SqliteConnection conn, string sql)
