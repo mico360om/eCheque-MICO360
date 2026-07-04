@@ -19,6 +19,18 @@
                 <Border DockPanel.Dock="Bottom" Padding="10,10" BorderBrush="#2C2C2C" BorderThickness="0,1,0,0">
                     <Button Content="Logout" Classes="nav" Click="OnLogout"/>
                 </Border>
+                <!-- Server connection status (click to open Sync settings) -->
+                <Border x:Name="SyncStatusBar" DockPanel.Dock="Bottom" Padding="14,8" Cursor="Hand"
+                        Background="Transparent" BorderBrush="#2C2C2C" BorderThickness="0,1,0,0"
+                        PointerReleased="SyncStatus_Click" ToolTip.Tip="Cloud sync status — click for settings">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse x:Name="SyncDot" Width="9" Height="9" Fill="#888888" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="SyncStatusText" Text="Local only" Foreground="#BBBBBB" FontSize="12"/>
+                            <TextBlock x:Name="SyncStatusSub" Text="cloud sync off" Foreground="#6E6E6E" FontSize="10"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
                 <StackPanel Margin="8,10">
                     <TextBlock Text="MAIN" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,4,0,4"/>
                     <Button Content="🏠  Dashboard" Classes="nav" Click="NavDashboard"/>

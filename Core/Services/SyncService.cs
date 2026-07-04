@@ -13,6 +13,18 @@ namespace eCheque.MICO360.Core.Services
     {
         static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
         static CancellationTokenSource? _loop;
+        static volatile bool _reachable;      // was the server reachable on the last check/sync?
+        static DateTime? _lastSyncUtc;        // last SUCCESSFUL full sync (UTC)
+
+        /// <summary>Current connection state for the UI indicator.</summary>
+        public static SyncConnState ConnectionStatus =>
+            !Enabled        ? SyncConnState.LocalOnly :
+            !IsRegistered   ? SyncConnState.NotConnected :
+            _reachable      ? SyncConnState.Connected :
+                              SyncConnState.Disconnected;
+
+        /// <summary>Local time of the last successful sync, or null if none this session.</summary>
+        public static DateTime? LastSyncLocal => _lastSyncUtc?.ToLocalTime();
 
         public static bool   Enabled   { get => CompanyService.GetMasterSetting("Sync_Enabled", "0") == "1"; set => CompanyService.SetMasterSetting("Sync_Enabled", value ? "1" : "0"); }
         public static string ServerUrl { get => CompanyService.GetMasterSetting("Sync_ServerUrl", "");       set => CompanyService.SetMasterSetting("Sync_ServerUrl", (value ?? "").Trim()); }
@@ -46,14 +58,31 @@ namespace eCheque.MICO360.Core.Services
                         Merge(agg, await client.SyncScopeAsync(company, CompanyService.CurrentCompanyId, SyncRegistry.Company));
                 LastResult = $"{DateTime.Now:HH:mm} — {agg}";
                 CompanyService.SetMasterSetting("Sync_LastRunUtc", DateTime.UtcNow.ToString("o"));
+                _reachable = agg.Ok;
+                if (agg.Ok) _lastSyncUtc = DateTime.UtcNow;
             }
             catch (Exception ex)
             {
-                agg.Ok = false; agg.Error = ex.Message;
+                agg.Ok = false; agg.Error = ex.Message; _reachable = false;
                 LastResult = $"{DateTime.Now:HH:mm} — error: {ex.Message}";
                 BugReportService.Report(ex, "Sync");
             }
             return agg;
+        }
+
+        /// <summary>Lightweight reachability probe (GET /api/health) used between full syncs to keep the
+        /// connection indicator fresh without moving data. Updates <see cref="ConnectionStatus"/>.</summary>
+        public static async Task<bool> CheckConnectionAsync()
+        {
+            if (!Enabled || !IsRegistered || string.IsNullOrWhiteSpace(ServerUrl)) { _reachable = false; return false; }
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+                using var resp = await Http.GetAsync(ServerUrl.TrimEnd('/') + "/api/health", HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                _reachable = resp.IsSuccessStatusCode;
+            }
+            catch { _reachable = false; }
+            return _reachable;
         }
 
         static void Merge(SyncReport a, SyncReport b)
@@ -67,13 +96,22 @@ namespace eCheque.MICO360.Core.Services
             _loop?.Cancel();
             _loop = new CancellationTokenSource();
             var ct = _loop.Token;
-            var wait = interval ?? TimeSpan.FromSeconds(60);
             _ = Task.Run(async () =>
             {
+                int tick = 0;
                 while (!ct.IsCancellationRequested)
                 {
-                    try { if (Enabled && IsRegistered) await SyncOnceAsync(); } catch { }
-                    try { await Task.Delay(wait, ct); } catch { break; }
+                    try
+                    {
+                        if (Enabled && IsRegistered)
+                        {
+                            if (tick % 3 == 0) await SyncOnceAsync();      // full sync every ~60s
+                            else await CheckConnectionAsync();             // reachability probe on the other ticks
+                        }
+                    }
+                    catch { }
+                    tick++;
+                    try { await Task.Delay(TimeSpan.FromSeconds(20), ct); } catch { break; }
                 }
             }, ct);
         }

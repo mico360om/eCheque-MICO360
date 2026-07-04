@@ -38,7 +38,49 @@ namespace eCheque.MICO360.Mac.Views
             _ = PdcReminderService.MaybeSendAsync();
             // Start background cloud sync (no-op unless enabled + this device is registered).
             SyncService.StartBackground();
+            // Keep the sidebar connection indicator fresh.
+            StartSyncStatusIndicator();
         }
+
+        DispatcherTimer? _syncStatusTimer;
+
+        void StartSyncStatusIndicator()
+        {
+            UpdateSyncStatus();
+            _syncStatusTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _syncStatusTimer.Tick += (_, _) => UpdateSyncStatus();
+            _syncStatusTimer.Start();
+        }
+
+        void UpdateSyncStatus()
+        {
+            if (SyncDot == null) return;
+            string color, label, sub;
+            switch (SyncService.ConnectionStatus)
+            {
+                case Sync.Client.SyncConnState.Connected:
+                    color = "#2ECC71"; label = "Connected";
+                    var t = SyncService.LastSyncLocal;
+                    sub = t != null ? $"synced {t:HH:mm}" : "online";
+                    break;
+                case Sync.Client.SyncConnState.Disconnected:
+                    color = "#E74C3C"; label = "Disconnected"; sub = "server unreachable"; break;
+                case Sync.Client.SyncConnState.NotConnected:
+                    color = "#E67E22"; label = "Not connected"; sub = "set up in Settings"; break;
+                default:
+                    color = "#888888"; label = "Local only"; sub = "cloud sync off"; break;
+            }
+            SyncDot.Fill = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse(color));
+            SyncStatusText.Text = label;
+            SyncStatusSub.Text = sub;
+            var last = SyncService.LastResult;
+            ToolTip.SetTip(SyncStatusBar, string.IsNullOrWhiteSpace(last)
+                ? "Cloud sync status — click for settings"
+                : $"{label} — click for Sync settings\n{last}");
+        }
+
+        void SyncStatus_Click(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
+            => NavSettings(this, new RoutedEventArgs());
 
         void PopulateCompanySwitcher()
         {

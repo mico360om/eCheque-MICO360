@@ -36,6 +36,15 @@ namespace eCheque.MICO360.Sync.Client
         };
     }
 
+    /// <summary>Cloud-sync connection state shown in the client UI.</summary>
+    public enum SyncConnState
+    {
+        LocalOnly,     // cloud sync is turned off — data stays on this PC
+        NotConnected,  // sync on, but this PC hasn't been registered with a server yet
+        Connected,     // registered and the server was reachable on the last check
+        Disconnected   // registered but the server could not be reached
+    }
+
     /// <summary>What one SyncScopeAsync pass did — surfaced to the UI and asserted in tests.</summary>
     public sealed class SyncReport
     {
