@@ -8,7 +8,7 @@ This document covers the server-based version of eCheque MICO360: a central **sy
 | Deliverable | Installer | Notes |
 |---|---|---|
 | **Client** | `installer/eCheque-MICO360-Setup-1.1.0.exe` | GUI installer → Program Files, shortcuts, uninstaller. |
-| **Server** | `installer/eCheque-MICO360-Server-Setup-1.1.0.exe` | GUI installer → prompts org key + port, installs a Windows service, opens firewall, starts it. |
+| **Server** | `installer/eCheque-MICO360-Server-Setup-1.1.0.exe` | GUI installer → prompts for port, installs a Windows service, opens firewall, starts it. |
 
 Both require administrator (UAC). No .NET install is needed on the target — the runtime is bundled.
 The raw self-contained EXEs are also under `dist/` if you prefer a manual/portable setup.
@@ -38,26 +38,28 @@ The raw self-contained EXEs are also under `dist/` if you prefer a manual/portab
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `ECHEQUE_ORG_KEY` | Shared secret clients use to register. **Set this** to a strong value. | auto-generated + printed on first run |
 | `ECHEQUE_SERVER_DB` | Path to the server SQLite database. | `./data/server.db` next to the EXE |
 | `ASPNETCORE_URLS` | Address/port(s) to listen on. | `http://0.0.0.0:5210` |
+
+This is a **single-organisation** server: clients connect by URL only — there is no organisation key.
+Because registration is open to anyone who can reach the port, **restrict access at the network layer**
+(TLS + a firewall allowlist of your client IPs) — see §3.4/§3.5.
 
 ### 3.2 Run it
 
 ```
-set ECHEQUE_ORG_KEY=choose-a-long-random-key
 set ECHEQUE_SERVER_DB=C:\eChequeServer\server.db
 set ASPNETCORE_URLS=http://0.0.0.0:5210
 eCheque.MICO360.Server.exe
 ```
 
-On start it prints the listen URL and the org key. Open `http://<server>:5210/` for a live status page
+On start it prints the listen URL. Open `http://<server>:5210/` for a live status page
 (devices registered, rows synced). Health check: `GET /api/health`.
 
 ### 3.3 Install as a Windows service (recommended for production)
 
 **Easiest — the GUI installer.** Run `eCheque-MICO360-Server-Setup-1.1.0.exe` on the server (admin/UAC). It
-asks for the **organisation key** and **port**, installs to Program Files, writes the config, registers the
+asks for the **port**, installs to Program Files, writes the config, registers the
 **eChequeSync** Windows service (auto-start + auto-restart), opens the firewall, and starts it. Uninstall from
 Add/Remove Programs removes the service and firewall rule. The database lives in
 `C:\ProgramData\eCheque MICO360 Server\server.db`.
@@ -65,7 +67,7 @@ Add/Remove Programs removes the service and firewall rule. The database lives in
 **Alternative — PowerShell.** A one-shot script also ships alongside the server EXE:
 
 1. Copy `eCheque.MICO360.Server.exe`, `Install-Server.ps1`, `Uninstall-Server.ps1` into one folder on the server.
-2. Edit `$OrgKey` (and `$Port` if needed) at the top of `Install-Server.ps1`.
+2. (Optional) change `$Port` at the top of `Install-Server.ps1`.
 3. Open **PowerShell as Administrator** in that folder and run:
    ```powershell
    .\Install-Server.ps1
@@ -75,7 +77,7 @@ It creates `C:\eCheque\Server` (EXE + `echeque.server.json` config) and `C:\eChe
 registers the **eChequeSync** service (auto-start + auto-restart on failure), opens the firewall port, starts
 the service, and prints a health check. To remove: `.\Uninstall-Server.ps1`.
 
-Config lives in `C:\eCheque\Server\echeque.server.json` (org key, DB path, listen URL) — edit it and restart
+Config lives in `C:\eCheque\Server\echeque.server.json` (DB path, listen URL) — edit it and restart
 the service (`Restart-Service eChequeSync`) to change settings. A config **file** is used rather than
 environment variables because a freshly-created Windows service does not reliably pick up newly-set machine
 env vars.
@@ -87,23 +89,24 @@ The server speaks plain HTTP by default. For production put **HTTPS** in front, 
 - binding Kestrel directly to an `https://` URL with a certificate (`ASPNETCORE_URLS=https://0.0.0.0:5210`
   plus the standard `ASPNETCORE_Kestrel__Certificates__Default__*` settings).
 
-Clients then use the `https://…` URL. **Never send the org key or data over plain HTTP across the internet.**
+Clients then use the `https://…` URL. **Never send cheque data over plain HTTP across the internet.**
 
 ### 3.5 Firewall & backups
 
-- Open the chosen port inbound on the server only.
+- **Because there is no organisation key, the firewall is your access control.** Open the port **only** to
+  your known client IPs (an allowlist), not to the whole internet — otherwise anyone who finds the port can
+  register a device and sync your data.
 - The whole server state is the single `server.db` file — back it up on a schedule (it is WAL-mode SQLite;
   copy `server.db`, `server.db-wal`, `server.db-shm` together, or stop the service first).
 
 ## 4. Client setup (per PC)
 
 1. Install / run `eCheque.MICO360.exe` and sign in.
-2. **Settings → Cloud Sync**: enter the **Server URL** (e.g. `https://sync.mycompany.com:5210`) and the
-   **Organisation key**, tick **Enable cloud sync**, click **Connect this PC**, then **Save**.
+2. **Settings → Cloud Sync**: enter the **Server URL** (e.g. `https://sync.mycompany.com:5210`),
+   tick **Enable cloud sync**, click **Connect this PC**, then **Save**.
 3. That's it — the PC registers (gets its own device token) and starts syncing in the background. Use
-   **Sync now** to force a cycle; the status line shows the last result.
-
-Each PC stores only a device token locally — the org key is not persisted after a successful connect.
+   **Sync now** to force a cycle; the status line shows the last result. The sidebar shows the live
+   connection status.
 
 ## 5. Multi-PC rollout (avoiding first-time duplicates)
 
@@ -138,11 +141,12 @@ conflict, idempotent replay, tombstone).
 
 ## 6a. Design notes & known limitations (from the security review)
 
-- **One server = one organisation.** The organisation key is the trust boundary; every registered PC in that
-  org can access all of that org's companies (matching the desktop app's company switcher). Do **not** point
-  two different organisations at one server instance — `CompanyId` partitions data, it is not a tenant wall.
-- **Protect the organisation key.** Anyone with it can register a PC. Keep it secret; set it via
-  `ECHEQUE_ORG_KEY` rather than using the auto-generated one in shared environments.
+- **One server = one organisation.** Every registered PC can access all of that org's companies (matching the
+  desktop app's company switcher). Do **not** point two different organisations at one server instance —
+  `CompanyId` partitions data, it is not a tenant wall.
+- **No organisation key — the network is your access control.** Registration is open to anyone who can reach
+  the server port. You **must** restrict access with TLS + a firewall IP allowlist (see §3.4/§3.5); do not
+  expose the port to the open internet.
 - **User login state syncs, volatile fields don't.** User accounts + password *hashes* sync so staff can log
   in on any PC; last-login / failed-attempt / lockout fields are kept per-PC and never sync. Because hashes
   cross the wire, **use TLS** (section 3.4).
@@ -154,8 +158,10 @@ conflict, idempotent replay, tombstone).
 ## 7. Security summary
 
 - Client databases remain **SQLCipher-encrypted at rest**; the server DB should be protected by host security
-  + TLS in transit. Use a strong `ECHEQUE_ORG_KEY`; rotate the token by having a PC reconnect.
-- Registration requires the org key (constant-time compared); every sync call requires the device bearer token.
+  + TLS in transit.
+- **Registration is open (single-organisation server).** Every sync call still requires a device bearer token,
+  but any PC that can reach the server can obtain one — so access control is the **network** (TLS + firewall
+  allowlist), not an app-level key.
 - No passwords are transmitted for sync; auth is device-token based.
 
 ## 8. Operations

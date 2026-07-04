@@ -16,7 +16,7 @@ namespace eCheque.MICO360.Mac.ViewModels
         string _mjKey = "", _mjSecret = "", _mjFrom = "", _mjFromName = "eCheque MICO360";
         string _wordsPreview = "";
         bool _pdcEnabled; string _pdcEmail = "", _pdcFreq = "Weekly", _pdcWa = ""; int _pdcLook = 7;
-        bool _syncEnabled; string _syncUrl = "", _syncKey = "", _syncStatus = "";
+        bool _syncEnabled; string _syncUrl = "", _syncStatus = "";
 
         static readonly (string Label, int Days)[] Freqs =
             { ("Daily", 1), ("Every 3 days", 3), ("Weekly", 7), ("Every 2 weeks", 14), ("Monthly", 30) };
@@ -48,7 +48,6 @@ namespace eCheque.MICO360.Mac.ViewModels
 
         public bool   SyncEnabled   { get => _syncEnabled; set => Set(ref _syncEnabled, value); }
         public string SyncServerUrl { get => _syncUrl;     set => Set(ref _syncUrl, value); }
-        public string SyncOrgKey    { get => _syncKey;     set => Set(ref _syncKey, value); }
         public string SyncStatus    { get => _syncStatus;  set => Set(ref _syncStatus, value); }
 
         public string StatusMessage { get => _status;       set => Set(ref _status, value); }
@@ -90,7 +89,7 @@ namespace eCheque.MICO360.Mac.ViewModels
             });
             ConnectSyncCommand = new RelayCommand(async () =>
             {
-                try { SyncStatus = "Connecting…"; SyncStatus = await SyncService.RegisterAsync(SyncServerUrl, SyncOrgKey); }
+                try { SyncStatus = "Connecting…"; SyncStatus = await SyncService.RegisterAsync(SyncServerUrl); }
                 catch (System.Exception ex) { SyncStatus = "Error: " + ex.Message; }
             });
             SyncNowCommand = new RelayCommand(async () =>
@@ -98,7 +97,7 @@ namespace eCheque.MICO360.Mac.ViewModels
                 try
                 {
                     SyncService.ServerUrl = SyncServerUrl; SyncService.Enabled = SyncEnabled;
-                    if (!SyncService.IsRegistered) { SyncStatus = "Connect this device first (enter URL + organisation key, then Connect)."; return; }
+                    if (!SyncService.IsRegistered) { SyncStatus = "Connect this device first (enter the server URL, then Connect)."; return; }
                     SyncStatus = "Syncing…"; SyncStatus = (await SyncService.SyncOnceAsync()).ToString();
                 }
                 catch (System.Exception ex) { SyncStatus = "Error: " + ex.Message; }
@@ -141,7 +140,7 @@ namespace eCheque.MICO360.Mac.ViewModels
             SyncEnabled   = SyncService.Enabled;
             SyncServerUrl = SyncService.ServerUrl;
             SyncStatus    = SyncService.IsRegistered ? ("This device is registered. " + SyncService.LastResult)
-                                                     : "Not connected. Enter the server URL + organisation key, then Connect.";
+                                                     : "Not connected. Enter the server URL, then Connect.";
 
             UpdatePreview();
         }

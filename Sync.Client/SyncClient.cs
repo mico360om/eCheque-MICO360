@@ -30,7 +30,7 @@ namespace eCheque.MICO360.Sync.Client
             _token = token;
         }
 
-        /// <summary>Exchange the shared org key for a device token. Returns null on auth failure / unreachable.</summary>
+        /// <summary>Register this device and get a bearer token. Returns null if the server is unreachable.</summary>
         public static async Task<RegisterResponse?> RegisterAsync(HttpClient http, string baseUrl, RegisterRequest req, CancellationToken ct = default)
         {
             try

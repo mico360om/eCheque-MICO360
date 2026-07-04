@@ -140,20 +140,13 @@
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Text="Cloud Sync (central server)" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,4"/>
-                    <TextBlock Text="Keep this PC in sync with your central eCheque server. Data stays on this PC for offline use and syncs automatically in the background. Ask your administrator for the server URL and organisation key."
+                    <TextBlock Text="Keep this PC in sync with your central eCheque server. Data stays on this PC for offline use and syncs automatically in the background. Ask your administrator for the server URL."
                                FontSize="11" Foreground="{StaticResource TextSub}" TextWrapping="Wrap" Margin="0,0,0,12"/>
                     <CheckBox Content="  Enable cloud sync on this PC" IsChecked="{Binding SyncEnabled}" Margin="0,0,0,12"/>
-                    <Grid Margin="0,0,0,10">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Server URL" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding SyncServerUrl}" ToolTip="e.g. https://sync.mycompany.com:5210"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Organisation key" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding SyncOrgKey}"/>
-                        </StackPanel>
-                    </Grid>
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="Server URL" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding SyncServerUrl}" ToolTip="e.g. https://sync.mycompany.com:5210"/>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="🔗  Connect this PC" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
                                 Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding ConnectSyncCommand}"/>

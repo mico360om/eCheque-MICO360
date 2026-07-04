@@ -8,8 +8,7 @@ namespace eCheque.MICO360.Server
     /// touching the HTTP endpoints — they depend only on this interface.</summary>
     public interface IServerStore
     {
-        void Initialize(string? orgKeyOverride = null);
-        string OrgKey { get; }
+        void Initialize();
         (string deviceId, string token) RegisterDevice(string deviceName, string machineId);
         bool ValidateToken(string? token, out string deviceId);
         void TouchDevice(string deviceId);
@@ -28,15 +27,12 @@ namespace eCheque.MICO360.Server
     {
         readonly string _cs;
         readonly object _writeLock = new();   // serialize version allocation + writes (SMB scale; SQLite is single-writer anyway)
-        string _orgKey = "";
 
         public SqliteServerStore(string dbPath)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(dbPath))!);
             _cs = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
         }
-
-        public string OrgKey => _orgKey;
 
         SqliteConnection Open()
         {
@@ -46,7 +42,7 @@ namespace eCheque.MICO360.Server
             return c;
         }
 
-        public void Initialize(string? orgKeyOverride = null)
+        public void Initialize()
         {
             using var c = Open();
             Exec(c, @"
@@ -65,20 +61,6 @@ namespace eCheque.MICO360.Server
                 CREATE TABLE IF NOT EXISTS Conflicts(
                     Id INTEGER PRIMARY KEY AUTOINCREMENT, Entity TEXT, CompanyId INTEGER, SyncId TEXT,
                     ServerVersion INTEGER, Winner TEXT, LoserPayloadJson TEXT, DetectedUtc TEXT);");
-
-            // Org key: explicit override (from config) wins, then env var; otherwise generate + persist once
-            // so the value is stable across restarts.
-            var envKey = string.IsNullOrWhiteSpace(orgKeyOverride)
-                ? Environment.GetEnvironmentVariable("ECHEQUE_ORG_KEY")
-                : orgKeyOverride;
-            _orgKey = string.IsNullOrWhiteSpace(envKey) ? GetMeta(c, "orgkey") : envKey.Trim();
-            if (string.IsNullOrWhiteSpace(_orgKey))
-            {
-                _orgKey = NewToken();
-                SetMeta(c, "orgkey", _orgKey);
-            }
-            else if (string.IsNullOrWhiteSpace(GetMeta(c, "orgkey")))
-                SetMeta(c, "orgkey", _orgKey);
         }
 
         // ---- devices / auth ----

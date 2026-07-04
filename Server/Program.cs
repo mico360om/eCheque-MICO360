@@ -11,8 +11,7 @@ builder.Host.UseWindowsService();
 // A file is used because a freshly-created Windows Service does not reliably see newly-set machine env vars.
 builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "echeque.server.json"), optional: true, reloadOnChange: false);
 
-// Org key + DB path come from config (file > env > default). "Urls" in the file / ASPNETCORE_URLS is auto-bound.
-string? orgKey = builder.Configuration["ECHEQUE_ORG_KEY"];
+// DB path from config (file > env > default). "Urls" in the file / ASPNETCORE_URLS is auto-bound.
 string dbPath = builder.Configuration["ECHEQUE_SERVER_DB"]
                 ?? Path.Combine(AppContext.BaseDirectory, "data", "server.db");
 
@@ -26,7 +25,7 @@ if (string.IsNullOrEmpty(builder.Configuration["urls"]) && string.IsNullOrEmpty(
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32 * 1024 * 1024); // 32 MB
 
 var store = new SqliteServerStore(dbPath);
-store.Initialize(orgKey);
+store.Initialize();
 builder.Services.AddSingleton<IServerStore>(store);
 
 string appVersion = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
@@ -58,11 +57,10 @@ app.MapGet("/api/health", () => Results.Ok(new HealthResponse
     ServerTimeUtc = DateTime.UtcNow.ToString("o")
 }));
 
-// Device registration: exchange the shared org key for a per-device bearer token.
+// Device registration: single-organisation server, so a PC just gets its own bearer token.
+// (Restrict who can reach this endpoint at the network layer — TLS + firewall allowlist.)
 app.MapPost("/api/register", (RegisterRequest req, IServerStore s) =>
 {
-    if (string.IsNullOrWhiteSpace(req.OrgKey) || !FixedEquals(req.OrgKey.Trim(), s.OrgKey))
-        return Results.Json(new { error = "Invalid organisation key." }, statusCode: StatusCodes.Status401Unauthorized);
     var (deviceId, token) = s.RegisterDevice(req.DeviceName, req.MachineId);
     return Results.Ok(new RegisterResponse { DeviceId = deviceId, Token = token });
 });
@@ -85,25 +83,16 @@ app.MapPost("/api/sync/push", (PushRequest req, HttpRequest http, IServerStore s
     return Results.Ok(s.Push(req));
 });
 
-// Startup banner so the admin can see the URL + org key to register clients with.
+// Startup banner.
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     Console.WriteLine();
     Console.WriteLine("  eCheque MICO360 Sync Server " + appVersion);
     Console.WriteLine("  DB   : " + dbPath);
-    Console.WriteLine("  Org key (register clients with this): " + store.OrgKey);
-    Console.WriteLine("  Set ECHEQUE_ORG_KEY to pin your own key. Put TLS in front for production.");
+    Console.WriteLine("  Single-organisation server — clients connect by URL only. Restrict access with TLS + firewall.");
     Console.WriteLine();
 });
 
 app.Run();
-
-// Constant-time string compare so the org-key check does not leak length/timing.
-static bool FixedEquals(string a, string b)
-{
-    var ba = System.Text.Encoding.UTF8.GetBytes(a);
-    var bb = System.Text.Encoding.UTF8.GetBytes(b);
-    return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(ba, bb);
-}
 
 public partial class Program { } // exposed for the integration test host

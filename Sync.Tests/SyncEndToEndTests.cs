@@ -10,7 +10,6 @@ namespace eCheque.MICO360.Sync.Tests
     [Collection("sync-serial")]
     public class SyncEndToEndTests : IDisposable
     {
-        const string OrgKey = "IT-ORG-KEY";
         const int Company = 5;
         static readonly SyncEntityDef[] Entities =
         {
@@ -32,7 +31,6 @@ namespace eCheque.MICO360.Sync.Tests
         public SyncEndToEndTests()
         {
             _serverDb = NewTempFile("server");
-            Environment.SetEnvironmentVariable("ECHEQUE_ORG_KEY", OrgKey);
             Environment.SetEnvironmentVariable("ECHEQUE_SERVER_DB", _serverDb);
             _factory = new WebApplicationFactory<Program>();
             _http = _factory.CreateClient();
@@ -42,7 +40,7 @@ namespace eCheque.MICO360.Sync.Tests
 
         string Register(string name, string mid)
         {
-            var r = SyncClient.RegisterAsync(_http, "", new RegisterRequest { OrgKey = OrgKey, DeviceName = name, MachineId = mid }).Result;
+            var r = SyncClient.RegisterAsync(_http, "", new RegisterRequest { DeviceName = name, MachineId = mid }).Result;
             Assert.NotNull(r);
             Assert.False(string.IsNullOrEmpty(r!.Token));
             return r.Token;

@@ -98,8 +98,8 @@ jobs:
             SHA256: ${{ steps.installer.outputs.sha256 }}
 
             **Server installer:** `eCheque-MICO360-Server-Setup-${{ steps.ver.outputs.version }}.exe`
-            Installs the sync server as a Windows service (prompts for the organisation key + port, opens the
-            firewall, and starts it). See SYNC-DEPLOYMENT.md.
+            Installs the sync server as a Windows service (prompts for the port, opens the firewall, and starts
+            it). Single-organisation server — clients connect by URL. See SYNC-DEPLOYMENT.md.
             SHA256: ${{ steps.server.outputs.sha256 }}
 
             <!-- Add [mandatory] anywhere in these notes to force the update. -->

@@ -43,28 +43,25 @@ procedure InitializeWizard;
 begin
   CfgPage := CreateInputQueryPage(wpSelectDir,
     'Server Configuration',
-    'Set how clients will connect to this server.',
-    'The organisation key is a shared secret that client PCs enter to register. Use a long, random value.' + #13#10 +
-    'Leave it blank to have the server generate one automatically (you can read it later from the server status page).');
-  CfgPage.Add('Organisation key:', False);
+    'Set the port this server listens on.',
+    'Clients connect to this server by its URL (http://<this-server>:<port>). Single-organisation server — no key needed.');
   CfgPage.Add('Port:', False);
-  CfgPage.Values[1] := '5210';
+  CfgPage.Values[0] := '5210';
 end;
 
 function PortValue: String;
 begin
-  Result := Trim(CfgPage.Values[1]);
+  Result := Trim(CfgPage.Values[0]);
   if Result = '' then Result := '5210';
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
-  JsonStr, Key, Port, ExePath, DbPath: String;
+  JsonStr, Port, ExePath, DbPath: String;
 begin
   if CurStep <> ssPostInstall then Exit;
 
-  Key  := Trim(CfgPage.Values[0]);
   Port := PortValue;
   ExePath := ExpandConstant('{app}\{#AppExe}');
 
@@ -78,7 +75,6 @@ begin
   { Config file next to the EXE — the server reads this at startup. }
   JsonStr :=
     '{' + #13#10 +
-    '  "ECHEQUE_ORG_KEY": "' + Key + '",' + #13#10 +
     '  "ECHEQUE_SERVER_DB": "' + DbPath + '",' + #13#10 +
     '  "Urls": "http://0.0.0.0:' + Port + '"' + #13#10 +
     '}';

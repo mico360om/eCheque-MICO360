@@ -4,18 +4,18 @@
     HOW TO USE (on the server, e.g. your VPS 84.247.142.2):
       1. Copy eCheque.MICO360.Server.exe and this script into the same folder.
       2. Open PowerShell *as Administrator* in that folder.
-      3. Edit $OrgKey below to a long random secret, then run:  .\Install-Server.ps1
+      3. (Optional) change $Port below, then run:  .\Install-Server.ps1
 
-    The service auto-starts on boot and restarts on failure. Config is written to
+    Single-organisation server — clients connect by URL only, no key. Restrict access with TLS + a firewall
+    allowlist. The service auto-starts on boot and restarts on failure. Config is written to
     echeque.server.json next to the EXE (not env vars), so it is reliable for a service.
 #>
 #Requires -RunAsAdministrator
 $ErrorActionPreference = 'Stop'
 
-# ============ EDIT THESE ============
-$OrgKey = 'CHANGE-ME-to-a-long-random-secret'   # clients register with this key
-$Port   = 5210                                  # TCP port the server listens on
-# ====================================
+# ============ EDIT THIS ============
+$Port = 5210                                    # TCP port the server listens on
+# ===================================
 
 $Svc        = 'eChequeSync'
 $InstallDir = 'C:\eCheque\Server'
@@ -30,7 +30,6 @@ Copy-Item (Join-Path $PSScriptRoot 'eCheque.MICO360.Server.exe') $Exe -Force
 
 # 2. Config file next to the EXE (read at startup)
 @{
-    ECHEQUE_ORG_KEY   = $OrgKey
     ECHEQUE_SERVER_DB = (Join-Path $DataDir 'server.db')
     Urls              = "http://0.0.0.0:$Port"
 } | ConvertTo-Json | Set-Content (Join-Path $InstallDir 'echeque.server.json') -Encoding UTF8
@@ -59,4 +58,3 @@ catch { Write-Warning "Health check failed (give it a few seconds and retry): $_
 Write-Host ""
 Write-Host "Done." -ForegroundColor Cyan
 Write-Host "  Clients set Server URL: http://<this-server-ip>:$Port   (use https:// once TLS is configured)"
-Write-Host "  Clients set Organisation key: $OrgKey"
