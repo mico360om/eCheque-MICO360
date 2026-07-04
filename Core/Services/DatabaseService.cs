@@ -17,8 +17,8 @@ namespace eCheque.MICO360.Core.Services
             _cs = SecurityService.ResolveConnectionString(DbPath);
             CreateTables();
             MigrateSchema();
-            MigrateSyncColumns();
             SeedData();
+            MigrateSyncColumns(); // after seeding, so default rows also get SyncId/UpdatedAtUtc + are marked dirty
         }
 
         /// <summary>

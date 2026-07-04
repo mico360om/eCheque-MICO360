@@ -20,8 +20,8 @@ namespace eCheque.MICO360.Services
             _cs = SecurityService.ResolveConnectionString(masterDb);
             CreateTable();
             MigrateLegacyUsers();   // bring forward users from older per-company databases
-            MigrateSyncColumns();
             SeedDefault();
+            MigrateSyncColumns(); // after seeding, so the default company/users also get SyncId + are marked dirty
         }
 
         /// <summary>Adds server-sync change-tracking columns to the master-tier tables (Companies, Users,
