@@ -22,3 +22,4 @@ installer_output/
 Thumbs.db
 desktop.ini
 *.suo
+*_wpftmp.csproj
