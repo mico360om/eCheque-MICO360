@@ -1,28 +1,23 @@
 # eCheque MICO360 — Architecture & How It Works
 
-Cross-platform **cheque-printing + management** desktop app for Oman (currency OMR; 1000 Baisa = 1 Rial),
-with an optional **central sync server** so several PCs share one dataset. Windows (WPF) + macOS (Avalonia),
-.NET 9. This document is the complete map of how the system is built and behaves.
+**Cheque-printing + management** desktop app for Oman (currency OMR; 1000 Baisa = 1 Rial), Windows-only,
+with an optional **central sync server** so several PCs share one dataset. .NET 9. This document is the
+complete map of how the system is built and behaves.
 
 ---
 
-## 1. Solution structure (8 projects)
+## 1. Solution structure (6 projects)
 
 | Project | Target | Role |
 |---|---|---|
-| `eCheque.MICO360` | WPF, net9.0-windows | **Windows desktop app** — standalone (its own Services / ViewModels / Views / Models). |
-| `Core` | lib, net9.0 | Shared services + models consumed by the macOS app. |
-| `Mac` | Avalonia, net9.0 | **macOS desktop app** (references Core). |
+| `eCheque.MICO360` | WPF, net9.0-windows | **The desktop app** (Services / ViewModels / Views / Models, MVVM). |
 | `Server` | ASP.NET Core (Kestrel) | **Sync server** → `eCheque.MICO360.Server.exe`. |
-| `Sync.Contracts` | lib, net9.0 | Dependency-free wire DTOs shared by clients + server (one source of truth). |
-| `Sync.Client` | lib, net9.0 | **Generic sync engine** (pull / apply / push) used by both apps + tests. |
+| `Sync.Contracts` | lib, net9.0 | Dependency-free wire DTOs shared by client + server (one source of truth). |
+| `Sync.Client` | lib, net9.0 | **Generic sync engine** (pull / apply / push) used by the app + tests. |
 | `Tests` | xUnit | 57 tests — amount-in-words, cheque logic, real encrypted-DB migration. |
 | `Sync.Tests` | xUnit | 15 tests — end-to-end sync through the real server. |
 
-The Windows app keeps its own copy of the services; the macOS app uses `Core`. The three sync libraries are
-shared by everyone to prevent drift.
-
-Windows app internals: ~20 Services, ~16 ViewModels, ~17 Views, ~9 Models (MVVM).
+Desktop app internals: ~20 Services, ~16 ViewModels, ~17 Views, ~9 Models (MVVM).
 
 ---
 

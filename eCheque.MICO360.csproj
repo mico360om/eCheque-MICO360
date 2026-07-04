@@ -15,13 +15,13 @@
     <Product>eCheque MICO360</Product>
     <ApplicationIcon>logo.ico</ApplicationIcon>
   </PropertyGroup>
-  <!-- The test project and the cross-platform (macOS/Avalonia) projects live inside the
-       repo but must be kept out of the Windows app build. -->
+  <!-- Sibling projects (tests, server, sync libraries) live inside the repo but must be
+       kept out of the Windows app's compile glob. -->
   <ItemGroup>
-    <Compile Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
-    <EmbeddedResource Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
-    <None Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
-    <Page Remove="Tests\**;Core\**;Mac\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <Compile Remove="Tests\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <EmbeddedResource Remove="Tests\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <None Remove="Tests\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
+    <Page Remove="Tests\**;Server\**;Sync.Contracts\**;Sync.Client\**;Sync.Tests\**" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Sync.Contracts\eCheque.MICO360.Sync.Contracts.csproj" />
