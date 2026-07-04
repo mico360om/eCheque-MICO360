@@ -65,6 +65,22 @@ jobs:
           echo "sha256=$hash" >> $env:GITHUB_OUTPUT
           echo "Installer: $setup ($hash)"
 
+      - name: Publish sync server (self-contained EXE)
+        id: server
+        shell: pwsh
+        run: |
+          dotnet publish Server\eCheque.MICO360.Server.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:Version=${{ steps.ver.outputs.version }} `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o publish_server
+          $exe = "publish_server\eCheque.MICO360.Server.exe"
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  $(Split-Path $exe -Leaf)" | Out-File "$exe.sha256" -Encoding ascii
+          echo "exe=$exe" >> $env:GITHUB_OUTPUT
+          echo "sha256=$hash" >> $env:GITHUB_OUTPUT
+          echo "Server: $exe ($hash)"
+
       - name: Create / update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -75,14 +91,17 @@ jobs:
 
             Automated release build.
 
-            **Windows installer (complete, all modules included):** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
+            **Client — Windows installer (complete, all modules included):** `eCheque-MICO360-Setup-${{ steps.ver.outputs.version }}.exe`
             Installs machine-wide into Program Files (admin required). The in-app updater downloads and runs this installer.
-
             SHA256: ${{ steps.installer.outputs.sha256 }}
+
+            **Server — self-contained sync server EXE:** `eCheque.MICO360.Server.exe`
+            Run on the central machine (see SYNC-DEPLOYMENT.md). No .NET install required.
+            SHA256: ${{ steps.server.outputs.sha256 }}
 
             <!-- Add [mandatory] anywhere in these notes to force the update. -->
           files: |
             ${{ steps.installer.outputs.setup }}
             ${{ steps.installer.outputs.setup }}.sha256
-            ${{ steps.pack.outputs.asset }}
-            ${{ steps.pack.outputs.asset }}.sha256
+            ${{ steps.server.outputs.exe }}
+            ${{ steps.server.outputs.exe }}.sha256

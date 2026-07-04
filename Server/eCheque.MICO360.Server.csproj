@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>eCheque.MICO360.Server</RootNamespace>
     <AssemblyName>eCheque.MICO360.Server</AssemblyName>
-    <Version>1.0.27</Version>
+    <Version>1.1.0</Version>
     <!-- Self-contained single-file EXE is produced at publish time (see deployment doc). -->
     <RuntimeIdentifiers>win-x64;linux-x64;osx-arm64;osx-x64</RuntimeIdentifiers>
     <InvariantGlobalization>true</InvariantGlobalization>
