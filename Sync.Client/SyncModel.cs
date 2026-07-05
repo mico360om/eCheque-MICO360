@@ -11,6 +11,7 @@ namespace eCheque.MICO360.Sync.Client
         public string? NaturalKey { get; init; }          // e.g. "Name" for Payees, "Key" for settings
         public bool HasProfileFk { get; init; }           // carries ProfileSyncId (portable FK to ChequeProfiles)
         public HashSet<string>? Exclude { get; init; }    // columns that must NOT sync (kept per-PC)
+        public string[]? ExcludeKeyPrefixes { get; init; } // natural-key rows that must NOT sync (device-local)
     }
 
     /// <summary>The tables that sync, split by database tier. Master-tier tables live in companies.db
@@ -23,7 +24,10 @@ namespace eCheque.MICO360.Sync.Client
             // Users sync (so any PC can log in), but the volatile per-PC login state stays local.
             new() { Name = SyncEntities.User,          Table = "Users",
                     Exclude = new(System.StringComparer.OrdinalIgnoreCase) { "LastLogin", "FailedLoginAttempts", "LockoutUntil" } },
-            new() { Name = SyncEntities.MasterSetting, Table = "MasterSettings", Guid = false, NaturalKey = "Key" },
+            // Sync_* keys are THIS device's identity/state (token, machine id, last-run) — they must never
+            // leave the PC, or one PC's token would overwrite another's and last-run writes would churn forever.
+            new() { Name = SyncEntities.MasterSetting, Table = "MasterSettings", Guid = false, NaturalKey = "Key",
+                    ExcludeKeyPrefixes = new[] { "Sync_" } },
         };
 
         public static readonly SyncEntityDef[] Company =

@@ -52,6 +52,8 @@ namespace eCheque.MICO360.Server
                 CREATE TABLE IF NOT EXISTS Devices(
                     DeviceId TEXT PRIMARY KEY, Token TEXT NOT NULL, DeviceName TEXT, MachineId TEXT,
                     CreatedUtc TEXT, LastSeenUtc TEXT);
+                CREATE INDEX IF NOT EXISTS IX_Devices_Token ON Devices(Token);       -- ValidateToken runs per request
+                CREATE INDEX IF NOT EXISTS IX_Devices_MachineId ON Devices(MachineId);
                 CREATE TABLE IF NOT EXISTS SyncRows(
                     Entity TEXT NOT NULL, CompanyId INTEGER NOT NULL, SyncId TEXT NOT NULL,
                     ServerVersion INTEGER NOT NULL, UpdatedAtUtc TEXT NOT NULL, Deleted INTEGER NOT NULL DEFAULT 0,

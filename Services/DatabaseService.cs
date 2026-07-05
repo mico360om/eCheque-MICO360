@@ -61,6 +61,8 @@ namespace eCheque.MICO360.Services
                 Exec(conn, $"UPDATE {table} SET ProfileSyncId = (SELECT p.SyncId FROM ChequeProfiles p WHERE p.Id = {table}.ProfileId) WHERE (ProfileSyncId IS NULL OR ProfileSyncId='') AND ProfileId > 0");
             if (fresh) Exec(conn, $"UPDATE {table} SET Dirty = 1"); // first migration: upload existing rows once
             if (guid) TryExec(conn, $"CREATE UNIQUE INDEX IF NOT EXISTS IX_{table}_SyncId ON {table}(SyncId)");
+            // Partial index so the sync engine's every-cycle "WHERE Dirty=1" scan is O(dirty), not O(table).
+            TryExec(conn, $"CREATE INDEX IF NOT EXISTS IX_{table}_Dirty ON {table}(Dirty) WHERE Dirty=1");
 
             CreateSyncTriggers(conn, table, guid);
         }
@@ -119,7 +121,12 @@ namespace eCheque.MICO360.Services
                 "ALTER TABLE ChequeRecords ADD COLUMN ClearedDate TEXT",
                 "ALTER TABLE ChequeRecords ADD COLUMN BounceReason TEXT DEFAULT ''",
                 "ALTER TABLE ChequeProfiles ADD COLUMN BackgroundImage TEXT DEFAULT ''",
-                "ALTER TABLE ChequeProfiles ADD COLUMN FieldsJson TEXT DEFAULT ''"
+                "ALTER TABLE ChequeProfiles ADD COLUMN FieldsJson TEXT DEFAULT ''",
+                // Hot-query indexes: status filters (PDC/reconciliation/dashboard), the duplicate-number
+                // check on every save, and the recent-cheques ordering.
+                "CREATE INDEX IF NOT EXISTS IX_ChequeRecords_Status ON ChequeRecords(Status)",
+                "CREATE INDEX IF NOT EXISTS IX_ChequeRecords_NumBank ON ChequeRecords(ChequeNumber, BankName)",
+                "CREATE INDEX IF NOT EXISTS IX_ChequeRecords_Created ON ChequeRecords(CreatedDate DESC)"
             };
             using var conn = GetConnection();
             foreach (var sql in migrations)

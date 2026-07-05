@@ -96,11 +96,17 @@ namespace eCheque.MICO360.Services
 
         /// <summary>Start the background loop (idempotent): a full sync every ~60s, plus a lightweight
         /// reachability check every ~20s in between so the connection indicator stays fresh.</summary>
+        static readonly object _loopLock = new();
+
         public static void StartBackground(TimeSpan? interval = null)
         {
-            _loop?.Cancel();
-            _loop = new CancellationTokenSource();
-            var ct = _loop.Token;
+            CancellationToken ct;
+            lock (_loopLock) // idempotent + race-free: never leak a second loop
+            {
+                _loop?.Cancel();
+                _loop = new CancellationTokenSource();
+                ct = _loop.Token;
+            }
             _ = Task.Run(async () =>
             {
                 int tick = 0;
@@ -121,7 +127,7 @@ namespace eCheque.MICO360.Services
             }, ct);
         }
 
-        public static void StopBackground() => _loop?.Cancel();
+        public static void StopBackground() { lock (_loopLock) _loop?.Cancel(); }
 
         // Stable per-install id so the server treats re-registration from this PC idempotently (one device row).
         static string MachineId()

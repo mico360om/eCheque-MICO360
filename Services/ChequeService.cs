@@ -11,7 +11,7 @@ namespace eCheque.MICO360.Services
         static double D(SqliteDataReader r,string col){var o=Ord(r,col);return o<0||r.IsDBNull(o)?0:r.GetDouble(o);}
         static int I(SqliteDataReader r,string col){var o=Ord(r,col);return o<0||r.IsDBNull(o)?0:r.GetInt32(o);}
 
-        public static List<ChequeRecord> GetCheques(string? search=null,string? status=null,DateTime? from=null,DateTime? to=null)
+        public static List<ChequeRecord> GetCheques(string? search=null,string? status=null,DateTime? from=null,DateTime? to=null,int limit=0)
         {
             var list=new List<ChequeRecord>();
             using var conn=DatabaseService.GetConnection();
@@ -22,6 +22,7 @@ namespace eCheque.MICO360.Services
             if(from.HasValue){sql+=" AND ChequeDate>=@fd";cmd.Parameters.AddWithValue("@fd",from.Value.ToString("yyyy-MM-dd"));}
             if(to.HasValue){sql+=" AND ChequeDate<=@td";cmd.Parameters.AddWithValue("@td",to.Value.ToString("yyyy-MM-dd"));}
             sql+=" ORDER BY CreatedDate DESC";
+            if(limit>0){sql+=" LIMIT @lim";cmd.Parameters.AddWithValue("@lim",limit);} // SQL-side cap — never load the whole table for "recent N"
             cmd.CommandText=sql;
             using var r=cmd.ExecuteReader();
             while(r.Read())list.Add(MapCheque(r));
@@ -114,21 +115,40 @@ namespace eCheque.MICO360.Services
             return true;
         }
 
+        // All PDC/reconciliation queries filter to issued cheques IN SQL (small subset once most cheques are
+        // Cleared) instead of materializing the whole table and filtering in memory. ChequeDate is stored as
+        // yyyy-MM-dd; date() normalizes defensively without changing the semantics.
+        static List<ChequeRecord> QueryIssued(int? dueWithinDays)
+        {
+            var list=new List<ChequeRecord>();
+            using var conn=DatabaseService.GetConnection();
+            var cmd=new SqliteCommand{Connection=conn};
+            var sql="SELECT * FROM ChequeRecords WHERE Status IN('Printed','Reprinted','Presented')";
+            if(dueWithinDays.HasValue){sql+=" AND date(ChequeDate)<=@d";cmd.Parameters.AddWithValue("@d",DateTime.Today.AddDays(dueWithinDays.Value).ToString("yyyy-MM-dd"));}
+            sql+=" ORDER BY ChequeDate";
+            cmd.CommandText=sql;
+            using var r=cmd.ExecuteReader();
+            while(r.Read())list.Add(MapCheque(r));
+            return list;
+        }
+
         /// <summary>Outstanding issued cheques (post-dated and overdue), ordered by due date — for the PDC register.</summary>
-        public static List<ChequeRecord> GetPdcCheques()
-            => GetCheques().Where(c => c.IsIssued).OrderBy(c => c.ChequeDate).ToList();
+        public static List<ChequeRecord> GetPdcCheques() => QueryIssued(null);
 
         /// <summary>Issued cheques awaiting settlement (for the reconciliation screen).</summary>
-        public static List<ChequeRecord> GetOutstandingCheques()
-            => GetCheques().Where(c => c.Status is "Printed" or "Reprinted" or "Presented").OrderBy(c => c.ChequeDate).ToList();
+        public static List<ChequeRecord> GetOutstandingCheques() => QueryIssued(null);
 
         /// <summary>Count of issued cheques due within the next <paramref name="days"/> days, INCLUDING overdue ones.</summary>
         public static int GetDuePdcCount(int days)
-            => GetCheques().Count(c => c.IsIssued && c.DaysUntilDue <= days);
+        {
+            using var conn=DatabaseService.GetConnection();
+            using var cmd=new SqliteCommand("SELECT COUNT(*) FROM ChequeRecords WHERE Status IN('Printed','Reprinted','Presented') AND date(ChequeDate)<=@d",conn);
+            cmd.Parameters.AddWithValue("@d",DateTime.Today.AddDays(days).ToString("yyyy-MM-dd"));
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
 
         /// <summary>Issued cheques due within the next <paramref name="days"/> days (incl. overdue), soonest first — for reminders.</summary>
-        public static List<ChequeRecord> GetDuePdcCheques(int days)
-            => GetCheques().Where(c => c.IsIssued && c.DaysUntilDue <= days).OrderBy(c => c.ChequeDate).ToList();
+        public static List<ChequeRecord> GetDuePdcCheques(int days) => QueryIssued(days);
 
         public static void VoidCheque(int id,string reason)
         {

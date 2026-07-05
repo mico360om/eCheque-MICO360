@@ -82,6 +82,7 @@ namespace eCheque.MICO360.Sync.Client
                     {
                         report.Pulled++;
                         if (!byName.TryGetValue(ch.Entity, out var def)) continue;
+                        if (IsExcludedRow(def, ch.SyncId)) continue; // device-local row (e.g. Sync_*) — ignore, cursor advances
                         if (ApplyChange(conn, def, ch)) report.Applied++;
                         else if (!skipped.TryGetValue(ch.Entity, out var m) || ch.ServerVersion < m)
                             skipped[ch.Entity] = ch.ServerVersion; // had unpushed local edits — don't advance past it
@@ -200,6 +201,7 @@ namespace eCheque.MICO360.Sync.Client
         bool ApplyChange(SqliteConnection conn, SyncEntityDef def, ServerChange ch, bool force)
         {
             if (!force) return ApplyChange(conn, def, ch);
+            if (IsExcludedRow(def, ch.SyncId)) return false; // never let a server copy overwrite device-local rows
             string keyCol = def.Guid ? "SyncId" : def.NaturalKey!;
             var payload = Deserialize(ch.PayloadJson);
             var cols = TableColumns(conn, def.Table);
@@ -235,6 +237,7 @@ namespace eCheque.MICO360.Sync.Client
                 string syncId = def.Guid ? (row.GetValueOrDefault("SyncId") as string ?? "")
                                          : (row.GetValueOrDefault(def.NaturalKey!)?.ToString() ?? "");
                 if (string.IsNullOrEmpty(syncId)) continue; // cannot sync an identity-less row
+                if (IsExcludedRow(def, syncId)) continue;   // device-local row (e.g. Sync_*) — never pushed
 
                 var payload = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
                 foreach (var (col, val) in row)
@@ -266,6 +269,16 @@ namespace eCheque.MICO360.Sync.Client
             while (r.Read()) set.Add(r.GetString(1));
             _colCache[table] = set;
             return set;
+        }
+
+        /// <summary>Rows whose natural key matches a def's excluded prefix are device-local and never sync,
+        /// in either direction (e.g. MasterSettings "Sync_*": this PC's token / machine id / last-run state).</summary>
+        static bool IsExcludedRow(SyncEntityDef def, string syncId)
+        {
+            if (def.ExcludeKeyPrefixes == null) return false;
+            foreach (var p in def.ExcludeKeyPrefixes)
+                if (syncId.StartsWith(p, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         static bool RowIsDirty(SqliteConnection conn, string table, string keyCol, string keyVal)

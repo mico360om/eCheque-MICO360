@@ -19,7 +19,8 @@ namespace eCheque.MICO360.Sync.Tests
         static readonly SyncEntityDef[] MasterEntities =
         {
             new() { Name = SyncEntities.Company, Table = "Companies" },
-            new() { Name = SyncEntities.MasterSetting, Table = "MasterSettings", Guid = false, NaturalKey = "Key" },
+            new() { Name = SyncEntities.MasterSetting, Table = "MasterSettings", Guid = false, NaturalKey = "Key",
+                    ExcludeKeyPrefixes = new[] { "Sync_" } }, // mirrors SyncRegistry.Master
         };
 
         readonly string _serverDb;
@@ -230,6 +231,32 @@ namespace eCheque.MICO360.Sync.Tests
             await ClientFor(_tokenB).SyncScopeAsync(b, SyncEntities.MasterCompanyId, MasterEntities);
             Assert.Equal("Acme Trading LLC", (string?)Scalar(b, "SELECT Name FROM Companies WHERE SyncId=@s", ("@s", id)));
             Assert.Equal("Acme", (string?)Scalar(b, "SELECT Value FROM MasterSettings WHERE Key='Mailjet_FromName'"));
+        }
+
+        [Fact]
+        public async Task Device_local_sync_settings_never_leave_the_pc()
+        {
+            using var a = NewMasterDb(); using var b = NewMasterDb();
+            // A holds a shared setting (must sync) and its own device token/state (must NOT sync).
+            Exec(a, "INSERT INTO MasterSettings(Key,Value,UpdatedAtUtc,Dirty) VALUES('Mailjet_FromName','Acme',@u,1)", ("@u", DateTime.UtcNow.ToString("o")));
+            Exec(a, "INSERT INTO MasterSettings(Key,Value,UpdatedAtUtc,Dirty) VALUES('Sync_Token','SECRET-A',@u,1)", ("@u", DateTime.UtcNow.ToString("o")));
+            Exec(b, "INSERT INTO MasterSettings(Key,Value,UpdatedAtUtc,Dirty) VALUES('Sync_Token','SECRET-B',@u,0)", ("@u", DateTime.UtcNow.ToString("o")));
+
+            var ra = await ClientFor(_tokenA).SyncScopeAsync(a, SyncEntities.MasterCompanyId, MasterEntities);
+            Assert.True(ra.Ok, ra.Error);
+            Assert.Equal(1, ra.Pushed); // only Mailjet_FromName — the Sync_ row was filtered from push
+
+            var rb = await ClientFor(_tokenB).SyncScopeAsync(b, SyncEntities.MasterCompanyId, MasterEntities);
+            Assert.True(rb.Ok, rb.Error);
+            Assert.Equal("Acme", (string?)Scalar(b, "SELECT Value FROM MasterSettings WHERE Key='Mailjet_FromName'"));
+            Assert.Equal("SECRET-B", (string?)Scalar(b, "SELECT Value FROM MasterSettings WHERE Key='Sync_Token'")); // untouched
+
+            // Repeated cycles stay quiet — the local-only row must not cause perpetual push churn,
+            // and the pull cursor must advance normally (no stuck re-pull).
+            var ra2 = await ClientFor(_tokenA).SyncScopeAsync(a, SyncEntities.MasterCompanyId, MasterEntities);
+            var ra3 = await ClientFor(_tokenA).SyncScopeAsync(a, SyncEntities.MasterCompanyId, MasterEntities);
+            Assert.Equal(0, ra2.Pushed + ra3.Pushed);
+            Assert.Equal(0, ra3.Applied);
         }
 
         [Fact]

@@ -83,7 +83,7 @@ namespace eCheque.MICO360.ViewModels
                 MonthAmount  = s.MonthAmount;
                 YearAmount   = s.YearAmount;
 
-                Recent = new ObservableCollection<ChequeRecord>(ChequeService.GetCheques().Take(10));
+                Recent = new ObservableCollection<ChequeRecord>(ChequeService.GetCheques(limit: 10));
 
                 // Post-dated cheque reminder
                 var reminderDays = int.TryParse(DatabaseService.GetSetting("PdcReminderDays", "7"), out var d) ? d : 7;
