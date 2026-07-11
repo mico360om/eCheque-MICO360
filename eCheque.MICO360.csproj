@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>eCheque.MICO360</AssemblyName>
     <RootNamespace>eCheque.MICO360</RootNamespace>
     <Version>1.1.0</Version>
@@ -14,6 +13,9 @@
     <Company>MICO360 Softwares</Company>
     <Product>eCheque MICO360</Product>
     <ApplicationIcon>logo.ico</ApplicationIcon>
+    <!-- Per-Monitor v2 DPI awareness (see app.manifest) so the UI stays crisp + re-layouts at any
+         display scaling and across mixed-DPI monitors. WPF reads this from the manifest at startup. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <!-- Sibling projects (tests, server, sync libraries) live inside the repo but must be
        kept out of the Windows app's compile glob. -->

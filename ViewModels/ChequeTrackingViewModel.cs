@@ -78,12 +78,12 @@ namespace eCheque.MICO360.ViewModels
         void ExportCsv()
         {
             if (Cheques.Count == 0) { StatusMessage = "Nothing to export."; return; }
-            using var d = new System.Windows.Forms.SaveFileDialog
+            var d = new Microsoft.Win32.SaveFileDialog
             {
                 Filter = "CSV file (*.csv)|*.csv",
                 FileName = $"{(IsPdcMode ? "PDC" : "Reconciliation")}_{DateTime.Now:yyyyMMdd}.csv"
             };
-            if (d.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+            if (d.ShowDialog() != true) return;
             try
             {
                 var sb = new StringBuilder();

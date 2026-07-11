@@ -42,6 +42,7 @@
         </Border>
         <!-- Editor -->
         <Border Grid.Column="1" Style="{StaticResource Card}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <TextBlock Text="User Details" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
                 <Grid Margin="0,0,0,10">
@@ -84,6 +85,7 @@
                             Command="{Binding SaveUserCommand}"/>
                 </StackPanel>
             </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>

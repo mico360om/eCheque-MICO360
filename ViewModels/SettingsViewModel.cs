@@ -83,14 +83,14 @@ namespace eCheque.MICO360.ViewModels
         void DoBackup(){try{var p=BackupService.CreateBackup();StatusMessage=$"Backup created: {System.IO.Path.GetFileName(p)}";}catch(Exception ex){StatusMessage=$"Backup failed: {ex.Message}";}}
         void DoRestore()
         {
-            using var d=new System.Windows.Forms.OpenFileDialog{Filter="Database backup (*.db)|*.db",Title="Select a backup to restore"};
+            var d=new Microsoft.Win32.OpenFileDialog{Filter="Database backup (*.db)|*.db",Title="Select a backup to restore"};
             if(System.IO.Directory.Exists(BackupPath)) d.InitialDirectory=BackupPath;
-            if(d.ShowDialog()!=System.Windows.Forms.DialogResult.OK)return;
+            if(d.ShowDialog()!=true)return;
             if(System.Windows.MessageBox.Show("Restoring will OVERWRITE the current company's data with the selected backup.\n\nA safety copy of the current data is kept (.prerestore). Continue?","Confirm Restore",System.Windows.MessageBoxButton.YesNo,System.Windows.MessageBoxImage.Warning)!=System.Windows.MessageBoxResult.Yes)return;
             try{BackupService.RestoreBackup(d.FileName);StatusMessage="Backup restored. Please restart the application for the change to fully apply.";}
             catch(Exception ex){StatusMessage=$"Restore failed: {ex.Message}";}
         }
-        void BrowsePdf(){using var d=new System.Windows.Forms.FolderBrowserDialog();if(d.ShowDialog()==System.Windows.Forms.DialogResult.OK)PdfPath=d.SelectedPath;}
-        void BrowseBackup(){using var d=new System.Windows.Forms.FolderBrowserDialog();if(d.ShowDialog()==System.Windows.Forms.DialogResult.OK)BackupPath=d.SelectedPath;}
+        void BrowsePdf(){var d=new Microsoft.Win32.OpenFolderDialog();if(d.ShowDialog()==true)PdfPath=d.FolderName;}
+        void BrowseBackup(){var d=new Microsoft.Win32.OpenFolderDialog();if(d.ShowDialog()==true)BackupPath=d.FolderName;}
     }
 }

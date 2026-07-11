@@ -20,6 +20,7 @@ namespace eCheque.MICO360
         public MainWindow()
         {
             InitializeComponent();
+            FitToScreen();
             ToastService.Register(ToastHostPanel);
             TxtCompanyName.Text = CompanyService.CurrentCompanyName;
             TxtUserInfo.Text = $"{AuthService.CurrentUser?.FullName} ({AuthService.CurrentUser?.Role})";
@@ -146,6 +147,18 @@ namespace eCheque.MICO360
                 // Never block startup on update problems — just log.
                 UpdateService.Log($"Startup check skipped: {ex.Message}");
             }
+        }
+
+        /// <summary>Size the window to the available work area so it never opens larger than the screen
+        /// (e.g. the 800px default on a 768px laptop). Caps at the design size; the layout is fluid below that.
+        /// If the screen is too small even for the minimum, start maximized.</summary>
+        private void FitToScreen()
+        {
+            var wa = SystemParameters.WorkArea; // primary monitor work area (excludes taskbar), in DIP
+            Width  = Math.Max(MinWidth,  Math.Min(Width,  wa.Width  * 0.96));
+            Height = Math.Max(MinHeight, Math.Min(Height, wa.Height * 0.96));
+            if (wa.Width < MinWidth || wa.Height < MinHeight)
+                WindowState = WindowState.Maximized;
         }
 
         private void PopulateCompanySwitcher()

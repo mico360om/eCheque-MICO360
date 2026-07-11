@@ -54,6 +54,10 @@ namespace eCheque.MICO360.Views
         public ChequeLayoutDesigner(ChequeProfile profile)
         {
             InitializeComponent();
+            // Never open taller/wider than the screen (e.g. on a small or DPI-scaled laptop).
+            var wa = System.Windows.SystemParameters.WorkArea;
+            Width  = System.Math.Max(MinWidth,  System.Math.Min(Width,  wa.Width  * 0.96));
+            Height = System.Math.Max(MinHeight, System.Math.Min(Height, wa.Height * 0.96));
             _profile = profile;
             try
             {
