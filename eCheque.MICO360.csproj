@@ -7,9 +7,9 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>eCheque.MICO360</AssemblyName>
     <RootNamespace>eCheque.MICO360</RootNamespace>
-    <Version>1.1.0</Version>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
+    <Version>1.2.0</Version>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <Company>MICO360 Softwares</Company>
     <Product>eCheque MICO360</Product>
     <ApplicationIcon>logo.ico</ApplicationIcon>
