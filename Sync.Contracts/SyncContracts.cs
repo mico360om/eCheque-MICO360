@@ -11,12 +11,13 @@ namespace eCheque.MICO360.Sync.Contracts
         public const string AppSetting    = "AppSetting";    // company tier
         public const string Bank          = "Bank";          // company tier
         public const string Payee         = "Payee";         // company tier
+        public const string ChequeBook    = "ChequeBook";    // company tier
 
         /// <summary>Master-tier entities live under the reserved CompanyId 0; everything else is per-company.</summary>
         public const int MasterCompanyId = 0;
 
         public static readonly string[] Master  = { Company, User, MasterSetting };
-        public static readonly string[] Company_ = { ChequeProfile, ChequeRecord, AppSetting, Bank, Payee };
+        public static readonly string[] Company_ = { ChequeProfile, ChequeRecord, AppSetting, Bank, Payee, ChequeBook };
     }
 
     /// <summary>Result of applying one pushed change.</summary>

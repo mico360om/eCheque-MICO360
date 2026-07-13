@@ -59,6 +59,8 @@
                         <Button x:Name="NavNewCheque"   Tag="NewCheque"    Content="✚  New Cheque"       Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <Button x:Name="NavHistory"     Tag="History"      Content="☰  Cheque History"   Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <Button x:Name="NavTracking"    Tag="Tracking"     Content="📅  Cheque Tracking"  Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
+                        <Button x:Name="NavBatch"       Tag="Batch"        Content="🗇  Batch Print"     Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
+                        <Button x:Name="NavChequeBooks" Tag="ChequeBooks"  Content="📘  Cheque Books"    Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <Button x:Name="NavPrintHistory" Tag="PrintHistory" Content="🖨  Print History"   Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>
                         <TextBlock Text="CONFIGURATION" Foreground="#555555" FontSize="10" FontWeight="Bold" Margin="8,14,0,4"/>
                         <Button x:Name="NavProfiles"  Tag="Profiles"  Content="📄  Cheque Profiles"  Style="{StaticResource NavBtn}" Click="NavBtn_Click"/>

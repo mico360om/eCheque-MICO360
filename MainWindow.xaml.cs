@@ -34,9 +34,12 @@ namespace eCheque.MICO360
                 TxtAdminHdr.Visibility = Visibility.Collapsed;
             }
 
-            // Read-only roles (Viewer/Auditor) cannot create cheques.
+            // Read-only roles (Viewer/Auditor) cannot create or batch-print cheques.
             if (!AuthService.CanEdit)
+            {
                 NavNewCheque.Visibility = Visibility.Collapsed;
+                NavBatch.Visibility = Visibility.Collapsed;
+            }
 
             _timer.Interval = TimeSpan.FromSeconds(1);
             _timer.Tick += (s, e) => TxtDateTime.Text = DateTime.Now.ToString("dddd, dd MMM yyyy  HH:mm:ss");
@@ -263,8 +266,8 @@ namespace eCheque.MICO360
                     "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            // Read-only roles cannot open the cheque entry/creation screen.
-            if (page == "NewCheque" && !AuthService.CanEdit)
+            // Read-only roles cannot open the cheque entry/creation or batch-print screens.
+            if ((page == "NewCheque" || page == "Batch") && !AuthService.CanEdit)
             {
                 MessageBox.Show("Your role has read-only access and cannot create cheques.",
                     "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -277,6 +280,8 @@ namespace eCheque.MICO360
                 "NewCheque" => "New Cheque",
                 "History" => "Cheque History",
                 "Tracking" => "Cheque Tracking",
+                "Batch" => "Batch Print",
+                "ChequeBooks" => "Cheque Books",
                 "PrintHistory" => "Print History",
                 "Profiles" => "Cheque Profiles",
                 "MyProfile" => "My Profile",
@@ -299,6 +304,8 @@ namespace eCheque.MICO360
                     "NewCheque" => CreateChequeEntry(),
                     "History" => CreateHistory(),
                     "Tracking" => CreateTracking(),
+                    "Batch" => CreateBatchPrint(),
+                    "ChequeBooks" => CreateChequeBooks(),
                     "PrintHistory" => CreatePrintHistory(),
                     "Profiles" => CreateProfiles(),
                     "MyProfile" => new MyProfileView { DataContext = new MyProfileViewModel() },
@@ -527,6 +534,54 @@ namespace eCheque.MICO360
         {
             var vm = new ChequeTrackingViewModel(); vm.Load();
             return new ChequeTrackingView { DataContext = vm };
+        }
+
+        private UserControl CreateChequeBooks()
+        {
+            var vm = new ChequeBookViewModel(); vm.Load();
+            return new ChequeBookView { DataContext = vm };
+        }
+
+        private UserControl CreateBatchPrint()
+        {
+            var vm = new BatchPrintViewModel(); vm.Load();
+            vm.PrintBatchRequested += (records, profile) => RunBatchPrint(records, profile);
+            return new BatchPrintView { DataContext = vm };
+        }
+
+        /// <summary>Prints a batch of already-saved cheques in one run: choose the printer once, print each at its
+        /// own cheque size, then mark each Printed. Mirrors RunBulkPrint but works from the batch's built records.</summary>
+        private void RunBatchPrint(System.Collections.Generic.List<Models.ChequeRecord> records, Models.ChequeProfile profile)
+        {
+            if (!AuthService.CanEdit || records.Count == 0) return;
+            if (MessageBox.Show($"Print {records.Count} cheque(s) on '{profile.Name}'?\n\nThis will use {records.Count} physical cheque(s).",
+                    "Confirm Batch Print", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            var dlg = new System.Windows.Controls.PrintDialog();
+            if (dlg.ShowDialog() != true) return;
+
+            const double pxPerMm = 96.0 / 25.4;
+            double cw = profile.ChequeWidth * pxPerMm, ch = profile.ChequeHeight * pxPerMm;
+            var resolved = Helpers.PrintHelper.SelectChequeMedia(dlg, profile.ChequeWidth, profile.ChequeHeight);
+            int ok = 0; var failed = new System.Collections.Generic.List<string>();
+            foreach (var c in records)
+            {
+                try
+                {
+                    var canvas = ChequePrintBuilder.Build(c, profile, cw, ch, includeBackground: false);
+                    Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, resolved.Wdip, resolved.Hdip, $"Cheque #{c.ChequeNumber}");
+                    ChequeService.RecordPrint(c.Id, c.ChequeNumber, isReprint: false, "Batch print");
+                    ChequeService.UpdateStatus(c.Id, "Printed", "");
+                    ok++;
+                }
+                catch (Exception ex) { failed.Add(c.ChequeNumber); UpdateService.Log($"Batch print failed for {c.ChequeNumber}: {ex.Message}"); }
+            }
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM", "Batch Print", $"{ok} cheque(s)",
+                $"Printed to {dlg.PrintQueue?.FullName} on {resolved.Wmm:0}×{resolved.Hmm:0} mm");
+            if (failed.Count == 0) ToastService.Success($"Printed {ok} cheque(s).");
+            else ToastService.Warn($"Printed {ok}; {failed.Count} failed ({string.Join(", ", failed.Take(5))}).");
+            UpdateBadges();
         }
 
         private UserControl CreateAudit()

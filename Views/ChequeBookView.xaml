@@ -1,0 +1,153 @@
+<UserControl x:Class="eCheque.MICO360.Views.ChequeBookView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#F5F5F5">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Books list -->
+        <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,14,0" Padding="12">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="Cheque Books" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,10"/>
+                <Button DockPanel.Dock="Bottom" Content="✚  New Cheque Book" Style="{StaticResource PrimaryBtn}"
+                        Margin="0,8,0,0" Command="{Binding NewCommand}" IsEnabled="{Binding CanEdit}"/>
+                <Button DockPanel.Dock="Bottom" Content="Refresh" Style="{StaticResource SecondaryBtn}" Margin="0,8,0,0" Command="{Binding RefreshCommand}"/>
+                <ListBox ItemsSource="{Binding Books}" SelectedItem="{Binding Selected}"
+                         BorderThickness="1" BorderBrush="#E0E0E0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="4,4">
+                                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock FontSize="11" Foreground="#888888">
+                                    <Run Text="{Binding BankName}"/>
+                                    <Run Text="  ·  "/>
+                                    <Run Text="{Binding Status}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="4"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#FFE8E8"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </DockPanel>
+        </Border>
+
+        <!-- Detail / editor -->
+        <Border Grid.Column="1" Style="{StaticResource Card}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <!-- Usage detail -->
+                    <StackPanel Visibility="{Binding ShowDetail, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="{Binding Selected.DisplayName}" FontSize="16" FontWeight="Bold" Foreground="#8B1818"/>
+                        <TextBlock Margin="0,2,0,14" Foreground="#666666" FontSize="12">
+                            <Run Text="{Binding Selected.BankName}"/>
+                            <Run Text="   ·   Account: "/>
+                            <Run Text="{Binding Selected.AccountNumber}"/>
+                            <Run Text="   ·   Issued: "/>
+                            <Run Text="{Binding Selected.IssueDate, StringFormat=dd/MM/yyyy}"/>
+                        </TextBlock>
+
+                        <Border Background="#FBEAEA" CornerRadius="6" Padding="14,10" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="{Binding UsageText}" FontWeight="SemiBold" Foreground="#8B1818" FontSize="13"/>
+                                <TextBlock Text="{Binding NextText}" Foreground="#2E7D32" FontSize="13" Margin="0,6,0,0" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{Binding GapsText}" Foreground="#B26A00" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <Button Content="Mark Leaf Spoiled" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
+                                    Command="{Binding MarkSpoiledCommand}" IsEnabled="{Binding CanEdit}"/>
+                            <Button Content="Cancel Book" Foreground="#B00020" Background="Transparent" BorderThickness="1" BorderBrush="#E0B4B4"
+                                    Padding="12,7" Cursor="Hand" Command="{Binding CancelBookCommand}" IsEnabled="{Binding CanEdit}"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Selected.Notes}" Foreground="#888888" FontSize="12" TextWrapping="Wrap" Margin="0,14,0,0"/>
+                    </StackPanel>
+
+                    <!-- Editor -->
+                    <StackPanel Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="Cheque Book Details" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,14"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Bank" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Banks}"
+                                          IsEditable="True" Text="{Binding Edit.BankName, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Account Number (optional)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.AccountNumber}"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Book Label (optional)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.BookLabel}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Number Prefix (optional)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Prefix}"/>
+                            </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Start Number" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.StartNumber}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                                <TextBlock Text="End Number" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.EndNumber}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Number Digits" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PadWidth}"/>
+                            </StackPanel>
+                        </Grid>
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="Notes (optional)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Notes}" TextWrapping="Wrap" Height="46"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                            <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding CancelEditCommand}"/>
+                            <Button Content="Save Book" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Empty state -->
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,60,0,0">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Selected}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="📘" FontSize="34" HorizontalAlignment="Center" Foreground="#CCCCCC"/>
+                        <TextBlock Text="No cheque book selected" FontSize="14" FontWeight="SemiBold" Foreground="#888888" HorizontalAlignment="Center" Margin="0,8,0,2"/>
+                        <TextBlock Text="Add a cheque book to track leaf usage and prevent duplicate numbers." FontSize="12" Foreground="#AAAAAA" HorizontalAlignment="Center" TextWrapping="Wrap" MaxWidth="320" TextAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+
+        <TextBlock Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="16,0,0,6"
+                   Text="{Binding StatusMessage}" Foreground="#2E7D32" FontSize="12"/>
+    </Grid>
+</UserControl>

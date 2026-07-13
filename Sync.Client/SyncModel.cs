@@ -37,6 +37,7 @@ namespace eCheque.MICO360.Sync.Client
             new() { Name = SyncEntities.Bank,          Table = "Banks" },
             new() { Name = SyncEntities.Payee,         Table = "Payees",      Guid = false, NaturalKey = "Name" },
             new() { Name = SyncEntities.AppSetting,    Table = "AppSettings", Guid = false, NaturalKey = "Key" },
+            new() { Name = SyncEntities.ChequeBook,    Table = "ChequeBooks" },
         };
     }
 

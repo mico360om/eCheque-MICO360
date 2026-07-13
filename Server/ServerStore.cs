@@ -273,7 +273,7 @@ namespace eCheque.MICO360.Server
             return f.ExecuteScalar() as string ?? "";
         }
 
-        void LogConflict(SqliteConnection c, SqliteTransaction tx, int companyId, string entity, string syncId, long version, string winner, string loserPayload)
+        void LogConflict(SqliteConnection c, SqliteTransaction tx, int companyId, string entity, string syncId, long version, string winner, string? loserPayload)
         {
             using var l = c.CreateCommand();
             l.Transaction = tx;

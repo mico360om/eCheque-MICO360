@@ -41,6 +41,7 @@ namespace eCheque.MICO360.Services
             ApplySyncColumns(conn, "Banks",          guid: true,  createdCol: null);
             ApplySyncColumns(conn, "Payees",         guid: false, createdCol: "LastUsed");
             ApplySyncColumns(conn, "AppSettings",    guid: false, createdCol: null);
+            ApplySyncColumns(conn, "ChequeBooks",    guid: true,  createdCol: "CreatedDate");
         }
 
         internal static void ApplySyncColumns(SqliteConnection conn, string table, bool guid, string? createdCol, bool profileFk = false)
@@ -103,7 +104,8 @@ namespace eCheque.MICO360.Services
                 CREATE TABLE IF NOT EXISTS PrintHistory(Id INTEGER PRIMARY KEY AUTOINCREMENT,ChequeId INTEGER,ChequeNumber TEXT DEFAULT '',PrintedBy TEXT DEFAULT '',PrintedDate TEXT,Reason TEXT DEFAULT '',IsReprint INTEGER DEFAULT 0);
                 CREATE TABLE IF NOT EXISTS AppSettings(Key TEXT PRIMARY KEY,Value TEXT DEFAULT '');
                 CREATE TABLE IF NOT EXISTS Banks(Id INTEGER PRIMARY KEY AUTOINCREMENT,Name TEXT NOT NULL,IsActive INTEGER DEFAULT 1);
-                CREATE TABLE IF NOT EXISTS Payees(Name TEXT PRIMARY KEY,LastUsed TEXT);";
+                CREATE TABLE IF NOT EXISTS Payees(Name TEXT PRIMARY KEY,LastUsed TEXT);
+                CREATE TABLE IF NOT EXISTS ChequeBooks(Id INTEGER PRIMARY KEY AUTOINCREMENT,BankName TEXT DEFAULT '',AccountNumber TEXT DEFAULT '',BookLabel TEXT DEFAULT '',Prefix TEXT DEFAULT '',StartNumber INTEGER DEFAULT 0,EndNumber INTEGER DEFAULT 0,PadWidth INTEGER DEFAULT 6,IssueDate TEXT,Status TEXT DEFAULT 'Active',SpoiledCsv TEXT DEFAULT '',Notes TEXT DEFAULT '',CreatedDate TEXT,CreatedBy TEXT DEFAULT '');";
             using var cmd = new SqliteCommand(sql, conn);
             cmd.ExecuteNonQuery();
         }

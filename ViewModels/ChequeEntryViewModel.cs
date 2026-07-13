@@ -41,7 +41,12 @@ namespace eCheque.MICO360.ViewModels
                         Cheque.AccountName   = value.AccountName;
                         Cheque.AccountNumber = value.AccountNumber;
                         if (string.IsNullOrWhiteSpace(Cheque.ChequeNumber))
-                            Cheque.ChequeNumber = ChequeService.GetNextChequeNumber(value.Id);
+                        {
+                            // Prefer the next unused leaf from the account's cheque book; fall back to the
+                            // profile's running counter when no book is defined.
+                            var next = ChequeBookService.NextLeaf(value.BankName, value.AccountNumber);
+                            Cheque.ChequeNumber = !string.IsNullOrEmpty(next) ? next : ChequeService.GetNextChequeNumber(value.Id);
+                        }
                     }
                     OnPropertyChanged(nameof(Cheque));
                 }
@@ -125,6 +130,10 @@ namespace eCheque.MICO360.ViewModels
             if (SelectedProfile == null)                         { StatusMessage = "Please select a cheque profile."; return false; }
             if (ChequeService.ChequeNumberExists(Cheque.ChequeNumber, Cheque.BankName, Cheque.Id))
             { StatusMessage = $"Cheque #{Cheque.ChequeNumber} already exists for {Cheque.BankName}."; return false; }
+            // Cheque-book inventory guard: block out-of-range or spoiled leaves when a book is defined for this account.
+            var (leaf, leafMsg) = ChequeBookService.Validate(Cheque.BankName, Cheque.AccountNumber, Cheque.ChequeNumber, Cheque.Id);
+            if (leaf != ChequeBookService.LeafCheck.Ok && leaf != ChequeBookService.LeafCheck.NoBook)
+            { StatusMessage = leafMsg; return false; }
             if (string.IsNullOrWhiteSpace(Cheque.AmountInWords)) ConvertWords();
             StatusMessage = "";
             return true;
