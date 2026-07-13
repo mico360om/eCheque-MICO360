@@ -106,6 +106,9 @@
                                 <TextBox x:Name="TxtAmount" Style="{StaticResource InputBox}"
                                          LostFocus="AmountBox_LostFocus"
                                          TextChanged="AmountBox_TextChanged"
+                                         PreviewTextInput="AmountBox_PreviewTextInput"
+                                         MaxLength="18"
+                                         InputMethod.IsInputMethodEnabled="False"
                                          FontSize="14" FontWeight="SemiBold"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1">

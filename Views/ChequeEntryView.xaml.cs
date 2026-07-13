@@ -14,6 +14,9 @@ namespace eCheque.MICO360.Views
         {
             InitializeComponent();
 
+            // Block pasting anything that isn't a valid numeric amount into the amount box.
+            DataObject.AddPastingHandler(TxtAmount, AmountBox_Pasting);
+
             // Debounced auto-convert as user types amount
             _convertTimer.Tick += (s, e) =>
             {
@@ -53,6 +56,35 @@ namespace eCheque.MICO360.Views
         {
             var text = vm.Cheque.Amount > 0 ? vm.Cheque.Amount.ToString("N3") : "";
             if (TxtAmount.Text != text) TxtAmount.Text = text;
+        }
+
+        // True if applying `insert` at the current caret/selection would leave a still-valid amount
+        // (digits, optional decimal point, up to 3 decimals — see Helpers.AmountInput).
+        private bool WouldStayValidAmount(string insert)
+        {
+            int start = TxtAmount.SelectionStart;
+            int len = TxtAmount.SelectionLength;
+            string text = TxtAmount.Text;
+            string candidate = text.Substring(0, start) + insert + text.Substring(start + len);
+            return Helpers.AmountInput.IsAcceptable(candidate);
+        }
+
+        // Keystroke filter: only digits and a single decimal point may be typed. Letters, symbols,
+        // spaces, extra decimal points, and >3 decimal places are rejected before they reach the box.
+        private void AmountBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            foreach (char ch in e.Text)
+                if (!char.IsDigit(ch) && ch != '.') { e.Handled = true; return; }
+            e.Handled = !WouldStayValidAmount(e.Text);
+        }
+
+        // Paste filter: allow a paste only if the result is a valid amount (grouping commas tolerated,
+        // since ApplyAmount strips them on commit). Anything else is blocked.
+        private void AmountBox_Pasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (!e.DataObject.GetDataPresent(DataFormats.UnicodeText)) { e.CancelCommand(); return; }
+            var pasted = (e.DataObject.GetData(DataFormats.UnicodeText) as string ?? "").Trim();
+            if (pasted.Length == 0 || !WouldStayValidAmount(pasted)) e.CancelCommand();
         }
 
         // Fires on every keystroke in amount field — starts debounce timer
