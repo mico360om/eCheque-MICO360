@@ -277,6 +277,44 @@ namespace eCheque.MICO360.Services
             return list;
         }
 
+        /// <summary>History summary for one payee (excludes cancelled/void): how many cheques, and the most
+        /// recent one — shown inline on the entry screen so the accountant can spot repeats at a glance.</summary>
+        public static (int Count, string LastNumber, DateTime LastDate, decimal LastAmount)? GetPayeeSummary(string payee)
+        {
+            if (string.IsNullOrWhiteSpace(payee)) return null;
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SqliteCommand(
+                @"SELECT COUNT(*),
+                         (SELECT ChequeNumber FROM ChequeRecords WHERE PayeeName=@p AND Status NOT IN('Cancelled','Void') ORDER BY CreatedDate DESC LIMIT 1),
+                         (SELECT ChequeDate   FROM ChequeRecords WHERE PayeeName=@p AND Status NOT IN('Cancelled','Void') ORDER BY CreatedDate DESC LIMIT 1),
+                         (SELECT Amount       FROM ChequeRecords WHERE PayeeName=@p AND Status NOT IN('Cancelled','Void') ORDER BY CreatedDate DESC LIMIT 1)
+                  FROM ChequeRecords WHERE PayeeName=@p AND Status NOT IN('Cancelled','Void')", conn);
+            cmd.Parameters.AddWithValue("@p", payee.Trim());
+            using var r = cmd.ExecuteReader();
+            if (!r.Read() || r.GetInt32(0) == 0) return null;
+            return (r.GetInt32(0),
+                    r.IsDBNull(1) ? "" : r.GetString(1),
+                    DateTime.TryParse(r.IsDBNull(2) ? "" : r.GetString(2), out var d) ? d : DateTime.Today,
+                    r.IsDBNull(3) ? 0m : (decimal)r.GetDouble(3));
+        }
+
+        /// <summary>Possible double payment: a non-cancelled cheque to the same payee for the same amount created
+        /// within the last <paramref name="days"/> days. Returns its cheque number, or null. Warning only — never blocks.</summary>
+        public static string? FindRecentDuplicate(string payee, decimal amount, int days = 30, int excludeId = 0)
+        {
+            if (string.IsNullOrWhiteSpace(payee) || amount <= 0) return null;
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SqliteCommand(
+                @"SELECT ChequeNumber FROM ChequeRecords
+                  WHERE PayeeName=@p AND Amount=@a AND Id!=@id AND Status NOT IN('Cancelled','Void')
+                    AND CreatedDate >= @since ORDER BY CreatedDate DESC LIMIT 1", conn);
+            cmd.Parameters.AddWithValue("@p", payee.Trim());
+            cmd.Parameters.AddWithValue("@a", (double)amount);
+            cmd.Parameters.AddWithValue("@id", excludeId);
+            cmd.Parameters.AddWithValue("@since", DateTime.Now.AddDays(-days).ToString("o"));
+            return cmd.ExecuteScalar() as string;
+        }
+
         /// <summary>Remembers a payee for reuse in the autocomplete (upsert with last-used timestamp).</summary>
         public static void SavePayee(string name)
         {

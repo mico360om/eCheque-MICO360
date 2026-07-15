@@ -92,7 +92,10 @@
                                       ItemsSource="{Binding Payees}"
                                       Text="{Binding Cheque.PayeeName, UpdateSourceTrigger=PropertyChanged}"
                                       IsTextSearchEnabled="True" StaysOpenOnEdit="True"
+                                      LostFocus="Payee_LostFocus" SelectionChanged="Payee_SelectionChanged"
                                       MaxDropDownHeight="200"/>
+                            <TextBlock Text="{Binding PayeeInsight}" FontSize="11" Foreground="#666688" Margin="2,3,0,0"
+                                       Visibility="{Binding HasPayeeInsight, Converter={StaticResource BoolToVisibility}}"/>
                         </StackPanel>
 
                         <!-- Amount + Amount in Words -->
@@ -122,6 +125,13 @@
                                          TextWrapping="Wrap" Height="46" FontSize="12"/>
                             </StackPanel>
                         </Grid>
+
+                        <!-- Duplicate-payment advisory (same payee + amount in the last 30 days) -->
+                        <Border Background="#FFF6E5" BorderBrush="#F0C36D" BorderThickness="1" CornerRadius="4"
+                                Padding="10,6" Margin="0,0,0,10"
+                                Visibility="{Binding HasDuplicateWarning, Converter={StaticResource BoolToVisibility}}">
+                            <TextBlock Text="{Binding DuplicateWarning}" FontSize="12" Foreground="#8A5A00" TextWrapping="Wrap"/>
+                        </Border>
 
                         <!-- Memo -->
                         <StackPanel>

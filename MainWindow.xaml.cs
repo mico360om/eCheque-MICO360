@@ -21,6 +21,8 @@ namespace eCheque.MICO360
         {
             InitializeComponent();
             FitToScreen();
+            // Version in the title bar — makes a stale install obvious at a glance.
+            Title = $"eCheque MICO360  v{Helpers.AppInfo.Version}";
             ToastService.Register(ToastHostPanel);
             TxtCompanyName.Text = CompanyService.CurrentCompanyName;
             TxtUserInfo.Text = $"{AuthService.CurrentUser?.FullName} ({AuthService.CurrentUser?.Role})";
@@ -52,6 +54,14 @@ namespace eCheque.MICO360
 
             PreviewMouseMove += (s, e) => _lastActivity = DateTime.Now;
             PreviewKeyDown  += (s, e) => _lastActivity = DateTime.Now;
+
+            // Ctrl+F from anywhere focuses the global cheque search.
+            PreviewKeyDown += (s, e) =>
+            {
+                if (e.Key == System.Windows.Input.Key.F &&
+                    (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0)
+                { TxtGlobalSearch.Focus(); TxtGlobalSearch.SelectAll(); e.Handled = true; }
+            };
 
             // "Remember me": mark the app as used so the 30-day inactivity window keeps resetting.
             Closing += (s, e) => SessionService.Touch();
@@ -392,6 +402,23 @@ namespace eCheque.MICO360
                 if (RunPrintFlow(cheque, profile)) vm.Load();
             };
             return new DashboardView { DataContext = vm };
+        }
+
+        /// <summary>Global search (top bar / Ctrl+F): Enter opens History filtered to the query.</summary>
+        private void GlobalSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key != System.Windows.Input.Key.Enter) return;
+            var q = TxtGlobalSearch.Text.Trim();
+            if (q.Length == 0) return;
+            var vm = new ChequeHistoryViewModel();
+            vm.PrintRequested += (cheque, profile) => { if (RunPrintFlow(cheque, profile)) vm.Load(); };
+            vm.EditRequested += HandleEditRequested;
+            vm.BulkPrintRequested += list => { if (RunBulkPrint(list)) vm.Load(); };
+            vm.Search = q;                 // setter triggers the (SQL-side) filtered load
+            TxtPageTitle.Text = $"Search: \"{q}\"";
+            MainContent.Content = new ChequeHistoryView { DataContext = vm };
+            SetActiveNav(NavHistory);
+            e.Handled = true;
         }
 
         /// <summary>Navigates to History pre-filtered by status (e.g. the dashboard "pending" card).</summary>

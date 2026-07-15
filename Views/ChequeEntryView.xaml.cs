@@ -110,8 +110,16 @@ namespace eCheque.MICO360.Views
                 vm.Cheque.Amount = amount;
                 if (commit) TxtAmount.Text = amount.ToString("N3");
                 vm.ConvertWordsCommand.Execute(null);
+                vm.RefreshPayeeInsight(); // amount changed — re-check the duplicate-payment advisory
             }
         }
+
+        // Payee changed (typed or picked) — refresh the inline history + duplicate advisory.
+        private void Payee_LostFocus(object sender, RoutedEventArgs e)
+            => (DataContext as ChequeEntryViewModel)?.RefreshPayeeInsight();
+
+        private void Payee_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => Dispatcher.BeginInvoke(new Action(() => (DataContext as ChequeEntryViewModel)?.RefreshPayeeInsight()));
 
         // Memo character counter
         private void MemoBox_TextChanged(object sender, TextChangedEventArgs e)

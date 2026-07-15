@@ -33,9 +33,55 @@ namespace eCheque.MICO360.Views
             Loaded += (s, e) =>
             {
                 TxtInfo.Text = $"Cheque #{cheque.ChequeNumber}  |  {cheque.PayeeName}  |  {cheque.Currency} {cheque.Amount:N3}";
+                TxtVersion.Text = "v" + Helpers.AppInfo.Version;
                 RenderPreview();
                 GeneratePdf();
+                UpdatePaperCheck();
             };
+        }
+
+        // ───────────── remembered printer + paper-size trust check ─────────────
+
+        /// <summary>This PC's remembered cheque printer (device-local setting; never synced).</summary>
+        private static string RememberedPrinter
+        {
+            get => DatabaseService.GetSetting(eCheque.MICO360.Helpers.PrintHelper.LocalPrinterKey, "");
+            set => DatabaseService.SaveSetting(eCheque.MICO360.Helpers.PrintHelper.LocalPrinterKey, value);
+        }
+
+        /// <summary>Shows, BEFORE any cheque is used, whether the remembered printer will honour the cheque's
+        /// page size — the single biggest source of misprinted cheques (silent A4 substitution).</summary>
+        private void UpdatePaperCheck()
+        {
+            try
+            {
+                var name = RememberedPrinter;
+                if (string.IsNullOrEmpty(name))
+                {
+                    TxtPaperCheck.Text = $"No cheque printer remembered on this PC — Print Now will ask. Template: {_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm.";
+                    TxtPaperCheck.Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88));
+                    return;
+                }
+                var queue = eCheque.MICO360.Helpers.PrintHelper.FindQueue(name);
+                if (queue == null)
+                {
+                    TxtPaperCheck.Text = $"⚠ Remembered printer \"{name}\" was not found (renamed or offline) — Print Now will ask.";
+                    TxtPaperCheck.Foreground = new SolidColorBrush(Color.FromRgb(0xB2, 0x6A, 0x00));
+                    return;
+                }
+                var r = eCheque.MICO360.Helpers.PrintHelper.ResolveForQueue(queue, _profile.ChequeWidth, _profile.ChequeHeight);
+                if (r.Matched)
+                {
+                    TxtPaperCheck.Text = $"✓ {name} — will print on the cheque size {r.Wmm:0}×{r.Hmm:0} mm.";
+                    TxtPaperCheck.Foreground = new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32));
+                }
+                else
+                {
+                    TxtPaperCheck.Text = $"⚠ {name} — cannot use {_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm; it will substitute {r.Wmm:0}×{r.Hmm:0} mm. Content still prints at actual size (top-left), but verify with a plain-paper test first.";
+                    TxtPaperCheck.Foreground = new SolidColorBrush(Color.FromRgb(0xB2, 0x6A, 0x00));
+                }
+            }
+            catch { TxtPaperCheck.Text = ""; }
         }
 
         private Canvas BuildChequeCanvas(double w, double h, bool includeBackground = false)
@@ -125,11 +171,9 @@ namespace eCheque.MICO360.Views
                 return;
             }
 
-            var dlg = new PrintDialog();
-            // Hint the cheque-sized page before the dialog opens...
-            eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
-            if (dlg.ShowDialog() != true) return;
-            // ...then force + validate it against the printer the user actually chose (this is what makes it stick).
+            var dlg = PreparePrintDialog(rememberChoice: true);
+            if (dlg == null) return;
+            // Force + validate the cheque page size against the printer that will be used.
             var resolved = eCheque.MICO360.Helpers.PrintHelper.SelectChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
 
             // If the printer couldn't use the cheque size, warn before wasting a cheque.
@@ -152,6 +196,68 @@ namespace eCheque.MICO360.Views
             DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM",
                 "Print", _cheque.ChequeNumber, $"Printed to {dlg.PrintQueue?.FullName} on {resolved.Wmm:0}×{resolved.Hmm:0} mm page");
             Close();
+        }
+
+        /// <summary>
+        /// Returns a ready PrintDialog, or null if the user cancelled. Uses this PC's remembered cheque printer
+        /// (one quick "leaf loaded?" confirm — no printer dialog) when available; otherwise shows the dialog and
+        /// remembers the chosen printer for next time. Cuts the daily flow to a single deliberate confirmation
+        /// while keeping the leaf-insertion checkpoint for shared printers.
+        /// </summary>
+        private PrintDialog? PreparePrintDialog(bool rememberChoice, string? loadPrompt = null)
+        {
+            var name = RememberedPrinter;
+            var queue = eCheque.MICO360.Helpers.PrintHelper.FindQueue(name);
+            if (queue != null)
+            {
+                if (MessageBox.Show(
+                        (loadPrompt ?? $"Print cheque #{_cheque.ChequeNumber} on \"{name}\"?\n\nMake sure the cheque leaf is loaded in the printer.")
+                        + "\n(Use the Printer… button to change printers.)",
+                        "Ready to Print", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+                    return null;
+                var quick = new PrintDialog();
+                try { quick.PrintQueue = queue; return quick; }
+                catch { /* stale queue — fall through to the dialog */ }
+            }
+
+            var dlg = new PrintDialog();
+            // Hint the cheque-sized page before the dialog opens (SelectChequeMedia after makes it stick).
+            eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
+            if (dlg.ShowDialog() != true) return null;
+            if (rememberChoice && dlg.PrintQueue != null)
+            {
+                RememberedPrinter = dlg.PrintQueue.FullName;
+                UpdatePaperCheck();
+            }
+            return dlg;
+        }
+
+        /// <summary>Choose (and remember) this PC's cheque printer without printing anything.</summary>
+        private void BtnChoosePrinter_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new PrintDialog();
+            eCheque.MICO360.Helpers.PrintHelper.ApplyChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
+            if (dlg.ShowDialog() != true || dlg.PrintQueue == null) return;
+            RememberedPrinter = dlg.PrintQueue.FullName;
+            UpdatePaperCheck();
+        }
+
+        /// <summary>Prints the alignment grid (rulers + field crosshairs) on PLAIN paper so the user can hold it
+        /// against a real leaf and trust the alignment before consuming a cheque. Never marks the cheque printed.</summary>
+        private void BtnTestPrint_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = PreparePrintDialog(rememberChoice: true,
+                loadPrompt: $"Print the alignment test sheet on \"{RememberedPrinter}\"?\n\nLoad PLAIN PAPER (not a cheque) in the printer.");
+            if (dlg == null) return;
+            var resolved = eCheque.MICO360.Helpers.PrintHelper.SelectChequeMedia(dlg, _profile.ChequeWidth, _profile.ChequeHeight);
+
+            const double pxPerMm = 96.0 / 25.4;
+            double cw = _profile.ChequeWidth * pxPerMm, ch = _profile.ChequeHeight * pxPerMm;
+            var canvas = CalibrationRenderer.Build(_profile, pxPerMm);
+            eCheque.MICO360.Helpers.PrintHelper.PrintActualSize(dlg, canvas, cw, ch, resolved.Wdip, resolved.Hdip, $"Alignment test — {_profile.Name}");
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM",
+                "Alignment Test Print", _profile.Name, $"On {dlg.PrintQueue?.FullName} ({resolved.Wmm:0}×{resolved.Hmm:0} mm)");
+            ToastService.Info("Alignment sheet sent — hold it against a cheque leaf to verify positions.");
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();

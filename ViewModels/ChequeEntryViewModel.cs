@@ -53,6 +53,30 @@ namespace eCheque.MICO360.ViewModels
             }
         }
 
+        string _payeeInsight = "", _dupWarning = "";
+        /// <summary>Inline payee history ("Last paid OMR 500.000 on 12/06/2026 · chq #000123 · 3 total").</summary>
+        public string PayeeInsight { get => _payeeInsight; set { Set(ref _payeeInsight, value); OnPropertyChanged(nameof(HasPayeeInsight)); } }
+        public bool HasPayeeInsight => !string.IsNullOrEmpty(_payeeInsight);
+        /// <summary>Possible-duplicate warning (same payee + amount within 30 days). Advisory — never blocks.</summary>
+        public string DuplicateWarning { get => _dupWarning; set { Set(ref _dupWarning, value); OnPropertyChanged(nameof(HasDuplicateWarning)); } }
+        public bool HasDuplicateWarning => !string.IsNullOrEmpty(_dupWarning);
+
+        /// <summary>Recomputes the payee history line and the duplicate-payment warning. Called by the view
+        /// when the payee loses focus and after the amount is applied (cheap: two indexed queries).</summary>
+        public void RefreshPayeeInsight()
+        {
+            try
+            {
+                var s = ChequeService.GetPayeeSummary(Cheque.PayeeName);
+                PayeeInsight = s == null ? "" :
+                    $"Last paid {Cheque.Currency} {s.Value.LastAmount:N3} on {s.Value.LastDate:dd/MM/yyyy} · chq #{s.Value.LastNumber} · {s.Value.Count} cheque(s) total";
+                var dup = ChequeService.FindRecentDuplicate(Cheque.PayeeName, Cheque.Amount, 30, Cheque.Id);
+                DuplicateWarning = dup == null ? "" :
+                    $"⚠ Possible duplicate: cheque #{dup} to this payee for the same amount in the last 30 days.";
+            }
+            catch { PayeeInsight = ""; DuplicateWarning = ""; }
+        }
+
         public string ProfileInfo => _selProfile != null
             ? $"{_selProfile.BankName}   |   Account: {_selProfile.AccountNumber}   |   Cheque size: {_selProfile.ChequeWidth:N0} × {_selProfile.ChequeHeight:N0} mm   |   Font: {_selProfile.FontFamily} {_selProfile.FontSize}pt"
             : "";
@@ -114,6 +138,7 @@ namespace eCheque.MICO360.ViewModels
                 if (defId > 0) SelectedProfile = Profiles.FirstOrDefault(p => p.Id == defId);
             }
             StatusMessage = "";
+            RefreshPayeeInsight();
         }
 
         public void ConvertWords()

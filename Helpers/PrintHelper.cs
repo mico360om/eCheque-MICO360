@@ -115,6 +115,36 @@ namespace eCheque.MICO360.Helpers
             catch { return Requested(); } // never block printing on a driver quirk
         }
 
+        // ─────────────────────── remembered printer (per-PC) ───────────────────────
+
+        /// <summary>Settings key for this PC's remembered cheque printer. The Local_ prefix keeps it
+        /// device-local — the sync registry excludes Local_* AppSettings from ever leaving this machine.</summary>
+        public const string LocalPrinterKey = "Local_ChequePrinter";
+
+        /// <summary>Finds an installed print queue by full name (local printers and network connections).
+        /// Returns null when the printer is gone (unplugged/renamed) — callers fall back to the dialog.</summary>
+        public static PrintQueue? FindQueue(string? fullName)
+        {
+            if (string.IsNullOrWhiteSpace(fullName)) return null;
+            try
+            {
+                var server = new PrintServer();
+                foreach (var q in server.GetPrintQueues(new[] { EnumeratedPrintQueueTypes.Local, EnumeratedPrintQueueTypes.Connections }))
+                    if (string.Equals(q.FullName, fullName, StringComparison.OrdinalIgnoreCase)) return q;
+            }
+            catch { }
+            return null;
+        }
+
+        /// <summary>Resolves what page size a specific printer would actually use for the cheque, WITHOUT
+        /// showing a dialog — used to show the ✓/⚠ paper check before the user prints.</summary>
+        public static ResolvedPage ResolveForQueue(PrintQueue queue, double widthMm, double heightMm)
+        {
+            var dlg = new System.Windows.Controls.PrintDialog();
+            try { dlg.PrintQueue = queue; } catch { }
+            return SelectChequeMedia(dlg, widthMm, heightMm);
+        }
+
         /// <summary>
         /// Prints the content at real size (1:1) anchored top-left of the given page size; if the content is
         /// larger than the page it is scaled down uniformly to fit (never scaled up). The page size is passed

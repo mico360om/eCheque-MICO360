@@ -24,6 +24,12 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="BtnPrint" Content="Print Now" Style="{StaticResource PrimaryBtn}"
                             Margin="0,0,8,0" Click="BtnPrint_Click"/>
+                    <Button x:Name="BtnTestPrint" Content="Test on Plain Paper" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Prints the alignment grid (rulers + field markers) on plain paper — hold it against a real cheque leaf to verify positions before using a cheque."
+                            Margin="0,0,8,0" Click="BtnTestPrint_Click"/>
+                    <Button x:Name="BtnChoosePrinter" Content="Printer…" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Choose and remember the cheque printer for this PC."
+                            Margin="0,0,8,0" Click="BtnChoosePrinter_Click"/>
                     <Button x:Name="BtnSavePdf" Content="Save PDF" Style="{StaticResource SecondaryBtn}"
                             Margin="0,0,8,0" Click="BtnSavePdf_Click"/>
                     <Button Content="Close" Style="{StaticResource SecondaryBtn}" Click="BtnClose_Click"/>
@@ -38,12 +44,20 @@
                 </Border>
             </Viewbox>
         </Border>
-        <!-- Info bar -->
+        <!-- Info bar: cheque info + paper-size check + app version -->
         <Border Grid.Row="2" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="16,8">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="TxtInfo" Foreground="#666666" FontSize="12"/>
-                <TextBlock x:Name="TxtPdfPath" Foreground="#8B1818" FontSize="12" Margin="16,0,0,0"/>
-            </StackPanel>
+            <DockPanel>
+                <TextBlock x:Name="TxtVersion" DockPanel.Dock="Right" Foreground="#BBBBBB" FontSize="11"
+                           VerticalAlignment="Center" Margin="16,0,0,0"
+                           ToolTip="Installed application version — if a fix seems missing, check this matches the latest release."/>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="TxtInfo" Foreground="#666666" FontSize="12"/>
+                        <TextBlock x:Name="TxtPdfPath" Foreground="#8B1818" FontSize="12" Margin="16,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock x:Name="TxtPaperCheck" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </Window>

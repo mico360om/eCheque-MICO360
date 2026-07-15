@@ -260,6 +260,30 @@ namespace eCheque.MICO360.Sync.Tests
         }
 
         [Fact]
+        public async Task Per_pc_Local_settings_never_sync_between_pcs()
+        {
+            // Uses the REAL registry entry (not a mirror), so removing its Local_ exclusion fails this test.
+            var defs = SyncRegistry.Company.Where(d => d.Name == SyncEntities.AppSetting).ToArray();
+            Assert.NotEmpty(defs);
+
+            using var a = NewClientDb(); using var b = NewClientDb();
+            var u = DateTime.UtcNow.ToString("o");
+            // A: one shared setting (must sync) + this PC's remembered printer (must NOT sync).
+            Exec(a, "INSERT INTO AppSettings(Key,Value,UpdatedAtUtc,Dirty) VALUES('CompanyName','Acme',@u,1)", ("@u", u));
+            Exec(a, "INSERT INTO AppSettings(Key,Value,UpdatedAtUtc,Dirty) VALUES('Local_ChequePrinter','HP-on-A',@u,1)", ("@u", u));
+            Exec(b, "INSERT INTO AppSettings(Key,Value,UpdatedAtUtc,Dirty) VALUES('Local_ChequePrinter','Canon-on-B',@u,0)", ("@u", u));
+
+            var ra = await ClientFor(_tokenA).SyncScopeAsync(a, Company, defs);
+            Assert.True(ra.Ok, ra.Error);
+            Assert.Equal(1, ra.Pushed); // only CompanyName — the Local_ row was filtered from push
+
+            var rb = await ClientFor(_tokenB).SyncScopeAsync(b, Company, defs);
+            Assert.True(rb.Ok, rb.Error);
+            Assert.Equal("Acme", (string?)Scalar(b, "SELECT Value FROM AppSettings WHERE Key='CompanyName'"));
+            Assert.Equal("Canon-on-B", (string?)Scalar(b, "SELECT Value FROM AppSettings WHERE Key='Local_ChequePrinter'")); // untouched
+        }
+
+        [Fact]
         public async Task Idle_pull_transfers_nothing_when_up_to_date()
         {
             using var a = NewClientDb();
@@ -384,6 +408,8 @@ namespace eCheque.MICO360.Sync.Tests
                 CREATE TABLE ChequeProfiles(Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, BankName TEXT,
                     SyncId TEXT, UpdatedAtUtc TEXT, Deleted INTEGER DEFAULT 0, Dirty INTEGER DEFAULT 0, ServerVersion INTEGER DEFAULT 0);
                 CREATE TABLE Payees(Name TEXT PRIMARY KEY, LastUsed TEXT,
+                    SyncId TEXT, UpdatedAtUtc TEXT, Deleted INTEGER DEFAULT 0, Dirty INTEGER DEFAULT 0, ServerVersion INTEGER DEFAULT 0);
+                CREATE TABLE AppSettings(Key TEXT PRIMARY KEY, Value TEXT,
                     SyncId TEXT, UpdatedAtUtc TEXT, Deleted INTEGER DEFAULT 0, Dirty INTEGER DEFAULT 0, ServerVersion INTEGER DEFAULT 0);
                 CREATE TABLE SyncState(Entity TEXT PRIMARY KEY, LastServerVersion INTEGER DEFAULT 0);");
             return conn;

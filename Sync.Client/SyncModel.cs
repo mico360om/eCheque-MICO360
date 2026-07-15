@@ -36,7 +36,10 @@ namespace eCheque.MICO360.Sync.Client
             new() { Name = SyncEntities.ChequeRecord,  Table = "ChequeRecords", HasProfileFk = true },
             new() { Name = SyncEntities.Bank,          Table = "Banks" },
             new() { Name = SyncEntities.Payee,         Table = "Payees",      Guid = false, NaturalKey = "Name" },
-            new() { Name = SyncEntities.AppSetting,    Table = "AppSettings", Guid = false, NaturalKey = "Key" },
+            // Local_* keys are per-PC preferences (e.g. the remembered cheque printer) — never synced,
+            // for the same reason as the master tier's Sync_* keys: they describe THIS machine.
+            new() { Name = SyncEntities.AppSetting,    Table = "AppSettings", Guid = false, NaturalKey = "Key",
+                    ExcludeKeyPrefixes = new[] { "Local_" } },
             new() { Name = SyncEntities.ChequeBook,    Table = "ChequeBooks" },
         };
     }
