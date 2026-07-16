@@ -68,6 +68,35 @@ namespace eCheque.MICO360.Tests
         }
     }
 
+    /// <summary>
+    /// Paper-feed compensation: when the driver substitutes a larger page (e.g. A4 for a 190×85 cheque),
+    /// the content must shift to where the leaf physically sits in the tray. A4 portrait = 210 mm wide vs a
+    /// 190 mm cheque → Centre feed shifts by exactly 10 mm.
+    /// </summary>
+    public class FeedAnchorTests
+    {
+        const double PxPerMm = 96.0 / 25.4;
+
+        [Theory]
+        [InlineData("Left",   0.0)]
+        [InlineData("Center", 10.0)]   // (210-190)/2
+        [InlineData("Centre", 10.0)]   // British spelling accepted
+        [InlineData("Right",  20.0)]   // 210-190
+        [InlineData("",       0.0)]    // unset -> Left
+        public void Offsets_match_the_leaf_position_on_A4(string align, double expectedMm)
+        {
+            double page = 210 * PxPerMm, cheque = 190 * PxPerMm;
+            Assert.Equal(expectedMm * PxPerMm, Helpers.PrintHelper.AnchorOffsetDip(align, page, cheque), 3);
+        }
+
+        [Fact]
+        public void No_offset_when_the_page_is_not_wider_than_the_cheque()
+        {
+            Assert.Equal(0, Helpers.PrintHelper.AnchorOffsetDip("Center", 190 * PxPerMm, 190 * PxPerMm));
+            Assert.Equal(0, Helpers.PrintHelper.AnchorOffsetDip("Right", 100, 200)); // never negative
+        }
+    }
+
     public class ChequeStatusGuardTests
     {
         [Theory]

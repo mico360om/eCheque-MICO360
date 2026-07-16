@@ -7,7 +7,7 @@
 #define SvcName "eChequeSync"
 #define AppPublisher "MICO360 Softwares"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.2.1"
+  #define MyAppVersion "1.2.2"
 #endif
 
 [Setup]

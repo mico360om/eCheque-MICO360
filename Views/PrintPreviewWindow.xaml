@@ -56,6 +56,20 @@
                         <TextBlock x:Name="TxtPdfPath" Foreground="#8B1818" FontSize="12" Margin="16,0,0,0"/>
                     </StackPanel>
                     <TextBlock x:Name="TxtPaperCheck" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <TextBlock Text="Paper feed position:" FontSize="12" Foreground="#666666" VerticalAlignment="Center"
+                                   ToolTip="Where the cheque leaf sits in the tray when the printer prints it as a bigger page (e.g. A4): against the LEFT guide, in the CENTRE, or against the RIGHT guide. The print is shifted to match."/>
+                        <ComboBox x:Name="CmbFeedAlign" Width="90" Margin="8,0,0,0" FontSize="12"
+                                  SelectionChanged="CmbFeedAlign_Changed">
+                            <ComboBoxItem Content="Left"/>
+                            <ComboBoxItem Content="Centre"/>
+                            <ComboBoxItem Content="Right"/>
+                        </ComboBox>
+                        <Button x:Name="BtnAddPaperSize" Content="Create Windows paper size" FontSize="11" Margin="16,0,0,0"
+                                Padding="8,4" Cursor="Hand"
+                                ToolTip="Registers this cheque's exact size as a Windows paper form so the printer dialog can list and use it."
+                                Click="BtnAddPaperSize_Click"/>
+                    </StackPanel>
                 </StackPanel>
             </DockPanel>
         </Border>

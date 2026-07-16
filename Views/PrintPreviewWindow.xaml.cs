@@ -34,10 +34,51 @@ namespace eCheque.MICO360.Views
             {
                 TxtInfo.Text = $"Cheque #{cheque.ChequeNumber}  |  {cheque.PayeeName}  |  {cheque.Currency} {cheque.Amount:N3}";
                 TxtVersion.Text = "v" + Helpers.AppInfo.Version;
+                LoadFeedAlign();
                 RenderPreview();
                 GeneratePdf();
                 UpdatePaperCheck();
             };
+        }
+
+        // ───────────── paper-feed position (Left / Centre / Right) ─────────────
+
+        private bool _feedInit;
+
+        private void LoadFeedAlign()
+        {
+            var v = DatabaseService.GetSetting(eCheque.MICO360.Helpers.PrintHelper.LocalFeedAlignKey, "Left");
+            CmbFeedAlign.SelectedIndex = v.Equals("Center", StringComparison.OrdinalIgnoreCase) || v.Equals("Centre", StringComparison.OrdinalIgnoreCase) ? 1
+                                       : v.Equals("Right", StringComparison.OrdinalIgnoreCase) ? 2 : 0;
+            _feedInit = true;
+        }
+
+        private void CmbFeedAlign_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_feedInit) return;
+            var v = CmbFeedAlign.SelectedIndex switch { 1 => "Center", 2 => "Right", _ => "Left" };
+            DatabaseService.SaveSetting(eCheque.MICO360.Helpers.PrintHelper.LocalFeedAlignKey, v);
+            ToastService.Info($"Paper feed set to {v} — prints on substituted pages shift to match.");
+        }
+
+        /// <summary>Registers this cheque's exact dimensions as a Windows paper form so the print dialog can
+        /// actually offer the correct size (drivers only list sizes Windows knows about).</summary>
+        private void BtnAddPaperSize_Click(object sender, RoutedEventArgs e)
+        {
+            var printer = RememberedPrinter;
+            var (ok, msg) = eCheque.MICO360.Helpers.PaperForms.EnsureChequeForm(printer, _profile.ChequeWidth, _profile.ChequeHeight);
+            if (ok)
+            {
+                MessageBox.Show(msg + "\n\nIf the printer supports custom forms, the cheque size will now appear in its paper list. Re-check below.",
+                    "Paper Size", MessageBoxButton.OK, MessageBoxImage.Information);
+                UpdatePaperCheck();
+            }
+            else
+            {
+                MessageBox.Show(msg, "Paper Size", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            DatabaseService.LogAudit(AuthService.CurrentUser?.Username ?? "SYSTEM", "Create Paper Form",
+                eCheque.MICO360.Helpers.PaperForms.FormNameFor(_profile.ChequeWidth, _profile.ChequeHeight), msg);
         }
 
         // ───────────── remembered printer + paper-size trust check ─────────────
@@ -77,7 +118,7 @@ namespace eCheque.MICO360.Views
                 }
                 else
                 {
-                    TxtPaperCheck.Text = $"⚠ {name} — cannot use {_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm; it will substitute {r.Wmm:0}×{r.Hmm:0} mm. Content still prints at actual size (top-left), but verify with a plain-paper test first.";
+                    TxtPaperCheck.Text = $"⚠ {name} — cannot use {_profile.ChequeWidth:0}×{_profile.ChequeHeight:0} mm; it will substitute {r.Wmm:0}×{r.Hmm:0} mm. The cheque still prints at actual size, shifted to the paper-feed position below — try \"Create Windows paper size\", then verify with a plain-paper test.";
                     TxtPaperCheck.Foreground = new SolidColorBrush(Color.FromRgb(0xB2, 0x6A, 0x00));
                 }
             }

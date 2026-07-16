@@ -145,11 +145,40 @@ namespace eCheque.MICO360.Helpers
             return SelectChequeMedia(dlg, widthMm, heightMm);
         }
 
+        // ─────────────────────── paper-feed position (per-PC) ───────────────────────
+
+        /// <summary>Where the cheque leaf physically sits in the tray when the driver substitutes a larger
+        /// page (e.g. A4): Left, Center or Right. Device-local — trays differ per printer/PC.</summary>
+        public const string LocalFeedAlignKey = "Local_FeedAlign";
+
+        /// <summary>Horizontal offset (DIP) that moves 1:1 content to where the leaf actually sits on a
+        /// substituted larger page. Left→0, Center→(page−content)/2, Right→page−content; 0 when the page
+        /// isn't wider than the content. Pure and testable.</summary>
+        public static double AnchorOffsetDip(string? align, double pageWdip, double contentWdip)
+        {
+            double slack = pageWdip - contentWdip;
+            if (slack <= 0) return 0;
+            return (align ?? "").Trim().ToLowerInvariant() switch
+            {
+                "center" or "centre" => slack / 2.0,
+                "right" => slack,
+                _ => 0, // Left (default): leaf against the left guide = page origin
+            };
+        }
+
+        static string FeedAlignSetting()
+        {
+            try { return Services.DatabaseService.GetSetting(LocalFeedAlignKey, "Left"); }
+            catch { return "Left"; } // printing before a DB is open (never in practice) — assume Left
+        }
+
         /// <summary>
-        /// Prints the content at real size (1:1) anchored top-left of the given page size; if the content is
-        /// larger than the page it is scaled down uniformly to fit (never scaled up). The page size is passed
-        /// in explicitly (from the validated print ticket) — dlg.PrintableArea* is NOT read, because WPF does
-        /// not refresh it after a PrintTicket is reassigned post-ShowDialog.
+        /// Prints the content at real size (1:1); if the content is larger than the page it is scaled down
+        /// uniformly to fit (never scaled up). The page size is passed in explicitly (from the validated print
+        /// ticket) — dlg.PrintableArea* is NOT read, because WPF does not refresh it after a PrintTicket is
+        /// reassigned post-ShowDialog. When the driver substituted a WIDER page than the cheque (e.g. A4 for a
+        /// 190×85 leaf), the content is shifted horizontally per this PC's paper-feed setting (Left/Center/
+        /// Right) so it lands where the leaf physically sits in the tray.
         /// </summary>
         public static void PrintActualSize(System.Windows.Controls.PrintDialog dlg, FrameworkElement content,
             double w, double h, double pageWdip, double pageHdip, string description)
@@ -163,6 +192,20 @@ namespace eCheque.MICO360.Helpers
 
             if (w <= aw + 0.5 && h <= ah + 0.5)
             {
+                double offX = AnchorOffsetDip(FeedAlignSetting(), aw, w);
+                if (offX > 0.5)
+                {
+                    // Wrap in a page-sized canvas with the content moved to the leaf's real position.
+                    var page = new System.Windows.Controls.Canvas { Width = aw, Height = ah };
+                    System.Windows.Controls.Canvas.SetLeft(content, offX);
+                    System.Windows.Controls.Canvas.SetTop(content, 0);
+                    page.Children.Add(content);
+                    page.Measure(new Size(aw, ah));
+                    page.Arrange(new Rect(0, 0, aw, ah));
+                    page.UpdateLayout();
+                    dlg.PrintVisual(page, description);
+                    return;
+                }
                 dlg.PrintVisual(content, description); // true 1:1, anchored top-left
                 return;
             }
