@@ -69,22 +69,20 @@ namespace eCheque.MICO360.Services
             info.Mandatory = body.Contains("[mandatory]", StringComparison.OrdinalIgnoreCase)
                           || body.Contains("mandatory: true", StringComparison.OrdinalIgnoreCase);
 
-            // Pick the Windows installer (Setup*.exe) as the update package; capture its .sha256 companion.
-            string shaFromAsset = "";
+            // Pick the CLIENT installer and ITS OWN .sha256 companion. Releases carry two installers
+            // (client + server); the selection must be order-independent and pair by exact name, or the
+            // client download gets verified against the server's hash and reports "corrupted".
+            var list = new List<(string Name, string Url, long Size)>();
             if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
-            {
                 foreach (var a in assets.EnumerateArray())
-                {
-                    var name = a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
-                    var url  = a.TryGetProperty("browser_download_url", out var u) ? u.GetString() ?? "" : "";
-                    var size = a.TryGetProperty("size", out var s) ? s.GetInt64() : 0;
-                    if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && name.Contains("Setup", StringComparison.OrdinalIgnoreCase)
-                        && string.IsNullOrEmpty(info.DownloadUrl))
-                    { info.DownloadUrl = url; info.AssetName = name; info.SizeBytes = size; }
-                    else if (name.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(url))
-                    { try { shaFromAsset = (await Http.GetStringAsync(url)).Trim().Split(' ')[0]; } catch { } }
-                }
-            }
+                    list.Add((a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
+                              a.TryGetProperty("browser_download_url", out var u) ? u.GetString() ?? "" : "",
+                              a.TryGetProperty("size", out var s) ? s.GetInt64() : 0));
+
+            var shaUrl = SelectClientPackage(info, list);
+            string shaFromAsset = "";
+            if (!string.IsNullOrEmpty(shaUrl))
+                try { shaFromAsset = (await Http.GetStringAsync(shaUrl)).Trim().Split(' ')[0]; } catch { }
 
             // Fallback: a "SHA256: <hash>" line in the release notes.
             if (string.IsNullOrEmpty(shaFromAsset))
@@ -101,6 +99,28 @@ namespace eCheque.MICO360.Services
             info.UpdateAvailable = !string.IsNullOrEmpty(info.DownloadUrl) && IsNewer(info.LatestVersion, info.CurrentVersion);
             Log($"Latest version {info.LatestVersion}. Update available: {info.UpdateAvailable}. Mandatory: {info.Mandatory}. Asset: {info.AssetName}");
             return info;
+        }
+
+        /// <summary>
+        /// Chooses the desktop-app installer from a release's assets and returns the URL of ITS matching
+        /// .sha256 companion ("" if none). The client asset is a Setup*.exe that is NOT the server installer;
+        /// the checksum is paired by exact file name ("&lt;asset&gt;.sha256"), never by position, so asset order
+        /// on the release can never mismatch the hash. Pure and testable.
+        /// </summary>
+        public static string SelectClientPackage(UpdateInfo info, IReadOnlyList<(string Name, string Url, long Size)> assets)
+        {
+            foreach (var a in assets)
+            {
+                if (!a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) continue;
+                if (!a.Name.Contains("Setup", StringComparison.OrdinalIgnoreCase)) continue;
+                if (a.Name.Contains("Server", StringComparison.OrdinalIgnoreCase)) continue; // server installer — not an app update
+                info.DownloadUrl = a.Url; info.AssetName = a.Name; info.SizeBytes = a.Size;
+                foreach (var s in assets)
+                    if (string.Equals(s.Name, a.Name + ".sha256", StringComparison.OrdinalIgnoreCase))
+                        return s.Url;
+                return "";
+            }
+            return "";
         }
 
         /// <summary>True if <paramref name="latest"/> is a strictly higher version than <paramref name="current"/>.</summary>

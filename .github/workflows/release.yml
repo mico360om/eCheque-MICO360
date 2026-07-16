@@ -103,8 +103,11 @@ jobs:
             SHA256: ${{ steps.server.outputs.sha256 }}
 
             <!-- Add [mandatory] anywhere in these notes to force the update. -->
+          # Asset ORDER matters for updaters <= 1.2.0 in the field: they take the FIRST Setup*.exe and the
+          # LAST .sha256. Keeping the client exe first and the client .sha256 last lets those old versions
+          # still self-update correctly. Updaters > 1.2.0 pair hash-to-exe by exact name (order-independent).
           files: |
             ${{ steps.installer.outputs.setup }}
-            ${{ steps.installer.outputs.setup }}.sha256
             ${{ steps.server.outputs.setup }}
             ${{ steps.server.outputs.setup }}.sha256
+            ${{ steps.installer.outputs.setup }}.sha256
