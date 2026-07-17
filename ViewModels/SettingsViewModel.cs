@@ -9,7 +9,7 @@ namespace eCheque.MICO360.ViewModels
         string _currencyWording="Omani Rials",_baisaWording="Baisa"; bool _includeBaisa=true,_addOnly=true;
         string _mjKey="",_mjSecret="",_mjFrom="",_mjFromName="eCheque MICO360";
         bool _pdcEnabled; string _pdcEmail="",_pdcFreq="Weekly",_pdcWa=""; int _pdcLook=7;
-        bool _syncEnabled; string _syncUrl="",_syncStatus=""; bool _sendingReminder,_sendingTest; // re-entrancy guards: double-click must not send twice
+        bool _syncEnabled; string _syncUrl="",_syncStatus="",_syncEnroll=""; bool _sendingReminder,_sendingTest; // re-entrancy guards: double-click must not send twice
         string _testEmail="";
         static readonly (string Label,int Days)[] Freqs={("Daily",1),("Every 3 days",3),("Weekly",7),("Every 2 weeks",14),("Monthly",30)};
         static int FreqDays(string label){var m=Freqs.FirstOrDefault(f=>f.Label==label);return m.Days==0?7:m.Days;}
@@ -22,6 +22,8 @@ namespace eCheque.MICO360.ViewModels
         public List<string> ReminderFrequencies{get;}=new(){"Daily","Every 3 days","Weekly","Every 2 weeks","Monthly"};
         public bool SyncEnabled{get=>_syncEnabled;set=>Set(ref _syncEnabled,value);}
         public string SyncServerUrl{get=>_syncUrl;set=>Set(ref _syncUrl,value);}
+        /// <summary>Enrollment secret typed at connect time. Used once for registration, never persisted.</summary>
+        public string SyncEnrollSecret{get=>_syncEnroll;set=>Set(ref _syncEnroll,value);}
         public string SyncStatus{get=>_syncStatus;set=>Set(ref _syncStatus,value);}
         public string TestEmailAddress{get=>_testEmail;set=>Set(ref _testEmail,value);}
         public string MailjetApiKey{get=>_mjKey;set=>Set(ref _mjKey,value);}
@@ -53,7 +55,7 @@ namespace eCheque.MICO360.ViewModels
         public ICommand SyncNowCommand{get;}
         public ICommand SendTestEmailCommand{get;}
         public SettingsViewModel(){SaveCommand=new RelayCommand(Save);BackupCommand=new RelayCommand(DoBackup);RestoreCommand=new RelayCommand(DoRestore);BrowsePdfCommand=new RelayCommand(BrowsePdf);BrowseBackupCommand=new RelayCommand(BrowseBackup);OpenLogCommand=new RelayCommand(BugReportService.OpenLog);SendReminderNowCommand=new RelayCommand(async()=>{if(_sendingReminder)return;_sendingReminder=true;try{PersistReminder();StatusMessage="Sending reminder…";StatusMessage=await PdcReminderService.SendNowAsync();}catch(Exception ex){StatusMessage="Reminder error: "+ex.Message;}finally{_sendingReminder=false;}});SendWhatsAppReminderCommand=new RelayCommand(()=>{try{PersistReminder();var(url,msg)=PdcReminderService.BuildWhatsAppReminder();if(url==null){StatusMessage=msg;return;}System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url){UseShellExecute=true});StatusMessage="Opening WhatsApp — review the message and tap Send.";}catch(Exception ex){StatusMessage="WhatsApp error: "+ex.Message;}});
-            ConnectSyncCommand=new RelayCommand(async()=>{try{SyncStatus="Connecting…";SyncStatus=await SyncService.RegisterAsync(SyncServerUrl);}catch(Exception ex){SyncStatus="Error: "+ex.Message;}});
+            ConnectSyncCommand=new RelayCommand(async()=>{try{SyncStatus="Connecting…";SyncStatus=await SyncService.RegisterAsync(SyncServerUrl,SyncEnrollSecret);SyncEnrollSecret="";}catch(Exception ex){SyncStatus="Error: "+ex.Message;}});
             SyncNowCommand=new RelayCommand(async()=>{try{SyncService.ServerUrl=SyncServerUrl;SyncService.Enabled=SyncEnabled;if(!SyncService.IsRegistered){SyncStatus="Connect this PC first (enter the server URL, then Connect).";return;}SyncStatus="Syncing…";var r=await SyncService.SyncOnceAsync();SyncStatus=r.ToString();}catch(Exception ex){SyncStatus="Error: "+ex.Message;}});
             SendTestEmailCommand=new RelayCommand(async()=>{if(_sendingTest)return;_sendingTest=true;try{
                 PersistMailjet(); // use what's typed in the form, no separate Save needed

@@ -92,7 +92,20 @@ namespace eCheque.MICO360.Services
                 }
                 File.Delete(path);
                 File.Move(tmp, path);
-                Log($"Migration complete: {Path.GetFileName(path)}");
+
+                // Verify the encrypted DB opens with our key, THEN destroy the plaintext backup. Leaving a
+                // .plainbak next to the encrypted file would defeat at-rest encryption for anyone with disk
+                // access. Only if verification fails do we keep the backup (so data is never lost).
+                if (CanOpen(path, _key))
+                {
+                    ShredAndDelete(path + ".plainbak");
+                    Log($"Migration complete (plaintext backup destroyed): {Path.GetFileName(path)}");
+                }
+                else
+                {
+                    Log($"Migration produced an unreadable encrypted DB for {Path.GetFileName(path)}; keeping .plainbak for recovery.");
+                    return false;
+                }
                 return true;
             }
             catch (Exception ex) { Log($"Migration error for {Path.GetFileName(path)}: {ex.Message}"); return false; }
@@ -111,6 +124,36 @@ namespace eCheque.MICO360.Services
             var enc = ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes(keyHex), null, DataProtectionScope.CurrentUser);
             File.WriteAllBytes(KeyFile, enc);
             return keyHex;
+        }
+
+        /// <summary>Overwrites a file with random bytes before deleting, so the plaintext is not trivially
+        /// recoverable. Best-effort (SSD wear-levelling limits guarantees) — deletion still happens if overwrite fails.</summary>
+        static void ShredAndDelete(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return;
+                try
+                {
+                    var len = new FileInfo(path).Length;
+                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.None))
+                    {
+                        var buf = new byte[81920];
+                        long written = 0;
+                        while (written < len)
+                        {
+                            RandomNumberGenerator.Fill(buf);
+                            int n = (int)Math.Min(buf.Length, len - written);
+                            fs.Write(buf, 0, n);
+                            written += n;
+                        }
+                        fs.Flush(true);
+                    }
+                }
+                catch { /* overwrite failed — still delete below */ }
+                File.Delete(path);
+            }
+            catch (Exception ex) { Log($"Could not remove plaintext backup {Path.GetFileName(path)}: {ex.Message}"); }
         }
 
         static void Log(string message)

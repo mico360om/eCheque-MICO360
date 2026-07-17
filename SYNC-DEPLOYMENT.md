@@ -91,11 +91,17 @@ The server speaks plain HTTP by default. For production put **HTTPS** in front, 
 
 Clients then use the `https://…` URL. **Never send cheque data over plain HTTP across the internet.**
 
-### 3.5 Firewall & backups
+### 3.5 Enrollment secret, firewall & backups
 
-- **Because there is no organisation key, the firewall is your access control.** Open the port **only** to
-  your known client IPs (an allowlist), not to the whole internet — otherwise anyone who finds the port can
-  register a device and sync your data.
+- **Set an enrollment secret** (the installer prompts for it, or set `ECHEQUE_REGISTER_SECRET` in
+  `echeque.server.json` and restart the service). When set, a PC must present the exact secret the first time
+  it connects, so reaching `/api/register` is **not** enough to obtain a token. This is defence-in-depth on top
+  of the firewall — strongly recommended on a public IP. Distribute the secret to your operators out-of-band
+  (not in email/chat). The startup banner prints whether enrollment is PROTECTED or OPEN.
+- **The firewall is still your primary access control.** Open the port **only** to your known client IPs (an
+  allowlist), not to the whole internet.
+- **On plain HTTP the secret, tokens and cheque data cross the wire in cleartext.** Use TLS (§3.4) for anything
+  beyond a fully trusted, isolated network.
 - The whole server state is the single `server.db` file — back it up on a schedule (it is WAL-mode SQLite;
   copy `server.db`, `server.db-wal`, `server.db-shm` together, or stop the service first).
 

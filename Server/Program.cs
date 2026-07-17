@@ -30,6 +30,10 @@ builder.Services.AddSingleton<IServerStore>(store);
 
 string appVersion = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
 
+// Optional enrollment secret: when set, /api/register requires a matching secret so that merely reaching the
+// endpoint (e.g. through a firewall gap) is not enough to obtain a device token. Empty = open registration.
+string registerSecret = (builder.Configuration["ECHEQUE_REGISTER_SECRET"] ?? "").Trim();
+
 var app = builder.Build();
 
 // --- helpers ---------------------------------------------------------------
@@ -58,9 +62,17 @@ app.MapGet("/api/health", () => Results.Ok(new HealthResponse
 }));
 
 // Device registration: single-organisation server, so a PC just gets its own bearer token.
-// (Restrict who can reach this endpoint at the network layer — TLS + firewall allowlist.)
+// Defence in depth: network controls (TLS + firewall allowlist) AND, when configured, an enrollment secret.
 app.MapPost("/api/register", (RegisterRequest req, IServerStore s) =>
 {
+    if (registerSecret.Length > 0)
+    {
+        var provided = System.Text.Encoding.UTF8.GetBytes(req.EnrollSecret ?? "");
+        var expected = System.Text.Encoding.UTF8.GetBytes(registerSecret);
+        // Constant-time compare — never leak the secret's length/content through response timing.
+        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(provided, expected))
+            return Results.Unauthorized();
+    }
     var (deviceId, token) = s.RegisterDevice(req.DeviceName, req.MachineId);
     return Results.Ok(new RegisterResponse { DeviceId = deviceId, Token = token });
 });
@@ -89,6 +101,9 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Console.WriteLine();
     Console.WriteLine("  eCheque MICO360 Sync Server " + appVersion);
     Console.WriteLine("  DB   : " + dbPath);
+    Console.WriteLine(registerSecret.Length > 0
+        ? "  Enrollment: PROTECTED by a registration secret."
+        : "  Enrollment: OPEN — anyone who can reach /api/register can enrol. Set ECHEQUE_REGISTER_SECRET to require a secret.");
     Console.WriteLine("  Single-organisation server — clients connect by URL only. Restrict access with TLS + firewall.");
     Console.WriteLine();
 });

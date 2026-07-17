@@ -7,7 +7,7 @@
 #define MyAppExeName "eCheque.MICO360.exe"
 #define MyAppURL "https://github.com/mico360om/eCheque-MICO360"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.2.2"
+  #define MyAppVersion "1.2.3"
 #endif
 
 [Setup]

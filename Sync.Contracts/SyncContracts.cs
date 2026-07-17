@@ -86,11 +86,14 @@ namespace eCheque.MICO360.Sync.Contracts
         public string? Message { get; set; }
     }
 
-    /// <summary>Device registration — a PC gets its own bearer token. Single-organisation server, so no key.</summary>
+    /// <summary>Device registration — a PC gets its own bearer token. Single-organisation server.</summary>
     public sealed class RegisterRequest
     {
         public string DeviceName { get; set; } = "";
         public string MachineId { get; set; } = "";       // stable per-PC id so re-registration is idempotent
+        /// <summary>Shared enrollment secret. Required only when the server is configured with one
+        /// (ECHEQUE_REGISTER_SECRET) — a defence-in-depth gate so reaching the endpoint is not enough to enrol.</summary>
+        public string? EnrollSecret { get; set; }
     }
 
     public sealed class RegisterResponse

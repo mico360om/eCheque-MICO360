@@ -7,7 +7,7 @@
 #define SvcName "eChequeSync"
 #define AppPublisher "MICO360 Softwares"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.2.2"
+  #define MyAppVersion "1.2.3"
 #endif
 
 [Setup]
@@ -43,9 +43,10 @@ procedure InitializeWizard;
 begin
   CfgPage := CreateInputQueryPage(wpSelectDir,
     'Server Configuration',
-    'Set the port this server listens on.',
-    'Clients connect to this server by its URL (http://<this-server>:<port>). Single-organisation server — no key needed.');
+    'Set the port and (recommended) an enrollment secret.',
+    'Clients connect by URL (http://<this-server>:<port>). The enrollment secret is required from each PC the first time it connects — leave it blank for open enrollment (not recommended on a public IP).');
   CfgPage.Add('Port:', False);
+  CfgPage.Add('Enrollment secret (recommended):', False);
   CfgPage.Values[0] := '5210';
 end;
 
@@ -53,6 +54,19 @@ function PortValue: String;
 begin
   Result := Trim(CfgPage.Values[0]);
   if Result = '' then Result := '5210';
+end;
+
+function SecretValue: String;
+begin
+  Result := Trim(CfgPage.Values[1]);
+end;
+
+{ Escapes backslashes and double-quotes for safe embedding in a JSON string. }
+function JsonEscape(S: String): String;
+begin
+  StringChangeEx(S, '\', '\\', True);
+  StringChangeEx(S, '"', '\"', True);
+  Result := S;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -76,6 +90,7 @@ begin
   JsonStr :=
     '{' + #13#10 +
     '  "ECHEQUE_SERVER_DB": "' + DbPath + '",' + #13#10 +
+    '  "ECHEQUE_REGISTER_SECRET": "' + JsonEscape(SecretValue) + '",' + #13#10 +
     '  "Urls": "http://0.0.0.0:' + Port + '"' + #13#10 +
     '}';
   SaveStringToFile(ExpandConstant('{app}\echeque.server.json'), JsonStr, False);

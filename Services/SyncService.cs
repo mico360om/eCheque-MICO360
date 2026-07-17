@@ -34,14 +34,15 @@ namespace eCheque.MICO360.Services
         static string DeviceId  { get => CompanyService.GetMasterSetting("Sync_DeviceId", "");  set => CompanyService.SetMasterSetting("Sync_DeviceId", value); }
         public static bool IsRegistered => !string.IsNullOrEmpty(Token);
 
-        /// <summary>Register this PC with the server (get a device token). Returns a user message.</summary>
-        public static async Task<string> RegisterAsync(string url)
+        /// <summary>Register this PC with the server (get a device token). The enrollment secret is required only
+        /// if the server was configured with one; it is used once here and never stored. Returns a user message.</summary>
+        public static async Task<string> RegisterAsync(string url, string? enrollSecret = null)
         {
             url = (url ?? "").Trim();
             if (string.IsNullOrWhiteSpace(url)) return "Enter the server URL first.";
             var resp = await SyncClient.RegisterAsync(Http, url,
-                new RegisterRequest { DeviceName = Environment.MachineName, MachineId = MachineId() });
-            if (resp == null) return "Could not connect / register — check the server URL.";
+                new RegisterRequest { DeviceName = Environment.MachineName, MachineId = MachineId(), EnrollSecret = (enrollSecret ?? "").Trim() });
+            if (resp == null) return "Could not register — check the server URL and the enrollment secret (if the server requires one).";
             ServerUrl = url; Token = resp.Token; DeviceId = resp.DeviceId;
             return "Connected. This PC is registered with the sync server.";
         }

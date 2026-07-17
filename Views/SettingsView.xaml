@@ -156,6 +156,11 @@
                         <TextBlock Text="Server URL" Style="{StaticResource FieldLabel}"/>
                         <TextBox Style="{StaticResource InputBox}" Text="{Binding SyncServerUrl}" ToolTip="e.g. https://sync.mycompany.com:5210"/>
                     </StackPanel>
+                    <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="Enrollment secret (only if the server requires one)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding SyncEnrollSecret}"
+                                 ToolTip="The registration secret set when the sync server was installed. Used once to connect this PC; not stored."/>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="🔗  Connect this PC" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
                                 Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding ConnectSyncCommand}"/>

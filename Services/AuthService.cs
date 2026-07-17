@@ -250,7 +250,10 @@ namespace eCheque.MICO360.Services
             var actor = CurrentUser?.Username ?? "SYSTEM";
             if (user.Id == 0)
             {
-                var h = BCrypt.Net.BCrypt.HashPassword(plainPassword ?? "Change@123");
+                // Never fall back to a fixed, known password. If a caller omits one, generate a strong random
+                // password that nobody knows — the account can only be accessed after an admin password reset
+                // or an email OTP. (The UI already requires a password for new users; this guards direct calls.)
+                var h = BCrypt.Net.BCrypt.HashPassword(string.IsNullOrEmpty(plainPassword) ? RandomPassword() : plainPassword);
                 using var cmd = new SqliteCommand(
                     "INSERT INTO Users(Username,PasswordHash,FullName,Email,Role,IsActive,CreatedDate,FailedLoginAttempts)VALUES(@u,@h,@fn,@e,@r,@a,@d,0)", conn);
                 cmd.Parameters.AddWithValue("@u", user.Username); cmd.Parameters.AddWithValue("@h", h);
@@ -304,6 +307,16 @@ namespace eCheque.MICO360.Services
             u.Parameters.AddWithValue("@id", userId); u.ExecuteNonQuery();
             CompanyService.MasterAudit(CurrentUser?.Username ?? "SYSTEM", "Password Changed", userId.ToString());
             return true;
+        }
+
+        /// <summary>A 24-char cryptographically-random password used only when a new user is created without
+        /// one — it is intentionally unknowable, forcing an admin reset or OTP before the account can be used.</summary>
+        static string RandomPassword()
+        {
+            const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var chars = new char[24];
+            for (int i = 0; i < chars.Length; i++) chars[i] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
+            return new string(chars);
         }
 
         public static void UnlockUser(int userId)
