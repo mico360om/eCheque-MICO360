@@ -26,15 +26,22 @@
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="🖼 Upload Cheque Image" Click="BtnUpload_Click" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Upload a scanned cheque as a positioning guide — never printed (max 4 MB)."
                             Foreground="White" BorderBrush="#666" Padding="10,5" Margin="0,0,6,0"/>
                     <Button Content="✕ Remove" Click="BtnRemoveImage_Click" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Remove the background cheque image."
                             Foreground="White" BorderBrush="#666" Padding="8,5" Margin="0,0,12,0"/>
-                    <Button Content="−" Click="BtnZoomOut_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,4,0"/>
+                    <Button Content="−" Click="BtnZoomOut_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,4,0"
+                            ToolTip="Zoom out."/>
                     <TextBlock x:Name="TxtZoom" Text="100%" Foreground="White" FontSize="12" VerticalAlignment="Center" MinWidth="42" TextAlignment="Center"/>
-                    <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="4,0,4,0"/>
-                    <Button Content="Fit" Click="BtnFit_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,12,0"/>
-                    <CheckBox x:Name="ChkGrid" Content="Grid" Foreground="White" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,0" Click="ChkGrid_Click"/>
-                    <Button Content="🖨 Test Print" Click="BtnTestPrint_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5" Margin="0,0,4,0"/>
+                    <Button Content="+" Click="BtnZoomIn_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="4,0,4,0"
+                            ToolTip="Zoom in."/>
+                    <Button Content="Fit" Click="BtnFit_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,3" Margin="0,0,12,0"
+                            ToolTip="Fit the whole cheque within the window."/>
+                    <CheckBox x:Name="ChkGrid" Content="Grid" Foreground="White" IsChecked="True" VerticalAlignment="Center" Margin="0,0,12,0" Click="ChkGrid_Click"
+                              ToolTip="Show or hide the 10 mm alignment grid."/>
+                    <Button Content="🖨 Test Print" Click="BtnTestPrint_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5" Margin="0,0,4,0"
+                            ToolTip="Print sample data at these positions to check alignment on a cheque."/>
                     <Button Content="📐 Calibration Sheet" Click="BtnCalibrate_Click" Style="{StaticResource SecondaryBtn}" Foreground="White" BorderBrush="#666" Padding="10,5"
                             ToolTip="Print a ruler + crosshair sheet. Lay it over a real cheque to measure and correct the print offset."/>
                 </StackPanel>
@@ -70,17 +77,21 @@
                             <!-- Add field -->
                             <TextBlock Text="Fields on cheque" Style="{StaticResource FieldLabel}"/>
                             <ListBox x:Name="LstFields" Height="150" Margin="0,0,0,10" SelectionChanged="LstFields_SelectionChanged"
+                                     ToolTip="Fields placed on the cheque — select one to edit or drag it on the canvas."
                                      DisplayMemberPath="Label" BorderBrush="#DDD" BorderThickness="1"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <ComboBox x:Name="CmbAddField" Width="150" Margin="0,0,6,0" FontSize="12"/>
-                                <Button Content="+ Add" Click="BtnAddField_Click" Style="{StaticResource SecondaryBtn}" Padding="10,4" FontSize="12"/>
+                                <ComboBox x:Name="CmbAddField" Width="150" Margin="0,0,6,0" FontSize="12"
+                                          ToolTip="Choose a field to add to the cheque."/>
+                                <Button Content="+ Add" Click="BtnAddField_Click" Style="{StaticResource SecondaryBtn}" Padding="10,4" FontSize="12"
+                                        ToolTip="Add the selected field to the cheque."/>
                             </StackPanel>
 
                             <Border Height="1" Background="#EEE" Margin="0,0,0,12"/>
 
                             <!-- Selected field editor -->
                             <StackPanel x:Name="PanelProps" IsEnabled="False">
-                                <CheckBox x:Name="ChkEnabled" Content="Print this field" Margin="0,0,0,10" Click="Prop_Changed"/>
+                                <CheckBox x:Name="ChkEnabled" Content="Print this field" Margin="0,0,0,10" Click="Prop_Changed"
+                                          ToolTip="Include this field when the cheque is printed."/>
                                 <TextBlock Text="Label / Custom text" Style="{StaticResource FieldLabel}"/>
                                 <TextBox x:Name="TxtLabel" Style="{StaticResource InputBox}" Margin="0,0,0,10" TextChanged="Prop_Changed"/>
                                 <TextBlock Text="Font family" Style="{StaticResource FieldLabel}"/>
@@ -113,6 +124,7 @@
                                     </StackPanel>
                                 </Grid>
                                 <Button x:Name="BtnDeleteField" Content="🗑  Remove this field  (Del)" Click="BtnDeleteField_Click"
+                                        ToolTip="Remove the selected field from the layout (Del)."
                                         Style="{StaticResource SecondaryBtn}" Foreground="#CC2020" BorderBrush="#CC2020" HorizontalAlignment="Left"/>
                             </StackPanel>
                         </StackPanel>
@@ -130,10 +142,13 @@
         <!-- Action buttons -->
         <Border Grid.Row="3" Background="#F5F5F5" Padding="16,10">
             <DockPanel>
-                <Button DockPanel.Dock="Left" Content="Reset to Defaults" Style="{StaticResource SecondaryBtn}" Click="BtnReset_Click" Padding="14,7"/>
+                <Button DockPanel.Dock="Left" Content="Reset to Defaults" Style="{StaticResource SecondaryBtn}" Click="BtnReset_Click" Padding="14,7"
+                        ToolTip="Restore all fields to the default layout — discards your positions."/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0" Click="BtnCancel_Click"/>
-                    <Button Content="💾 Save Layout" Style="{StaticResource PrimaryBtn}" Click="BtnSave_Click"/>
+                    <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0" Click="BtnCancel_Click"
+                            ToolTip="Discard layout changes and close without saving."/>
+                    <Button Content="💾 Save Layout" Style="{StaticResource PrimaryBtn}" Click="BtnSave_Click"
+                            ToolTip="Save the field layout to this profile."/>
                 </StackPanel>
             </DockPanel>
         </Border>

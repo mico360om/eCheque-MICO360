@@ -315,6 +315,39 @@ namespace eCheque.MICO360.Services
             return cmd.ExecuteScalar() as string;
         }
 
+        /// <summary>
+        /// Cheque numbers used by more than one live (non-cancelled/void) cheque on the same bank. Because sync
+        /// identity is a per-row GUID and two offline PCs can each issue the same leaf, a collision can only be
+        /// DETECTED after sync, not prevented. Surfaced as a warning so a duplicate leaf is never printed twice
+        /// unnoticed. Returns (number, bank, count) per collision, worst first.
+        /// </summary>
+        public static List<(string Number, string Bank, int Count)> FindDuplicateChequeNumbers()
+        {
+            var list = new List<(string, string, int)>();
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SqliteCommand(
+                @"SELECT ChequeNumber, BankName, COUNT(*) AS c
+                  FROM ChequeRecords
+                  WHERE Status NOT IN('Cancelled','Void') AND ChequeNumber <> ''
+                  GROUP BY ChequeNumber, BankName HAVING c > 1
+                  ORDER BY c DESC, ChequeNumber", conn);
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+                list.Add((r.IsDBNull(0) ? "" : r.GetString(0), r.IsDBNull(1) ? "" : r.GetString(1), r.GetInt32(2)));
+            return list;
+        }
+
+        /// <summary>How many cheque numbers are duplicated across live cheques (0 = none). Cheap COUNT for badges.</summary>
+        public static int DuplicateChequeCount()
+        {
+            using var conn = DatabaseService.GetConnection();
+            using var cmd = new SqliteCommand(
+                @"SELECT COUNT(*) FROM (SELECT 1 FROM ChequeRecords
+                  WHERE Status NOT IN('Cancelled','Void') AND ChequeNumber <> ''
+                  GROUP BY ChequeNumber, BankName HAVING COUNT(*) > 1)", conn);
+            return Convert.ToInt32(cmd.ExecuteScalar());
+        }
+
         /// <summary>Remembers a payee for reuse in the autocomplete (upsert with last-used timestamp).</summary>
         public static void SavePayee(string name)
         {

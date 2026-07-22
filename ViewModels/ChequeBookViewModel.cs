@@ -34,6 +34,11 @@ namespace eCheque.MICO360.ViewModels
             set { Set(ref _selected, value); IsEditing = false; RecomputeStats(); OnPropertyChanged(nameof(ShowDetail)); }
         }
 
+        string _dupWarning = "";
+        /// <summary>Cross-PC duplicate cheque numbers detected after sync (empty when none). Advisory banner.</summary>
+        public string DuplicateWarning { get => _dupWarning; set { Set(ref _dupWarning, value); OnPropertyChanged(nameof(HasDuplicateWarning)); } }
+        public bool HasDuplicateWarning => !string.IsNullOrEmpty(_dupWarning);
+
         public ChequeBookStats? Stats { get => _stats; set => Set(ref _stats, value); }
         public string UsageText => _stats == null ? "" :
             $"Total {_stats.Total}   ·   Used {_stats.Used}   ·   Spoiled {_stats.Spoiled}   ·   Remaining {_stats.Remaining}";
@@ -65,6 +70,11 @@ namespace eCheque.MICO360.ViewModels
             Books = new ObservableCollection<ChequeBook>(ChequeBookService.GetBooks());
             Banks = new ObservableCollection<string>(ChequeService.GetBanks());
             Selected = Books.FirstOrDefault(b => b.Id == sel) ?? Books.FirstOrDefault();
+            var dups = ChequeService.FindDuplicateChequeNumbers();
+            DuplicateWarning = dups.Count == 0 ? "" :
+                "⚠ Duplicate cheque number(s) detected (same number used more than once — can happen when two PCs issue offline): "
+                + string.Join(", ", dups.Take(8).Select(d => $"#{d.Number} ({d.Bank}) ×{d.Count}"))
+                + (dups.Count > 8 ? " …" : "") + ". Review in Cheque History and cancel the wrong one.";
             StatusMessage = "";
         }
 

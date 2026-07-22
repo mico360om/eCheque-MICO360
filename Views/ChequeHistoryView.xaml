@@ -22,27 +22,32 @@
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="Search" Style="{StaticResource FieldLabel}"/>
                         <TextBox Style="{StaticResource InputBox}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
-                                 x:Name="TxtSearch"/>
+                                 x:Name="TxtSearch"
+                                 ToolTip="Filter by cheque number, payee, or bank"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,10,0">
                         <TextBlock Text="Status" Style="{StaticResource FieldLabel}"/>
                         <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Statuses}"
-                                  SelectedItem="{Binding StatusFilter}"/>
+                                  SelectedItem="{Binding StatusFilter}"
+                                  ToolTip="Show only cheques with this status"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="0,0,10,0">
                         <TextBlock Text="From Date" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker SelectedDate="{Binding From}" FontSize="13" Padding="6,5"/>
+                        <DatePicker SelectedDate="{Binding From}" FontSize="13" Padding="6,5"
+                                    ToolTip="Show cheques dated on or after this date"/>
                     </StackPanel>
                     <StackPanel Grid.Column="3" Margin="0,0,10,0">
                         <TextBlock Text="To Date" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker SelectedDate="{Binding To}" FontSize="13" Padding="6,5"/>
+                        <DatePicker SelectedDate="{Binding To}" FontSize="13" Padding="6,5"
+                                    ToolTip="Show cheques dated on or before this date"/>
                     </StackPanel>
                     <StackPanel Grid.Column="4" VerticalAlignment="Bottom" Orientation="Horizontal">
                         <Button Content="🖨  Print Selected" Style="{StaticResource PrimaryBtn}" Padding="12,7" FontSize="12"
                                 Margin="0,0,8,0" Click="BtnPrintSelected_Click"
                                 ToolTip="Select rows with Ctrl/Shift-click, then print them all at once"/>
                         <Button Content="Export Excel" Style="{StaticResource SecondaryBtn}"
-                                Command="{Binding ExportCommand}"/>
+                                Command="{Binding ExportCommand}"
+                                ToolTip="Export the current filtered list to Excel"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
@@ -56,7 +61,8 @@
                     Padding="14,10" Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Content="↻  Retry" Style="{StaticResource SecondaryBtn}"
-                            Padding="12,5" FontSize="12" Command="{Binding RefreshCommand}"/>
+                            Padding="12,5" FontSize="12" Command="{Binding RefreshCommand}"
+                            ToolTip="Reload the cheque list"/>
                     <TextBlock Text="{Binding LoadError}" Foreground="#B00020" FontSize="12"
                                VerticalAlignment="Center" TextWrapping="Wrap"/>
                 </DockPanel>
@@ -96,18 +102,22 @@
                                 <StackPanel Orientation="Horizontal" Margin="4,2">
                                     <Button Content="Print" Style="{StaticResource PrimaryBtn}" Padding="8,3" Margin="0,0,4,0" FontSize="11"
                                             Command="{Binding DataContext.PrintCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"/>
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Print this cheque"/>
                                     <Button Content="Edit" Style="{StaticResource SecondaryBtn}" Padding="8,3" Margin="0,0,4,0" FontSize="11"
                                             Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"/>
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Open this cheque to edit its details"/>
                                     <Button Content="Cancel" Foreground="#8B1818" Background="Transparent" BorderThickness="0"
                                             Cursor="Hand" FontSize="11" Padding="4,3" Margin="0,0,4,0"
                                             Command="{Binding DataContext.CancelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"/>
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Cancel this cheque before it is printed"/>
                                     <Button Content="Void" Foreground="#B00020" Background="Transparent" BorderThickness="0"
                                             Cursor="Hand" FontSize="11" Padding="4,3"
                                             Command="{Binding DataContext.VoidCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"/>
+                                            CommandParameter="{Binding}"
+                                            ToolTip="Void keeps the record but cancels the cheque — cannot be undone"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

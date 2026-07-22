@@ -12,7 +12,8 @@
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Users" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,10"/>
                 <Button DockPanel.Dock="Bottom" Content="Add New User" Style="{StaticResource PrimaryBtn}"
-                        Margin="0,8,0,0" Command="{Binding NewUserCommand}"/>
+                        Margin="0,8,0,0" Command="{Binding NewUserCommand}"
+                        ToolTip="Start a blank form to create a new user account"/>
                 <ListBox ItemsSource="{Binding Users}" SelectedItem="{Binding Selected}"
                          BorderThickness="1" BorderBrush="#E0E0E0">
                     <ListBox.ItemTemplate>
@@ -53,36 +54,41 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="Username" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Username}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Username}" ToolTip="Name used to sign in — must be unique"/>
                     </StackPanel>
                 </Grid>
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="Email" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Email}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Email}" ToolTip="Address that receives this user's one-time login codes"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="Role" Style="{StaticResource FieldLabel}"/>
                         <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Roles}"
-                                  SelectedItem="{Binding Edit.Role}"/>
+                                  SelectedItem="{Binding Edit.Role}"
+                                  ToolTip="Admin = full access; Accountant = can edit; Viewer/Auditor = read-only"/>
                     </StackPanel>
                 </Grid>
                 <Grid Margin="0,0,0,10">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="New Password (leave blank to keep current)" Style="{StaticResource FieldLabel}"/>
-                        <PasswordBox x:Name="PwdBox" Style="{StaticResource InputPassword}"/>
+                        <PasswordBox x:Name="PwdBox" Style="{StaticResource InputPassword}"
+                                     ToolTip="Min 8 characters with letters and digits; leave blank to keep the current password"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="16,0,0,0">
-                        <CheckBox Content=" Active" IsChecked="{Binding Edit.IsActive}" VerticalAlignment="Center" MinHeight="34" Padding="0,7,0,0"/>
+                        <CheckBox Content=" Active" IsChecked="{Binding Edit.IsActive}" VerticalAlignment="Center" MinHeight="34" Padding="0,7,0,0"
+                                  ToolTip="Uncheck to disable sign-in for this user without deleting the account"/>
                     </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                     <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
-                            Command="{Binding CancelEditCommand}"/>
+                            Command="{Binding CancelEditCommand}"
+                            ToolTip="Discard unsaved changes to this user"/>
                     <Button Content="Save User" Style="{StaticResource PrimaryBtn}"
-                            Command="{Binding SaveUserCommand}"/>
+                            Command="{Binding SaveUserCommand}"
+                            ToolTip="Save this user's details, role and password"/>
                 </StackPanel>
             </StackPanel>
             </ScrollViewer>

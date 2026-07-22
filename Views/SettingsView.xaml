@@ -16,11 +16,11 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="Currency" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding Currency}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding Currency}" ToolTip="Currency code shown on cheques and reports, e.g. OMR"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Date Format" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding DateFormat}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding DateFormat}" ToolTip="Date pattern for printed dates, e.g. dd/MM/yyyy"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>
@@ -44,13 +44,13 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="Case Format" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding CaseFormats}" SelectedItem="{Binding CaseFormat}"/>
+                            <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding CaseFormats}" SelectedItem="{Binding CaseFormat}" ToolTip="Letter case for the amount in words, e.g. UPPERCASE or Title Case"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Margin="0,0,10,0" VerticalAlignment="Bottom">
-                            <CheckBox Content="  Include Baisa" FontSize="13" IsChecked="{Binding IncludeBaisa}" MinHeight="34" VerticalContentAlignment="Center"/>
+                            <CheckBox Content="  Include Baisa" FontSize="13" IsChecked="{Binding IncludeBaisa}" MinHeight="34" VerticalContentAlignment="Center" ToolTip="Include the fractional Baisa amount in the words (1000 Baisa = 1 OMR)"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2" VerticalAlignment="Bottom">
-                            <CheckBox Content='  Append "Only"' FontSize="13" IsChecked="{Binding AddOnly}" MinHeight="34" VerticalContentAlignment="Center"/>
+                            <CheckBox Content='  Append "Only"' FontSize="13" IsChecked="{Binding AddOnly}" MinHeight="34" VerticalContentAlignment="Center" ToolTip='Add the word "Only" at the end of the amount in words'/>
                         </StackPanel>
                     </Grid>
                     <!-- Live preview -->
@@ -74,22 +74,22 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="Mailjet API Key" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetApiKey}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetApiKey}" ToolTip="Public API Key from Mailjet (Account → API Key Management)"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Mailjet Secret Key" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetSecretKey}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetSecretKey}" ToolTip="Private Secret Key that pairs with the API Key — keep confidential"/>
                         </StackPanel>
                     </Grid>
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,10,0">
                             <TextBlock Text="From Email (verified sender)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetFromEmail}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetFromEmail}" ToolTip="Sender address for OTP emails — must be a Mailjet-verified sender"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="From Name" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetFromName}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding MailjetFromName}" ToolTip="Display name shown as the sender of OTP emails"/>
                         </StackPanel>
                     </Grid>
                     <Grid Margin="0,12,0,0">
@@ -99,7 +99,8 @@
                             <TextBox Style="{StaticResource InputBox}" Text="{Binding TestEmailAddress}" ToolTip="Any address — verifies the Mailjet settings above end-to-end"/>
                         </StackPanel>
                         <Button Grid.Column="2" Content="✉  Send test email" Style="{StaticResource SecondaryBtn}" VerticalAlignment="Bottom"
-                                Padding="14,7" FontSize="12" Command="{Binding SendTestEmailCommand}"/>
+                                Padding="14,7" FontSize="12" Command="{Binding SendTestEmailCommand}"
+                                ToolTip="Send a test message to check the Mailjet settings work"/>
                     </Grid>
                 </StackPanel>
             </Border>
@@ -110,20 +111,21 @@
                     <TextBlock Text="Post-Dated Cheque Reminders" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,4"/>
                     <TextBlock Text="Email a summary of post-dated cheques coming due. Reminders are sent when the app is opened, no more often than the chosen frequency. Requires the email (Mailjet) settings above."
                                FontSize="11" Foreground="{StaticResource TextSub}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                    <CheckBox Content="  Enable PDC email reminders" IsChecked="{Binding PdcReminderEnabled}" Margin="0,0,0,12"/>
+                    <CheckBox Content="  Enable PDC email reminders" IsChecked="{Binding PdcReminderEnabled}" Margin="0,0,0,12"
+                              ToolTip="Email a summary of post-dated cheques coming due — requires the Mailjet settings above"/>
                     <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Send reminders to (email)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding PdcReminderEmail}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding PdcReminderEmail}" ToolTip="Address that receives the due-cheque reminder emails"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Frequency" Style="{StaticResource FieldLabel}"/>
-                            <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding ReminderFrequencies}" SelectedItem="{Binding PdcFrequency}"/>
+                            <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding ReminderFrequencies}" SelectedItem="{Binding PdcFrequency}" ToolTip="How often reminders may be sent, at most, when the app is opened"/>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
                             <TextBlock Text="Notify for due within (days)" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Style="{StaticResource InputBox}" Text="{Binding PdcLookAheadDays}"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding PdcLookAheadDays}" ToolTip="Number of days ahead to include cheques coming due, e.g. 7"/>
                         </StackPanel>
                     </Grid>
                     <Grid Margin="0,0,0,10">
@@ -138,9 +140,11 @@
                     </Grid>
                     <StackPanel Orientation="Horizontal">
                         <Button Content="✉  Send a reminder now (test)" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
-                                Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding SendReminderNowCommand}"/>
+                                Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding SendReminderNowCommand}"
+                                ToolTip="Email the due-cheque reminder immediately to check it works"/>
                         <Button Content="🟢  Send via WhatsApp" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
-                                Padding="14,7" FontSize="12" Command="{Binding SendWhatsAppReminderCommand}"/>
+                                Padding="14,7" FontSize="12" Command="{Binding SendWhatsAppReminderCommand}"
+                                ToolTip="Open WhatsApp with the due-cheque summary pre-filled — review and tap Send"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -151,7 +155,8 @@
                     <TextBlock Text="Cloud Sync (central server)" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,4"/>
                     <TextBlock Text="Keep this PC in sync with your central eCheque server. Data stays on this PC for offline use and syncs automatically in the background. Ask your administrator for the server URL."
                                FontSize="11" Foreground="{StaticResource TextSub}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                    <CheckBox Content="  Enable cloud sync on this PC" IsChecked="{Binding SyncEnabled}" Margin="0,0,0,12"/>
+                    <CheckBox Content="  Enable cloud sync on this PC" IsChecked="{Binding SyncEnabled}" Margin="0,0,0,12"
+                              ToolTip="Sync this PC with the central sync server in the background; data stays local for offline use"/>
                     <StackPanel Margin="0,0,0,10">
                         <TextBlock Text="Server URL" Style="{StaticResource FieldLabel}"/>
                         <TextBox Style="{StaticResource InputBox}" Text="{Binding SyncServerUrl}" ToolTip="e.g. https://sync.mycompany.com:5210"/>
@@ -163,9 +168,11 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="🔗  Connect this PC" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
-                                Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding ConnectSyncCommand}"/>
+                                Padding="14,7" FontSize="12" Margin="0,0,8,0" Command="{Binding ConnectSyncCommand}"
+                                ToolTip="Register this PC with the sync server using the URL and enrollment secret above"/>
                         <Button Content="⟳  Sync now" Style="{StaticResource SecondaryBtn}" HorizontalAlignment="Left"
-                                Padding="14,7" FontSize="12" Command="{Binding SyncNowCommand}"/>
+                                Padding="14,7" FontSize="12" Command="{Binding SyncNowCommand}"
+                                ToolTip="Exchange changes with the sync server now instead of waiting for the background sync"/>
                     </StackPanel>
                     <TextBlock Text="{Binding SyncStatus}" FontSize="11" Foreground="#2E7D32" TextWrapping="Wrap"/>
                 </StackPanel>
@@ -181,7 +188,8 @@
                             <Button Content="Browse" Style="{StaticResource SecondaryBtn}" DockPanel.Dock="Right"
                                     Padding="12,6" Command="{Binding BrowsePdfCommand}"/>
                             <TextBox Style="{StaticResource InputBox}" Text="{Binding PdfPath}" IsReadOnly="True"
-                                     Background="#F8F8F8" Margin="0,0,8,0"/>
+                                     Background="#F8F8F8" Margin="0,0,8,0"
+                                     ToolTip="Folder where generated cheque PDFs are saved — click Browse to change"/>
                         </DockPanel>
                     </StackPanel>
                     <StackPanel>
@@ -190,7 +198,8 @@
                             <Button Content="Browse" Style="{StaticResource SecondaryBtn}" DockPanel.Dock="Right"
                                     Padding="12,6" Command="{Binding BrowseBackupCommand}"/>
                             <TextBox Style="{StaticResource InputBox}" Text="{Binding BackupPath}" IsReadOnly="True"
-                                     Background="#F8F8F8" Margin="0,0,8,0"/>
+                                     Background="#F8F8F8" Margin="0,0,8,0"
+                                     ToolTip="Folder where database backups are saved — click Browse to change"/>
                         </DockPanel>
                     </StackPanel>
                 </StackPanel>
@@ -202,9 +211,11 @@
                     <TextBlock Text="Create a backup copy of the current company's database, or restore from a previous backup." Foreground="#666666" Margin="0,0,0,12"/>
                     <StackPanel Orientation="Horizontal">
                         <Button Content="Create Backup Now" Style="{StaticResource PrimaryBtn}" Margin="0,0,10,0"
-                                Command="{Binding BackupCommand}"/>
+                                Command="{Binding BackupCommand}"
+                                ToolTip="Save a backup copy of the current company's database to the Backup Path"/>
                         <Button Content="Restore from Backup…" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"
-                                Command="{Binding RestoreCommand}"/>
+                                Command="{Binding RestoreCommand}"
+                                ToolTip="Restore replaces ALL current data on this PC — cannot be undone"/>
                         <Button Content="Open Diagnostic Log" Style="{StaticResource SecondaryBtn}"
                                 Command="{Binding OpenLogCommand}" ToolTip="View the automatic bug/error log"/>
                     </StackPanel>
@@ -214,7 +225,8 @@
             </Border>
             <!-- Save -->
             <StackPanel HorizontalAlignment="Right">
-                <Button Content="Save Settings" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"/>
+                <Button Content="Save Settings" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"
+                        ToolTip="Save all settings on this page"/>
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

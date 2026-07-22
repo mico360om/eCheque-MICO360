@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using eCheque.MICO360.Services;
 using eCheque.MICO360.Views;
 
@@ -6,6 +7,18 @@ namespace eCheque.MICO360
 {
     public partial class App : Application
     {
+        static App()
+        {
+            // App-wide tooltip behaviour so every tooltip is accessible and readable without per-element setup:
+            //  • show on keyboard focus (not just mouse hover) → keyboard + screen-reader users get them too
+            //  • generous on-screen time and a short delay so they're easy to read but not intrusive
+            //  • allow tooltips on disabled controls (e.g. a greyed-out action explains WHY it's disabled)
+            ToolTipService.ShowsToolTipOnKeyboardFocusProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(true));
+            ToolTipService.ShowDurationProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(30000));
+            ToolTipService.InitialShowDelayProperty.OverrideMetadata(typeof(DependencyObject), new FrameworkPropertyMetadata(450));
+            ToolTipService.ShowOnDisabledProperty.OverrideMetadata(typeof(Control), new FrameworkPropertyMetadata(true));
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);

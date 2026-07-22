@@ -21,23 +21,28 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
                         <TextBlock Text="Search (user, action, reference, remarks)" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Filter by user, action, reference, or remarks"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,10,0">
                         <TextBlock Text="Action" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Actions}" SelectedItem="{Binding ActionFilter}"/>
+                        <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Actions}" SelectedItem="{Binding ActionFilter}"
+                                  ToolTip="Show only this type of logged action"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="0,0,10,0">
                         <TextBlock Text="From Date" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker SelectedDate="{Binding From}" FontSize="13" Padding="6,5"/>
+                        <DatePicker SelectedDate="{Binding From}" FontSize="13" Padding="6,5"
+                                    ToolTip="Show entries on or after this date"/>
                     </StackPanel>
                     <StackPanel Grid.Column="3">
                         <TextBlock Text="To Date" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker SelectedDate="{Binding To}" FontSize="13" Padding="6,5"/>
+                        <DatePicker SelectedDate="{Binding To}" FontSize="13" Padding="6,5"
+                                    ToolTip="Show entries on or before this date"/>
                     </StackPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button Content="Clear Filters" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ClearFiltersCommand}"/>
+                    <Button Content="Clear Filters" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ClearFiltersCommand}"
+                            ToolTip="Reset search, action, and date filters"/>
                     <Button Content="Refresh" Style="{StaticResource SecondaryBtn}" Command="{Binding RefreshCommand}"/>
                 </StackPanel>
             </StackPanel>

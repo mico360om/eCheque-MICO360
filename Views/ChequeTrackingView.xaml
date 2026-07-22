@@ -13,12 +13,16 @@
         <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,14">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Content="📅  PDC Register" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ShowPdcCommand}"/>
-                    <Button Content="✓  Reconciliation" Style="{StaticResource SecondaryBtn}" Command="{Binding ShowReconCommand}"/>
+                    <Button Content="📅  PDC Register" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ShowPdcCommand}"
+                            ToolTip="Show post-dated cheques (PDC) ordered by due date"/>
+                    <Button Content="✓  Reconciliation" Style="{StaticResource SecondaryBtn}" Command="{Binding ShowReconCommand}"
+                            ToolTip="Show outstanding cheques awaiting clearance"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <Button Content="⭳  Export CSV" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ExportCommand}"/>
-                    <Button Content="Refresh" Style="{StaticResource SecondaryBtn}" Command="{Binding RefreshCommand}"/>
+                    <Button Content="⭳  Export CSV" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding ExportCommand}"
+                            ToolTip="Export the current list to CSV"/>
+                    <Button Content="Refresh" Style="{StaticResource SecondaryBtn}" Command="{Binding RefreshCommand}"
+                            ToolTip="Reload the list for the current mode"/>
                 </StackPanel>
                 <TextBlock Text="{Binding Heading}" VerticalAlignment="Center" Margin="16,0" Foreground="#8B1818" FontWeight="SemiBold" FontSize="13"/>
             </DockPanel>
@@ -41,11 +45,14 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" Margin="4,2">
                                         <Button Content="Present" Style="{StaticResource SecondaryBtn}" Padding="7,3" Margin="0,0,4,0" FontSize="11"
-                                                Command="{Binding DataContext.PresentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                                Command="{Binding DataContext.PresentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                ToolTip="Mark cheque as presented to the bank today"/>
                                         <Button Content="Clear" Style="{StaticResource PrimaryBtn}" Padding="7,3" Margin="0,0,4,0" FontSize="11"
-                                                Command="{Binding DataContext.ClearedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                                Command="{Binding DataContext.ClearedCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                ToolTip="Mark cheque as cleared — the bank has paid it"/>
                                         <Button Content="Bounce" Foreground="#B00020" Background="Transparent" BorderThickness="0" Cursor="Hand" FontSize="11" Padding="4,3"
-                                                Command="{Binding DataContext.BounceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"/>
+                                                Command="{Binding DataContext.BounceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}"
+                                                ToolTip="Bounce records a returned cheque and asks for a reason"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

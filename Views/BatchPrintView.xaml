@@ -21,17 +21,22 @@
                     <StackPanel Grid.Column="0" Margin="0,0,12,0">
                         <TextBlock Text="Cheque Profile / Account" Style="{StaticResource FieldLabel}"/>
                         <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Profiles}"
+                                  ToolTip="Account profile used for every cheque in this batch."
                                   SelectedItem="{Binding SelectedProfile}" DisplayMemberPath="Name"/>
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,12,0">
                         <TextBlock Text="Start Number (optional override)" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource InputBox}" Text="{Binding StartNumberOverride, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding StartNumberOverride, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="First cheque number — leave blank to continue from the profile's last number."/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
                         <Button Content="⭱  Import File" Style="{StaticResource PrimaryBtn}" Margin="0,0,8,0"
+                                ToolTip="Import an Excel or CSV list of payees and amounts."
                                 Command="{Binding ImportCommand}" IsEnabled="{Binding CanEdit}"/>
-                        <Button Content="Re-number" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding AssignCommand}"/>
-                        <Button Content="Validate" Style="{StaticResource SecondaryBtn}" Command="{Binding ValidateCommand}"/>
+                        <Button Content="Re-number" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding AssignCommand}"
+                                ToolTip="Re-assign sequential cheque numbers to every row."/>
+                        <Button Content="Validate" Style="{StaticResource SecondaryBtn}" Command="{Binding ValidateCommand}"
+                                ToolTip="Check every row for errors before printing."/>
                     </StackPanel>
                 </Grid>
                 <TextBlock Text="{Binding ProfileInfo}" Foreground="#8B1818" FontSize="12" Margin="0,8,0,0"/>
@@ -81,8 +86,10 @@
         <DockPanel Grid.Row="2" Margin="0,10,0,0">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
                 <Button Content="Save as Drafts" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
+                        ToolTip="Save all rows as drafts without printing."
                         Command="{Binding SaveDraftsCommand}" IsEnabled="{Binding CanEdit}"/>
                 <Button Content="🖨  Print All" Style="{StaticResource PrimaryBtn}"
+                        ToolTip="Print every valid cheque — uses one physical leaf per cheque."
                         Command="{Binding PrintAllCommand}" IsEnabled="{Binding CanEdit}"/>
             </StackPanel>
             <StackPanel>

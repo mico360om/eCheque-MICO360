@@ -48,12 +48,15 @@
                     <!-- Actions -->
                     <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
                         <Button Content="🔄  Check for Updates" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
-                                Command="{Binding CheckCommand}" IsEnabled="{Binding IsNotBusy}"/>
+                                Command="{Binding CheckCommand}" IsEnabled="{Binding IsNotBusy}"
+                                ToolTip="Check GitHub for a newer version."/>
                         <Button Content="⬇  Download &amp; Install" Style="{StaticResource PrimaryBtn}" Margin="0,0,8,0"
                                 Command="{Binding InstallCommand}"
-                                Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibility}}"/>
+                                Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVisibility}}"
+                                ToolTip="Download the update from GitHub and install it. The app restarts to apply."/>
                         <Button Content="View Update Log" Style="{StaticResource SecondaryBtn}"
-                                Command="{Binding ViewLogCommand}"/>
+                                Command="{Binding ViewLogCommand}"
+                                ToolTip="View the log of past update checks and installations."/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -77,15 +80,18 @@
                     </TextBlock>
                     <TextBlock Margin="0,0,0,12" FontSize="13">
                         <Run Text="Repository: " Foreground="#666666"/>
-                        <Hyperlink NavigateUri="{Binding RepoUrl}" Command="{Binding OpenRepoCommand}" Foreground="#1565C0">
+                        <Hyperlink NavigateUri="{Binding RepoUrl}" Command="{Binding OpenRepoCommand}" Foreground="#1565C0"
+                                   ToolTip="Open the official GitHub repository in your browser.">
                             <Run Text="{Binding RepoUrl, Mode=OneWay}"/>
                         </Hyperlink>
                     </TextBlock>
                     <StackPanel Orientation="Horizontal">
                         <Button Content="⬇  Download Latest from GitHub" Style="{StaticResource PrimaryBtn}"
-                                Command="{Binding OpenReleasesCommand}" Margin="0,0,8,0"/>
+                                Command="{Binding OpenReleasesCommand}" Margin="0,0,8,0"
+                                ToolTip="Open the GitHub releases page to download the latest installer."/>
                         <Button Content="Open Repository" Style="{StaticResource SecondaryBtn}"
-                                Command="{Binding OpenRepoCommand}"/>
+                                Command="{Binding OpenRepoCommand}"
+                                ToolTip="Open the official GitHub repository in your browser."/>
                     </StackPanel>
                 </StackPanel>
             </Border>

@@ -111,7 +111,8 @@
                                          Padding="10,8" FontSize="14" FontFamily="Segoe UI"
                                          Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
                                          BorderThickness="0" Height="40"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         ToolTip="Enter your account username."/>
                             </Border>
 
                             <TextBlock Text="PASSWORD" FontSize="10" FontWeight="Bold"
@@ -122,7 +123,8 @@
                                              Padding="10,8" FontSize="14" FontFamily="Segoe UI"
                                              Background="White" Foreground="#1A1A1A" CaretBrush="#1A1A1A"
                                              BorderThickness="0" Height="40"
-                                             VerticalContentAlignment="Center"/>
+                                             VerticalContentAlignment="Center"
+                                             ToolTip="Account locks for 5 minutes after 5 failed attempts."/>
                             </Border>
 
                             <CheckBox Content="  Keep me signed in" IsChecked="{Binding RememberMe}"
@@ -130,10 +132,12 @@
                                       ToolTip="Stay signed in on this computer. You'll only be signed out after 30 days of not using the app, or when you sign out."/>
 
                             <Button Content="SIGN IN" Height="42" FontSize="13" FontWeight="Bold"
-                                    Style="{StaticResource PrimaryBtn}" Click="LoginBtn_Click" Margin="0,0,0,10"/>
+                                    Style="{StaticResource PrimaryBtn}" Click="LoginBtn_Click" Margin="0,0,0,10"
+                                    ToolTip="Sign in with your username and password."/>
                             <TextBlock HorizontalAlignment="Center" FontSize="12">
                                 <Hyperlink Command="{Binding UseOtpCommand}" Foreground="#8B1818"
-                                           TextDecorations="None"><Run Text="Sign in with Email OTP"/></Hyperlink>
+                                           TextDecorations="None"
+                                           ToolTip="Sign in instead with a one-time code (OTP) emailed to you."><Run Text="Sign in with Email OTP"/></Hyperlink>
                             </TextBlock>
                         </StackPanel>
 
@@ -141,21 +145,26 @@
                         <StackPanel Visibility="{Binding OtpMode, Converter={StaticResource BoolToVisibility}}">
                             <TextBlock Text="EMAIL" FontSize="10" FontWeight="Bold" Foreground="#888888" Margin="0,0,0,5"/>
                             <TextBox Style="{StaticResource InputBox}" Height="40" FontSize="14" CaretBrush="#1A1A1A"
-                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                     Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"
+                                     ToolTip="Enter the email address registered to your account."/>
                             <Button Content="SEND CODE" Height="40" FontSize="13" FontWeight="Bold"
-                                    Style="{StaticResource PrimaryBtn}" Command="{Binding SendOtpCommand}" Margin="0,0,0,12"/>
+                                    Style="{StaticResource PrimaryBtn}" Command="{Binding SendOtpCommand}" Margin="0,0,0,12"
+                                    ToolTip="Email a one-time code (OTP) to this address. Code is valid for 5 minutes."/>
 
                             <StackPanel Visibility="{Binding OtpSent, Converter={StaticResource BoolToVisibility}}">
                                 <TextBlock Text="ENTER CODE" FontSize="10" FontWeight="Bold" Foreground="#888888" Margin="0,0,0,5"/>
                                 <TextBox Style="{StaticResource InputBox}" Height="40" FontSize="18" FontWeight="Bold"
-                                         CaretBrush="#1A1A1A" Text="{Binding OtpCode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"/>
+                                         CaretBrush="#1A1A1A" Text="{Binding OtpCode, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10"
+                                         ToolTip="Enter the one-time code (OTP) from your email. Valid for 5 minutes."/>
                                 <Button Content="VERIFY &amp; SIGN IN" Height="42" FontSize="13" FontWeight="Bold"
-                                        Style="{StaticResource PrimaryBtn}" Command="{Binding VerifyOtpCommand}" Margin="0,0,0,10"/>
+                                        Style="{StaticResource PrimaryBtn}" Command="{Binding VerifyOtpCommand}" Margin="0,0,0,10"
+                                        ToolTip="Verify the one-time code (OTP) and sign in."/>
                             </StackPanel>
 
                             <TextBlock HorizontalAlignment="Center" FontSize="12">
                                 <Hyperlink Command="{Binding UsePasswordCommand}" Foreground="#8B1818"
-                                           TextDecorations="None"><Run Text="Use username &amp; password"/></Hyperlink>
+                                           TextDecorations="None"
+                                           ToolTip="Go back to signing in with username and password."><Run Text="Use username &amp; password"/></Hyperlink>
                             </TextBlock>
                         </StackPanel>
 

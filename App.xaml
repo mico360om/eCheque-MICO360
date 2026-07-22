@@ -499,6 +499,25 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+
+            <!-- Global tooltip: wraps long text and caps its width so it stays readable and never runs off-screen
+                 or obstructs the UI. Applied to every ToolTip="..." in the app. Timing, keyboard-focus display and
+                 show-on-disabled are configured app-wide in App.xaml.cs (accessible to keyboard + screen readers). -->
+            <Style TargetType="ToolTip">
+                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                <Setter Property="HasDropShadow" Value="True"/>
+                <Setter Property="MaxWidth" Value="340"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToolTip">
+                            <Border Background="#2B2B2B" CornerRadius="5" Padding="10,7">
+                                <TextBlock Text="{TemplateBinding Content}" TextWrapping="Wrap"
+                                           FontSize="12" Foreground="#F5F5F5" LineHeight="16"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -23,6 +23,7 @@
                 <TextBlock Text="Cheque Print Preview" FontSize="16" FontWeight="Bold" Foreground="#1A1A1A" VerticalAlignment="Center"/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                     <Button x:Name="BtnPrint" Content="Print Now" Style="{StaticResource PrimaryBtn}"
+                            ToolTip="Print on the remembered cheque printer — uses one physical cheque leaf."
                             Margin="0,0,8,0" Click="BtnPrint_Click"/>
                     <Button x:Name="BtnTestPrint" Content="Test on Plain Paper" Style="{StaticResource SecondaryBtn}"
                             ToolTip="Prints the alignment grid (rulers + field markers) on plain paper — hold it against a real cheque leaf to verify positions before using a cheque."
@@ -31,6 +32,7 @@
                             ToolTip="Choose and remember the cheque printer for this PC."
                             Margin="0,0,8,0" Click="BtnChoosePrinter_Click"/>
                     <Button x:Name="BtnSavePdf" Content="Save PDF" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Save the cheque as a PDF file and open it — does not print."
                             Margin="0,0,8,0" Click="BtnSavePdf_Click"/>
                     <Button Content="Close" Style="{StaticResource SecondaryBtn}" Click="BtnClose_Click"/>
                 </StackPanel>
@@ -60,6 +62,7 @@
                         <TextBlock Text="Paper feed position:" FontSize="12" Foreground="#666666" VerticalAlignment="Center"
                                    ToolTip="Where the cheque leaf sits in the tray when the printer prints it as a bigger page (e.g. A4): against the LEFT guide, in the CENTRE, or against the RIGHT guide. The print is shifted to match."/>
                         <ComboBox x:Name="CmbFeedAlign" Width="90" Margin="8,0,0,0" FontSize="12"
+                                  ToolTip="Where the cheque leaf sits in the tray — the print shifts to match."
                                   SelectionChanged="CmbFeedAlign_Changed">
                             <ComboBoxItem Content="Left"/>
                             <ComboBoxItem Content="Centre"/>

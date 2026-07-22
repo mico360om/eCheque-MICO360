@@ -259,6 +259,10 @@ namespace eCheque.MICO360
             {
                 int due = ChequeService.GetDuePdcCount(7); // cheques due within a week
                 Helpers.NavProps.SetBadge(NavTracking, due > 0 ? (due > 99 ? "99+" : due.ToString()) : "");
+                // Duplicate cheque numbers (e.g. two offline PCs issuing the same leaf) can only be detected
+                // after sync — flag them on the Cheque Books screen so they're never printed twice unnoticed.
+                int dup = ChequeService.DuplicateChequeCount();
+                Helpers.NavProps.SetBadge(NavChequeBooks, dup > 0 ? "!" : "");
             }
             catch { /* badge is best-effort */ }
         }

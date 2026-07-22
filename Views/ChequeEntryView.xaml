@@ -26,6 +26,7 @@
                             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                 <TextBlock Text="Profile *" Style="{StaticResource FieldLabel}"/>
                                 <ComboBox Style="{StaticResource InputCombo}"
+                                          ToolTip="Select the account profile — sets bank, account, and cheque layout."
                                           ItemsSource="{Binding Profiles}"
                                           SelectedItem="{Binding SelectedProfile}">
                                     <ComboBox.ItemTemplate>
@@ -36,11 +37,13 @@
                             <StackPanel Grid.Column="1" Margin="0,0,12,0">
                                 <TextBlock Text="Bank Name" Style="{StaticResource FieldLabel}"/>
                                 <TextBox Style="{StaticResource InputBox}" Text="{Binding Cheque.BankName}"
+                                         ToolTip="Filled automatically from the selected profile — read-only."
                                          IsReadOnly="True" Background="#F8F8F8"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Account Number" Style="{StaticResource FieldLabel}"/>
                                 <TextBox Style="{StaticResource InputBox}" Text="{Binding Cheque.AccountNumber}"
+                                         ToolTip="Filled automatically from the selected profile — read-only."
                                          IsReadOnly="True" Background="#F8F8F8"/>
                             </StackPanel>
                         </Grid>
@@ -72,15 +75,18 @@
                             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                 <TextBlock Text="Cheque Number *" Style="{StaticResource FieldLabel}"/>
                                 <TextBox x:Name="TxtChequeNumber" Style="{StaticResource InputBox}"
+                                         ToolTip="Cheque leaf number — must match the physical leaf you print on."
                                          Text="{Binding Cheque.ChequeNumber, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,12,0">
                                 <TextBlock Text="Date *" Style="{StaticResource FieldLabel}"/>
-                                <DatePicker Style="{StaticResource InputDate}" SelectedDate="{Binding Cheque.ChequeDate}"/>
+                                <DatePicker Style="{StaticResource InputDate}" SelectedDate="{Binding Cheque.ChequeDate}"
+                                            ToolTip="Cheque date — a future date makes it a post-dated cheque (PDC)."/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Status" Style="{StaticResource FieldLabel}"/>
                                 <TextBox Style="{StaticResource InputBox}" Text="{Binding Cheque.Status}"
+                                         ToolTip="Current cheque status — set automatically, not editable."
                                          IsReadOnly="True" Background="#F8F8F8"/>
                             </StackPanel>
                         </Grid>
@@ -89,6 +95,7 @@
                         <StackPanel Margin="0,0,0,10">
                             <TextBlock Text="Payee Name *" Style="{StaticResource FieldLabel}"/>
                             <ComboBox x:Name="CmbPayee" Style="{StaticResource InputCombo}" IsEditable="True"
+                                      ToolTip="Type or pick the payee — suggestions come from past cheques."
                                       ItemsSource="{Binding Payees}"
                                       Text="{Binding Cheque.PayeeName, UpdateSourceTrigger=PropertyChanged}"
                                       IsTextSearchEnabled="True" StaysOpenOnEdit="True"
@@ -107,6 +114,7 @@
                             <StackPanel Grid.Column="0" Margin="0,0,12,0">
                                 <TextBlock Text="Amount (OMR) *" Style="{StaticResource FieldLabel}"/>
                                 <TextBox x:Name="TxtAmount" Style="{StaticResource InputBox}"
+                                         ToolTip="Amount in OMR — numbers only, up to 3 decimals (1 Rial = 1000 Baisa)."
                                          LostFocus="AmountBox_LostFocus"
                                          TextChanged="AmountBox_TextChanged"
                                          PreviewTextInput="AmountBox_PreviewTextInput"
@@ -121,6 +129,7 @@
                                                Foreground="#AAAAAA" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                 </DockPanel>
                                 <TextBox Style="{StaticResource InputBox}"
+                                         ToolTip="Auto-filled from the amount — edit only to correct the wording."
                                          Text="{Binding Cheque.AmountInWords, UpdateSourceTrigger=PropertyChanged}"
                                          TextWrapping="Wrap" Height="46" FontSize="12"/>
                             </StackPanel>
@@ -141,6 +150,7 @@
                                            Foreground="#AAAAAA" DockPanel.Dock="Right" VerticalAlignment="Center"/>
                             </DockPanel>
                             <TextBox x:Name="TxtMemo" Style="{StaticResource InputBox}"
+                                     ToolTip="Optional note kept with the cheque — up to 250 characters."
                                      Text="{Binding Cheque.Remarks, UpdateSourceTrigger=PropertyChanged}"
                                      Height="60" TextWrapping="Wrap" AcceptsReturn="True"
                                      MaxLength="250" VerticalScrollBarVisibility="Auto"
@@ -269,12 +279,16 @@
                 <!-- Buttons right-aligned -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Cancel" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Discard this entry and clear the form — unsaved changes are lost."
                             Margin="0,0,8,0" Command="{Binding CancelCommand}"/>
                     <Button Content="💾  Save Draft" Style="{StaticResource SecondaryBtn}"
+                            ToolTip="Save as a draft without printing (Ctrl+S)."
                             Margin="0,0,8,0" Command="{Binding SaveDraftCommand}"/>
                     <Button Content="👁  Preview Cheque" Margin="0,0,8,0" Command="{Binding PreviewCommand}"
+                            ToolTip="Preview the printed cheque layout before printing."
                             Style="{StaticResource InfoBtn}"/>
                     <Button Content="🖨  Print Cheque" Style="{StaticResource PrimaryBtn}"
+                            ToolTip="Save and print the cheque (Ctrl+P) — uses one physical cheque leaf."
                             Padding="16,8" Command="{Binding SavePrintCommand}"/>
                 </StackPanel>
             </DockPanel>

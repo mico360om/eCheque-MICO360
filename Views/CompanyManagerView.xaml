@@ -17,7 +17,8 @@
                     <DockPanel>
                         <TextBlock Text="Companies" FontSize="14" FontWeight="Bold" Foreground="#8B1818" VerticalAlignment="Center"/>
                         <Button Content="+ New" Style="{StaticResource PrimaryBtn}" DockPanel.Dock="Right"
-                                Padding="10,5" FontSize="12" Command="{Binding NewCommand}"/>
+                                Padding="10,5" FontSize="12" Command="{Binding NewCommand}"
+                                ToolTip="Start a blank form to add a new company profile"/>
                     </DockPanel>
                 </Border>
                 <ListBox ItemsSource="{Binding Companies}"
@@ -108,7 +109,8 @@
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Default Currency" Style="{StaticResource FieldLabel}"/>
                             <ComboBox Style="{StaticResource InputCombo}" ItemsSource="{Binding Currencies}"
-                                      SelectedItem="{Binding Edit.Currency}" IsEnabled="{Binding IsEditing}"/>
+                                      SelectedItem="{Binding Edit.Currency}" IsEnabled="{Binding IsEditing}"
+                                      ToolTip="Default currency for this company's cheques, e.g. OMR"/>
                         </StackPanel>
                     </Grid>
 
@@ -120,10 +122,12 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Edit" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"
                                 Command="{Binding EditCommand}"
+                                ToolTip="Enable the fields above to edit this company's details"
                                 Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibility}}"/>
                         <Button Content="Delete" Margin="0,0,10,0" Padding="16,7"
                                 Foreground="#CC2020" Background="Transparent" BorderBrush="#CC2020" BorderThickness="1"
                                 Cursor="Hand" Command="{Binding DeleteCommand}"
+                                ToolTip="Permanently delete this company and its data — cannot be undone"
                                 Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibility}}">
                             <Button.Style>
                                 <Style TargetType="Button">
@@ -153,9 +157,11 @@
                         </Button>
                         <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,10,0"
                                 Command="{Binding CancelEditCommand}"
+                                ToolTip="Discard unsaved changes to this company"
                                 Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}"/>
                         <Button Content="Save Company" Style="{StaticResource PrimaryBtn}"
                                 Command="{Binding SaveCommand}"
+                                ToolTip="Save this company's details"
                                 Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}"/>
                     </StackPanel>
                 </StackPanel>

@@ -88,11 +88,13 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Delete" Foreground="#8B1818" Background="Transparent" BorderThickness="1"
                                 BorderBrush="#8B1818" Cursor="Hand" Padding="14,7" Margin="0,0,8,0" FontSize="13"
-                                Command="{Binding DeleteCommand}"/>
+                                Command="{Binding DeleteCommand}"
+                                ToolTip="Delete this profile permanently."/>
                         <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
                                 Command="{Binding CancelEditCommand}"/>
                         <Button Content="💾  Save Profile" Style="{StaticResource PrimaryBtn}"
-                                Command="{Binding SaveCommand}"/>
+                                Command="{Binding SaveCommand}"
+                                ToolTip="Save changes to this profile template."/>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -130,11 +132,13 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Width (mm)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.ChequeWidth, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.ChequeWidth, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Physical cheque width in millimetres."/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Height (mm)" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.ChequeHeight, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.ChequeHeight, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Physical cheque height in millimetres."/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="PDF Page Size" Style="{StaticResource FieldLabel}"/>
@@ -168,11 +172,13 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/><ColumnDefinition Width="1.2*"/></Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Nudge X" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PrintOffsetX, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PrintOffsetX, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Shift all printed fields right (+) or left (−), in mm."/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Nudge Y" Style="{StaticResource FieldLabel}"/>
-                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PrintOffsetY, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PrintOffsetY, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Shift all printed fields down (+) or up (−), in mm."/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>

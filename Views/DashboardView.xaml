@@ -72,6 +72,7 @@
             <!-- PDC due reminder banner -->
             <Button Command="{Binding PdcCommand}" Cursor="Hand" BorderThickness="0" HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Stretch" Margin="0,0,0,14" Padding="0"
+                    ToolTip="View post-dated cheques (PDC) due soon."
                     Visibility="{Binding HasPdcAlert, Converter={StaticResource BoolToVisibility}}">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -99,26 +100,30 @@
 
             <!-- ── Quick Actions ── -->
             <UniformGrid Columns="4" Margin="0,0,0,18" Height="80">
-                <Button Style="{StaticResource QuickBtn}" Command="{Binding NewChequeCommand}" Margin="0,0,10,0">
+                <Button Style="{StaticResource QuickBtn}" Command="{Binding NewChequeCommand}" Margin="0,0,10,0"
+                        ToolTip="Create and print a new cheque.">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="✚" FontSize="20" Foreground="#8B1818" HorizontalAlignment="Center"/>
                         <TextBlock Text="New Cheque" FontSize="12" FontWeight="SemiBold" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource QuickBtn}" Command="{Binding HistoryCommand}" Margin="0,0,10,0">
+                <Button Style="{StaticResource QuickBtn}" Command="{Binding HistoryCommand}" Margin="0,0,10,0"
+                        ToolTip="Browse all issued cheques.">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="☰" FontSize="20" Foreground="#1565C0" HorizontalAlignment="Center"/>
                         <TextBlock Text="Cheque History" FontSize="12" FontWeight="SemiBold" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource QuickBtn}" Command="{Binding PendingCommand}" Margin="0,0,10,0">
+                <Button Style="{StaticResource QuickBtn}" Command="{Binding PendingCommand}" Margin="0,0,10,0"
+                        ToolTip="Print cheques awaiting print.">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="🖨" FontSize="18" Foreground="#E65100" HorizontalAlignment="Center"/>
                         <TextBlock Text="Print Pending" FontSize="12" FontWeight="SemiBold" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
                         <TextBlock Text="{Binding Draft, StringFormat='{}{0} awaiting'}" FontSize="10" Foreground="#E65100" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource QuickBtn}" Command="{Binding BackupCommand}">
+                <Button Style="{StaticResource QuickBtn}" Command="{Binding BackupCommand}"
+                        ToolTip="Save a backup copy of your data.">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock Text="💾" FontSize="18" Foreground="#2E7D32" HorizontalAlignment="Center"/>
                         <TextBlock Text="Create Backup" FontSize="12" FontWeight="SemiBold" Foreground="#1A1A1A" HorizontalAlignment="Center"/>
@@ -170,7 +175,7 @@
                 </Border>
 
                 <!-- Pending / Draft — clickable -->
-                <Border Style="{StaticResource StatCard}" Cursor="Hand">
+                <Border Style="{StaticResource StatCard}" Cursor="Hand" ToolTip="Click to view cheques awaiting print.">
                     <Border.InputBindings>
                         <MouseBinding MouseAction="LeftClick" Command="{Binding PendingCommand}"/>
                     </Border.InputBindings>

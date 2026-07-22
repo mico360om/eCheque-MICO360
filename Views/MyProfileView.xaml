@@ -31,7 +31,8 @@
                     <DockPanel>
                         <TextBlock Text="{Binding ProfileStatus}" DockPanel.Dock="Left" VerticalAlignment="Center" Foreground="#2E7D32" FontSize="12"/>
                         <Button Content="Save Profile" Style="{StaticResource PrimaryBtn}" DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                Command="{Binding SaveProfileCommand}"/>
+                                Command="{Binding SaveProfileCommand}"
+                                ToolTip="Save your full name and email."/>
                     </DockPanel>
                 </StackPanel>
             </Border>
@@ -59,7 +60,8 @@
                     <DockPanel>
                         <TextBlock Text="{Binding PasswordStatus}" DockPanel.Dock="Left" VerticalAlignment="Center" Foreground="#8B1818" FontSize="12" TextWrapping="Wrap" MaxWidth="380"/>
                         <Button Content="Change Password" Style="{StaticResource PrimaryBtn}" DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                Click="BtnChangePassword_Click"/>
+                                Click="BtnChangePassword_Click"
+                                ToolTip="Update your account password."/>
                     </DockPanel>
                 </StackPanel>
             </Border>

@@ -7,13 +7,25 @@
             <ColumnDefinition Width="320"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Cross-PC duplicate cheque-number warning (detected after sync) -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#FDECEA" BorderBrush="#F5B7B1" BorderThickness="1"
+                CornerRadius="4" Padding="12,8" Margin="0,0,0,12"
+                Visibility="{Binding HasDuplicateWarning, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{Binding DuplicateWarning}" Foreground="#943126" FontSize="12" TextWrapping="Wrap"/>
+        </Border>
 
         <!-- Books list -->
-        <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,14,0" Padding="12">
+        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,14,0" Padding="12">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="Cheque Books" FontSize="14" FontWeight="Bold" Foreground="#8B1818" Margin="0,0,0,10"/>
                 <Button DockPanel.Dock="Bottom" Content="✚  New Cheque Book" Style="{StaticResource PrimaryBtn}"
-                        Margin="0,8,0,0" Command="{Binding NewCommand}" IsEnabled="{Binding CanEdit}"/>
+                        Margin="0,8,0,0" Command="{Binding NewCommand}" IsEnabled="{Binding CanEdit}"
+                        ToolTip="Start a blank form to register a new cheque book"/>
                 <Button DockPanel.Dock="Bottom" Content="Refresh" Style="{StaticResource SecondaryBtn}" Margin="0,8,0,0" Command="{Binding RefreshCommand}"/>
                 <ListBox ItemsSource="{Binding Books}" SelectedItem="{Binding Selected}"
                          BorderThickness="1" BorderBrush="#E0E0E0">
@@ -44,7 +56,7 @@
         </Border>
 
         <!-- Detail / editor -->
-        <Border Grid.Column="1" Style="{StaticResource Card}">
+        <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <Grid>
                     <!-- Usage detail -->
@@ -69,9 +81,11 @@
 
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <Button Content="Mark Leaf Spoiled" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0"
-                                    Command="{Binding MarkSpoiledCommand}" IsEnabled="{Binding CanEdit}"/>
+                                    Command="{Binding MarkSpoiledCommand}" IsEnabled="{Binding CanEdit}"
+                                    ToolTip="Mark a leaf as spoiled so its number is skipped, not reused"/>
                             <Button Content="Cancel Book" Foreground="#B00020" Background="Transparent" BorderThickness="1" BorderBrush="#E0B4B4"
-                                    Padding="12,7" Cursor="Hand" Command="{Binding CancelBookCommand}" IsEnabled="{Binding CanEdit}"/>
+                                    Padding="12,7" Cursor="Hand" Command="{Binding CancelBookCommand}" IsEnabled="{Binding CanEdit}"
+                                    ToolTip="Void this whole cheque book so no more leaves can be used from it"/>
                         </StackPanel>
                         <TextBlock Text="{Binding Selected.Notes}" Foreground="#888888" FontSize="12" TextWrapping="Wrap" Margin="0,14,0,0"/>
                     </StackPanel>
@@ -99,22 +113,22 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock Text="Number Prefix (optional)" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Prefix}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Prefix}" ToolTip="Text printed before each leaf number, e.g. A → A000123"/>
                             </StackPanel>
                         </Grid>
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
                                 <TextBlock Text="Start Number" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.StartNumber}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.StartNumber}" ToolTip="First leaf number in this book"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,10,0">
                                 <TextBlock Text="End Number" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.EndNumber}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.EndNumber}" ToolTip="Last leaf number in this book"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Number Digits" Style="{StaticResource FieldLabel}"/>
-                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PadWidth}"/>
+                                <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.PadWidth}" ToolTip="Digit width for leaf numbers; shorter numbers are zero-padded, e.g. 6 → 000123"/>
                             </StackPanel>
                         </Grid>
                         <StackPanel Margin="0,0,0,10">
@@ -122,8 +136,10 @@
                             <TextBox Style="{StaticResource InputBox}" Text="{Binding Edit.Notes}" TextWrapping="Wrap" Height="46"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                            <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding CancelEditCommand}"/>
-                            <Button Content="Save Book" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"/>
+                            <Button Content="Cancel" Style="{StaticResource SecondaryBtn}" Margin="0,0,8,0" Command="{Binding CancelEditCommand}"
+                                    ToolTip="Discard unsaved changes to this cheque book"/>
+                            <Button Content="Save Book" Style="{StaticResource PrimaryBtn}" Command="{Binding SaveCommand}"
+                                    ToolTip="Save this cheque book's number range and details"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -147,7 +163,7 @@
             </ScrollViewer>
         </Border>
 
-        <TextBlock Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="16,0,0,6"
+        <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="16,0,0,6"
                    Text="{Binding StatusMessage}" Foreground="#2E7D32" FontSize="12"/>
     </Grid>
 </UserControl>

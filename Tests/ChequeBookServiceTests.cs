@@ -90,6 +90,32 @@ namespace eCheque.MICO360.Tests
             => Assert.Equal(ChequeBookService.LeafCheck.NoBook, ChequeBookService.Validate("Some Other Bank", "", "000123").result);
 
         [Fact]
+        public void Duplicate_cheque_numbers_are_detected_across_rows()
+        {
+            // Simulates two offline PCs each issuing the same leaf (two rows, same number+bank, both live).
+            UseCheque("000500");
+            UseCheque("000500");                 // duplicate on the same bank
+            UseCheque("000501");                 // unique
+            UseCheque("000502", "Cancelled");    // cancelled — excluded
+            UseCheque("000502", "Cancelled");
+
+            Assert.Equal(1, ChequeService.DuplicateChequeCount());       // only #000500 collides
+            var dups = ChequeService.FindDuplicateChequeNumbers();
+            Assert.Single(dups);
+            Assert.Equal("000500", dups[0].Number);
+            Assert.Equal(2, dups[0].Count);
+        }
+
+        [Fact]
+        public void No_duplicates_reported_for_distinct_numbers()
+        {
+            UseCheque("000600");
+            UseCheque("000601");
+            Assert.Equal(0, ChequeService.DuplicateChequeCount());
+            Assert.Empty(ChequeService.FindDuplicateChequeNumbers());
+        }
+
+        [Fact]
         public void SaveBook_rejects_overlapping_active_ranges()
         {
             NewBook(1, 50);
